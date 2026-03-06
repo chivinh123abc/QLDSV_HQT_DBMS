@@ -1,0 +1,40 @@
+@page "/login"
+@rendermode InteractiveServer
+@using Microsoft.Data.SqlClient
+
+<h3>Đăng nhập</h3>
+
+<input @bind="username" placeholder="Username" />
+<br /><br />
+
+<input type="password" @bind="password" placeholder="Password" />
+<br /><br />
+
+<button class="btn btn-primary" @onclick="HandleLogin">Đăng nhập</button>
+
+<p>@message</p>
+
+@code {
+
+  string username = "";
+  string password = "";
+  string message = "";
+
+  void HandleLogin()
+  {
+    try
+    {
+      string conn = $"Server=.;Database=QLDSV_HTC;User Id={username};Password={password};TrustServerCertificate=True";
+
+      using SqlConnection con = new SqlConnection(conn);
+      con.Open();
+
+      message = "Đăng nhập thành công";
+    }
+    catch
+    {
+      message = "Sai tài khoản hoặc mật khẩu";
+    }
+  }
+
+}
