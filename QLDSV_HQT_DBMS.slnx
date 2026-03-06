@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/QLDSV_HTC.Application/QLDSV_HTC.Application.csproj" />
+    <Project Path="src/QLDSV_HTC.Domain/QLDSV_HTC.Domain.csproj" />
+    <Project Path="src/QLDSV_HTC.Infrastructure/QLDSV_HTC.Infrastructure.csproj" />
+    <Project Path="src/QLDSV_HTC.Web/QLDSV_HTC.Web.csproj" />
+  </Folder>
+</Solution>

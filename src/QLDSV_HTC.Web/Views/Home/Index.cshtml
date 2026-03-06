@@ -1,0 +1,26 @@
+@{
+    ViewData["Title"] = "Trang chủ";
+}
+
+<div class="text-center mt-5">
+    <div class="p-5 mb-4 bg-light rounded-4 shadow-sm">
+        <div class="container-fluid py-5">
+            <h1 class="display-4 fw-bold text-gradient">Chào mừng đến QLDSV_HTC</h1>
+            <p class="col-md-8 mx-auto fs-4 text-muted">Hệ thống quản lý điểm sinh viên chuyên nghiệp sử dụng SQL Server và mô hình MVC Core.</p>
+            <hr class="my-4">
+            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                <a class="btn btn-primary btn-lg px-5 py-3 fw-bold rounded-pill" asp-controller="account" asp-action="login">
+                    Bắt đầu ngay
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-gradient {
+        background: -webkit-linear-gradient(#007bff, #0056b3);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>

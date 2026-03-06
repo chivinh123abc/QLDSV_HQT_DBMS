@@ -1,0 +1,16 @@
+root = true
+
+# Tất cả các file C#
+[*.cs]
+# Dùng space thay vì tab, thụt lề 4 ô (giống tabWidth trong Prettier)
+indent_style = space
+indent_size = 4
+
+# Ép buộc quy tắc đặt tên (ví dụ: Interface phải bắt đầu bằng chữ I)
+dotnet_naming_rule.interface_should_be_begins_with_i.severity = warning
+dotnet_naming_rule.interface_should_be_begins_with_i.symbols = interface
+dotnet_naming_rule.interface_should_be_begins_with_i.style = begins_with_i
+
+[*.{cs,vb}]
+# Yêu cầu dấu ngoặc nhọn ở dòng mới (Chuẩn C# Allman style)
+csharp_new_line_before_open_brace = all
