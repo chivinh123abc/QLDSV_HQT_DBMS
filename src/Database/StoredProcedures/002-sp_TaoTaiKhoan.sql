@@ -59,3 +59,7 @@ BEGIN
     END CATCH
 END
 GO
+
+EXEC sp_TaoTaiKhoan 'pgv', '123', 'user_pgv', 'pgv';
+EXEC sp_TaoTaiKhoan 'khoa', '123', 'user_khoa', 'khoa';
+EXEC sp_TaoTaiKhoan 'sv', 'sv', 'user_sv', 'sv';

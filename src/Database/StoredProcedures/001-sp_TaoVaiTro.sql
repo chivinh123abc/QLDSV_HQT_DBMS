@@ -26,3 +26,7 @@ BEGIN
     END CATCH
 END
 GO
+
+EXEC sp_TaoVaiTro 'pgv';
+EXEC sp_TaoVaiTro 'khoa';
+EXEC sp_TaoVaiTro 'sv';
