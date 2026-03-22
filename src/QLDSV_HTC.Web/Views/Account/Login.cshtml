@@ -24,23 +24,85 @@
                 }
 
                 <form asp-action="Login" method="post">
-                    <div class="mb-3">
-                        <label asp-for="Username" class="form-label fw-semibold">Tài khoản</label>
-                        <input asp-for="Username" class="form-control" placeholder="Mã số sinh viên/GV" required />
+                    
+                    <div class="form-group mb-4 text-center">
+                        <div class="d-flex justify-content-center gap-4">
+                            <div class="form-check">
+                                <input class="form-check-input role-switch" type="radio" name="IsSinhVien" id="roleGV" value="false" checked>
+                                <label class="form-check-label fw-bold text-secondary" for="roleGV">Giảng viên / Quản trị</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input role-switch" type="radio" name="IsSinhVien" id="roleSV" value="true">
+                                <label class="form-check-label fw-bold text-secondary" for="roleSV">Sinh viên</label>
+                            </div>
+                        </div>
                     </div>
+
+                    <div class="mb-3">
+                        <label id="lblLoginName" for="LoginName" class="form-label fw-semibold">Tên đăng nhập</label>
+                        <input asp-for="LoginName" id="LoginName" class="form-control" placeholder="Nhập tên đăng nhập giảng viên..." required />
+                        <span asp-validation-for="LoginName" class="text-danger small"></span>
+                    </div>
+
                     <div class="mb-4">
                         <label asp-for="Password" class="form-label fw-semibold">Mật khẩu</label>
-                        <input asp-for="Password" type="password" class="form-control" placeholder="••••••••" required />
+                        <div class="input-group">
+                            <input asp-for="Password" type="password" id="Password" class="form-control border-end-0" placeholder="••••••••" />
+                            <button class="btn btn-outline-secondary bg-transparent border-start-0 text-muted" type="button" id="togglePassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill">
+                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm">
                         Xác Nhận
                     </button>
                 </form>
             </div>
         </div>
         <p class="text-center mt-4 text-muted small">
-            &copy; 2026 Hệ thống quản lý điểm
+            &copy; @DateTime.Now.Year Hệ thống quản lý điểm
         </p>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const roleSwitches = document.querySelectorAll('.role-switch');
+            const lblLoginName = document.getElementById('lblLoginName');
+            const inputLoginName = document.getElementById('LoginName');
+
+            roleSwitches.forEach(radio => {
+                radio.addEventListener('change', function () {
+                    if (this.value === 'true') {
+                        // Nếu chọn Sinh viên
+                        lblLoginName.innerText = 'Mã SV';
+                        inputLoginName.placeholder = 'Nhập mã sinh viên (VD: N15DCCN001)...';
+                    } else {
+                        // Nếu chọn Giảng viên
+                        lblLoginName.innerText = 'Tên đăng nhập';
+                        inputLoginName.placeholder = 'Nhập tên đăng nhập giảng viên...';
+                    }
+                });
+            });
+
+            // Password visibility toggle logic
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('Password');
+
+            togglePassword.addEventListener('click', function () {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                // Thay đổi icon mắt
+                if (type === 'password') {
+                    this.innerHTML = '<i class="bi bi-eye"></i>';
+                } else {
+                    this.innerHTML = '<i class="bi bi-eye-slash"></i>';
+                }
+            });
+        });
+    </script>
+}
