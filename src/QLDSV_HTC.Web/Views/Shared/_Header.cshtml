@@ -1,10 +1,8 @@
-@using Microsoft.AspNetCore.Identity
-@using QLDSV_HTC.Domain.Constants
 
 <header>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-3">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">
+            <a class="navbar-brand fw-bold" href="@RouteConstants.Home.HomePath">
                 <i class="bi bi-mortarboard-fill me-2"></i> QLDSV HTC
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -13,7 +11,7 @@
             <div class="navbar-collapse collapse d-lg-inline-flex justify-content-between">
                 <ul class="navbar-nav flex-grow-1">
                     <li class="nav-item">
-                        <a class="nav-link text-white" asp-area="" asp-controller="Home" asp-action="Index">Trang chủ</a>
+                        <a class="nav-link text-white" href="@RouteConstants.Home.HomePath">Trang chủ</a>
                     </li>
                     @if (User.Identity != null && User.Identity.IsAuthenticated)
                     {
@@ -26,7 +24,7 @@
                 <ul class="navbar-nav">
                     @if (User.Identity != null && User.Identity.IsAuthenticated)
                     {
-                        var group = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+                        var group = User.FindFirst(QLDSV_HTC.Domain.Constants.AppConstants.SessionKeys.Group)?.Value ?? "";
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle text-white fw-semibold" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-person-circle me-1"></i> @User.Identity.Name (@group)
@@ -51,7 +49,7 @@
                     else
                     {
                         <li class="nav-item">
-                            <a class="nav-link text-white border border-light rounded px-3" asp-area="" asp-controller="Account" asp-action="Login">
+                            <a class="nav-link text-white border border-light rounded px-3" href="@RouteConstants.Account.LoginPath">
                                 Đăng nhập
                             </a>
                         </li> 

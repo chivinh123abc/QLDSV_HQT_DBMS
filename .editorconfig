@@ -14,3 +14,13 @@ dotnet_naming_rule.interface_should_be_begins_with_i.style = begins_with_i
 [*.{cs,vb}]
 # Yêu cầu dấu ngoặc nhọn ở dòng mới (Chuẩn C# Allman style)
 csharp_new_line_before_open_brace = all
+
+# IDE0005: Remove unnecessary using directives
+dotnet_diagnostic.IDE0005.severity = warning
+
+# S6967: Controller actions must have HTTP method attributes
+dotnet_diagnostic.S6967.severity = suggestion
+
+# CS1591: Missing XML comment for publicly visible type or member 
+# (Required to turn off because we enabled GenerateDocumentationFile for IDE0005)
+dotnet_diagnostic.CS1591.severity = none
