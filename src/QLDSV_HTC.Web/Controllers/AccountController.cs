@@ -35,8 +35,7 @@ namespace QLDSV_HTC.Controllers
                 return View(model);
             }
 
-            // Gọi repository với tham số isSinhVien
-            var session = await authRepository.ValidateUserAsync(model.LoginName, model.Password ?? string.Empty, model.IsSinhVien ?? false);
+            var session = await authRepository.ValidateUserAsync(model.LoginName, model.Password ?? string.Empty, model.IsStudent ?? false);
 
             if (session != null && session.IsValid)
             {

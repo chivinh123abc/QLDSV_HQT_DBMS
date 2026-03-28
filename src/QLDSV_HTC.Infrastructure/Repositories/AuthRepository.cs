@@ -9,18 +9,18 @@ namespace QLDSV_HTC.Infrastructure.Repositories
 {
     public class AuthRepository(IDbConnectionProvider connectionProvider) : BaseSqlRepository(connectionProvider), IAuthRepository
     {
-        public async Task<UserSession> ValidateUserAsync(string loginName, string password, bool isSinhVien)
+        public async Task<UserSession> ValidateUserAsync(string loginName, string password, bool isStudent)
         {
             string connString;
             string spName;
             SqlParameter[] parameters;
 
-            if (isSinhVien)
+            if (isStudent)
             {
-                var svUser = Environment.GetEnvironmentVariable(AppConstants.Configs.StudentUsername) ?? "sv";
-                var svPass = Environment.GetEnvironmentVariable(AppConstants.Configs.StudentPassword) ?? "sv";
+                var studentUser = Environment.GetEnvironmentVariable(AppConstants.Configs.StudentUsername) ?? "sv";
+                var studentPass = Environment.GetEnvironmentVariable(AppConstants.Configs.StudentPassword) ?? "sv";
 
-                connString = SqlConfigHelper.GetConnectionString(svUser, svPass);
+                connString = SqlConfigHelper.GetConnectionString(studentUser, studentPass);
                 spName = AppConstants.SpNames.StudentLogin;
 
                 parameters =

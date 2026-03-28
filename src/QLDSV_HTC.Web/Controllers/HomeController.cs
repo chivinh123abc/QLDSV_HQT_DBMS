@@ -13,9 +13,13 @@ namespace QLDSV_HTC.Web.Controllers
         public IActionResult Index()
         {
             var group = User.FindFirst(AppConstants.SessionKeys.Group)?.Value;
-            if (string.Equals(group, "SV", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(group, AppConstants.Groups.SV, StringComparison.OrdinalIgnoreCase))
             {
                 return View("StudentDashboard");
+            }
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return View("AdminDashboard");
             }
             return View();
         }
