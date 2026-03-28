@@ -9,11 +9,14 @@
             <p class="col-md-8 mx-auto fs-4 text-muted">Hệ thống quản lý điểm sinh viên chuyên nghiệp sử dụng SQL Server và mô hình MVC Core.</p>
             <hr class="my-4">
             <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                <a class="btn btn-primary btn-lg px-5 py-3 fw-bold rounded-pill" asp-controller="account" asp-action="login">
+                <a class="btn btn-primary btn-lg px-5 py-3 fw-bold rounded-pill" href="@RouteConstants.Account.LoginPath">
                     Bắt đầu ngay
                 </a>
-                <a class="btn btn-outline-danger btn-lg px-4 py-3 fw-bold rounded-pill" asp-controller="Report" asp-action="ExportPdf" asp-route-masv="N15DCCN001">
+                <a class="btn btn-outline-danger btn-lg px-4 py-3 fw-bold rounded-pill" href="@RouteConstants.Report.LayPhieuDiemPath?maSV=N15DCCN001">
                     <i class="fa fa-file-pdf"></i> Thử Xuất Phiếu Điểm N15DCCN001 (PDF)
+                </a>
+                <a class="btn btn-outline-success btn-lg px-4 py-3 fw-bold rounded-pill" href="@RouteConstants.Report.LayDanhSachLopTinChiPath?nienKhoa=2021-2022&hocKy=1&khoaName=Công Nghệ Thông Tin&maKhoa=CNTT">
+                    <i class="fa fa-file-pdf"></i> Thử Xuất DS Lớp Tín Chỉ (PDF)
                 </a>
             </div>
         </div>

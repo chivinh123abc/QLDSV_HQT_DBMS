@@ -1,22 +1,30 @@
 using System.Data;
-using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using QLDSV_HTC.Application.Interfaces;
+using QLDSV_HTC.Domain.Constants;
 
 namespace QLDSV_HTC.Infrastructure.Repositories
 {
-    public class ReportRepository : BaseSqlRepository, IReportRepository
+    public class ReportRepository(IDbConnectionProvider connectionProvider)
+         : BaseSqlRepository(connectionProvider), IReportRepository
     {
-        public ReportRepository(IDbConnectionProvider connectionProvider) : base(connectionProvider)
-        {
-        }
-
-        public async Task<DataTable> LayDiemSinhVienAsync(string masv)
+        public async Task<DataTable> LayPhieuDiemAsync(string maSV)
         {
             return await ExecuteQueryAsync(
-                "sp_LayPhieuDiem", 
+                AppConstants.SpNames.LayPhieuDiem,
                 CommandType.StoredProcedure,
-                new SqlParameter("@MASV", masv)
+                new SqlParameter(StoredProcedureConstants.LayPhieuDiem.MASV, maSV)
+            );
+        }
+
+        public async Task<DataTable> LayDanhSachLopTinChiAsync(string nienKhoa, int hocKy, string maKhoa)
+        {
+            return await ExecuteQueryAsync(
+                AppConstants.SpNames.LayDanhSachLopTinChi,
+                CommandType.StoredProcedure,
+                new SqlParameter(StoredProcedureConstants.LayDanhSachLopTinChi.NIENKHOA, nienKhoa),
+                new SqlParameter(StoredProcedureConstants.LayDanhSachLopTinChi.HOCKY, hocKy),
+                new SqlParameter(StoredProcedureConstants.LayDanhSachLopTinChi.MAKHOA, maKhoa)
             );
         }
     }

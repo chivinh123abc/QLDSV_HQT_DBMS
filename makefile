@@ -4,16 +4,20 @@ INFRA_PROJECT = src/QLDSV_HTC.Infrastructure
 
 .PHONY: dev build clean db-update
 
+format:
+	dotnet format
+	dotnet format --severity warn
+
 # Chạy ứng dụng Web ở chế độ Watch (Hot Reload)
-dev:
+dev: format
 	dotnet watch --project $(WEB_PROJECT) run
 
 # Build toàn bộ Solution
-build:
+build: format
 	dotnet build
 
 # Dọn dẹp các thư mục rác bin/obj (giúp project sạch sẽ)
-clean:
+clean: format
 	dotnet clean
 	find . -type d -name "bin" -exec rm -rf {} +
 	find . -type d -name "obj" -exec rm -rf {} +

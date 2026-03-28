@@ -1,11 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\QLDSV_HTC.Domain\QLDSV_HTC.Domain.csproj" />
     <ProjectReference Include="..\QLDSV_HTC.Application\QLDSV_HTC.Application.csproj" />
@@ -15,5 +8,4 @@
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.2" />
   </ItemGroup>
-
 </Project>
