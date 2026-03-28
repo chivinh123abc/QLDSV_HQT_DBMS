@@ -1,0 +1,262 @@
+@{
+    ViewData["Title"] = "Đăng ký tín chỉ";
+}
+
+<div class="container-fluid px-0">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="h3 fw-bold mb-1 text-gradient">Đăng ký tín chỉ</h2>
+            <p class="text-muted small mb-0">
+                <i class="bi bi-info-circle me-1"></i> Đăng ký các lớp tín chỉ trong học kỳ mới
+            </p>
+        </div>
+    </div>
+
+    <!-- Student Info Summary -->
+    <div class="welcome-card shadow-sm mb-4 border-0">
+        <div class="row align-items-center">
+            <div class="col-md-auto mb-3 mb-md-0">
+                <div class="header-avatar shadow-sm border border-white border-opacity-25" style="width: 4rem; height: 4rem; font-size: 1.5rem;">
+                    AN
+                </div>
+            </div>
+            <div class="col">
+                <div class="row g-4">
+                    <div class="col-6 col-md-3">
+                        <div class="info-label">Mã sinh viên</div>
+                        <div class="info-value h6 mb-0">SV001</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="info-label">Họ tên</div>
+                        <div class="info-value h6 mb-0">Nguyễn Văn An</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="info-label">Lớp</div>
+                        <div class="info-value h6 mb-0">DH20CNTT01</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="info-label">Niên khóa</div>
+                        <div class="info-value h6 mb-0">2020 - 2024</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Main Registration Area -->
+        <div class="col-lg-8">
+            <div class="qldsv-card border-0 shadow-sm h-100">
+                <!-- Filters -->
+                <div class="row g-3 mb-4 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Niên khóa</label>
+                        <select id="select-year" class="form-select border-0 bg-light">
+                            <option value="2023-2024">2023-2024</option>
+                            <option value="2024-2025" selected>2024-2025</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Học kỳ</label>
+                        <select id="select-semester" class="form-select border-0 bg-light">
+                            <option value="1">Học kỳ 1</option>
+                            <option value="2">Học kỳ 2</option>
+                            <option value="3">Học kỳ 3</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Tìm kiếm môn học</label>
+                        <div class="search-input-wrapper">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="search-input" placeholder="Tên môn, mã môn..." class="form-control border-0 bg-light" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Classes Table -->
+                <div class="qldsv-table-wrapper border-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 qldsv-table">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3 border-0 small fw-bold">Mã MH</th>
+                                    <th class="border-0 small fw-bold">Tên môn học</th>
+                                    <th class="text-center border-0 small fw-bold">Nhóm</th>
+                                    <th class="border-0 small fw-bold">Giảng viên</th>
+                                    <th class="text-center border-0 small fw-bold">Sĩ số</th>
+                                    <th class="pe-3 text-center border-0 small fw-bold">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="classes-tbody" class="border-top-0">
+                                <!-- Dynamic rows injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registered Classes Summary (Side Panel) -->
+        <div class="col-lg-4">
+            <div class="qldsv-card border-0 shadow-sm sticky-top" style="top: 5rem;">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <h3 class="h6 fw-bold mb-0">Danh sách đã chọn</h3>
+                    <span class="badge rounded-pill bg-primary" id="total-registered-count">0</span>
+                </div>
+                
+                <div class="registered-list-container" style="max-height: 400px; overflow-y: auto;">
+                    <div class="space-y-3" id="registered-panel">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-top">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted small">Số tín chỉ đăng ký:</span>
+                        <span class="fw-bold">12</span>
+                    </div>
+                    <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm transition-base">
+                        Xác nhận đăng ký <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                    <p class="text-center text-muted small mt-3 mb-0">
+                        <i class="bi bi-shield-check me-1"></i> Hệ thống tự động ghi nhận
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .registered-list-container::-webkit-scrollbar {
+        width: 4px;
+    }
+    .registered-list-container::-webkit-scrollbar-thumb {
+        background: #e2e8f0;
+        border-radius: 10px;
+    }
+    .space-y-3 > * + * {
+        margin-top: 0.75rem;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Mock data
+        let classes = [
+            { id: "LTC001", code: "MH001", name: "Cơ sở dữ liệu", group: 1, lecturer: "ThS. Nguyễn Văn Anh", registered: 28, max: 40, isRegistered: false },
+            { id: "LTC002", code: "MH002", name: "Lập trình hướng đối tượng", group: 1, lecturer: "TS. Trần Thị Bảo", registered: 35, max: 40, isRegistered: true },
+            { id: "LTC003", code: "MH003", name: "Cấu trúc dữ liệu và giải thuật", group: 1, lecturer: "PGS. Lê Văn Cường", registered: 40, max: 40, isRegistered: false },
+            { id: "LTC004", code: "MH004", name: "Mạng máy tính", group: 1, lecturer: "ThS. Phạm Minh Tuấn", registered: 22, max: 35, isRegistered: false },
+            { id: "LTC005", code: "MH007", name: "Lập trình Web", group: 1, lecturer: "TS. Trần Thị Bảo", registered: 30, max: 40, isRegistered: true },
+            { id: "LTC006", code: "MH008", name: "Trí tuệ nhân tạo", group: 1, lecturer: "TS. Phạm Thị Dung", registered: 18, max: 30, isRegistered: false },
+        ];
+
+        let searchTerm = "";
+
+        const tbody = document.getElementById("classes-tbody");
+        const registeredPanel = document.getElementById("registered-panel");
+        const registeredCount = document.getElementById("total-registered-count");
+        const searchInput = document.getElementById("search-input");
+
+        function render() {
+            // Filter classes
+            const filteredClasses = classes.filter(
+                (cls) =>
+                    cls.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    cls.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            // Render table
+            tbody.innerHTML = "";
+            filteredClasses.forEach(cls => {
+                const isFull = cls.registered >= cls.max;
+                const tr = document.createElement("tr");
+
+                let actionHtml = "";
+                if (cls.isRegistered) {
+                    actionHtml = `
+                    <button class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1 toggle-btn rounded-pill px-3" data-id="${cls.id}">
+                        <i class="bi bi-dash-circle"></i> Hủy
+                    </button>`;
+                } else {
+                    const btnClass = isFull
+                        ? "btn-secondary disabled"
+                        : "btn-outline-primary";
+                    const btnDisabled = isFull ? "disabled" : "";
+                    const text = isFull ? "Đầy" : "Chọn";
+
+                    actionHtml = `
+                    <button class="btn btn-sm ${btnClass} d-inline-flex align-items-center gap-1 toggle-btn rounded-pill px-3" ${btnDisabled} data-id="${cls.id}">
+                        <i class="bi bi-plus-circle"></i> ${text}
+                    </button>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="ps-3"><span class="text-muted font-monospace small">${cls.code}</span></td>
+                    <td><span class="fw-semibold">${cls.name}</span></td>
+                    <td class="text-center">${cls.group}</td>
+                    <td><span class="small">${cls.lecturer}</span></td>
+                    <td class="text-center"><span class="${isFull ? "text-danger fw-bold" : "text-dark"}">${cls.registered}/${cls.max}</span></td>
+                    <td class="pe-3 text-center">${actionHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Re-attach listeners for toggle buttons
+            document.querySelectorAll(".toggle-btn").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    if (this.hasAttribute("disabled")) return;
+                    const id = this.getAttribute("data-id");
+                    handleToggleRegistration(id);
+                });
+            });
+
+            // Render Registered Panel
+            const registeredClasses = classes.filter((c) => c.isRegistered);
+            registeredPanel.innerHTML = "";
+            if (registeredClasses.length > 0) {
+                registeredClasses.forEach(cls => {
+                    const div = document.createElement("div");
+                    div.className = "p-3 bg-light border-start border-4 border-primary rounded-end animate__animated animate__fadeInRight";
+                    div.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-bold small">${cls.name}</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">Nhóm ${cls.group} • ${cls.code}</div>
+                            </div>
+                            <button class="btn btn-sm text-danger p-0" onclick="window.handleRemove('${cls.id}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    registeredPanel.appendChild(div);
+                });
+            } else {
+                registeredPanel.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-cart-x display-4 text-muted opacity-25"></i>
+                        <p class="text-muted small mt-2">Chưa có môn nào được chọn</p>
+                    </div>`;
+            }
+
+            registeredCount.innerText = registeredClasses.length;
+        }
+
+        window.handleRemove = (id) => handleToggleRegistration(id);
+
+        function handleToggleRegistration(classId) {
+            classes = classes.map(c => c.id === classId ? { ...c, isRegistered: !c.isRegistered } : c);
+            render();
+        }
+
+        searchInput.addEventListener("input", function (e) {
+            searchTerm = e.target.value;
+            render();
+        });
+
+        // Initial Render
+        render();
+    });
+</script>

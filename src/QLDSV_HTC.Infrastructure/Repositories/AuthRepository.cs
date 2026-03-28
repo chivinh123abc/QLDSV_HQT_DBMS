@@ -17,23 +17,26 @@ namespace QLDSV_HTC.Infrastructure.Repositories
 
             if (isSinhVien)
             {
-                connString = SqlConfigHelper.GetConnectionString("sv", "sv");
-                spName = AppConstants.SpNames.DangNhapSinhVien;
+                var svUser = Environment.GetEnvironmentVariable(AppConstants.Configs.StudentUsername) ?? "sv";
+                var svPass = Environment.GetEnvironmentVariable(AppConstants.Configs.StudentPassword) ?? "sv";
+
+                connString = SqlConfigHelper.GetConnectionString(svUser, svPass);
+                spName = AppConstants.SpNames.StudentLogin;
 
                 parameters =
                 [
-                    new(StoredProcedureConstants.DangNhapSinhVien.MASV, loginName),
-                    new(StoredProcedureConstants.DangNhapSinhVien.PASSWORD, password ?? "")
+                    new(StoredProcedureConstants.StudentLogin.StudentId, loginName),
+                    new(StoredProcedureConstants.StudentLogin.Password, password ?? "")
                 ];
             }
             else
             {
                 connString = SqlConfigHelper.GetConnectionString(loginName, password);
-                spName = AppConstants.SpNames.DangNhap;
+                spName = AppConstants.SpNames.Login;
 
                 parameters =
                 [
-                    new(StoredProcedureConstants.DangNhap.TENLOGIN, loginName)
+                    new(StoredProcedureConstants.Login.LoginName, loginName)
                 ];
             }
 

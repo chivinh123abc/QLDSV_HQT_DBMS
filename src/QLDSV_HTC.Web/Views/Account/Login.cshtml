@@ -3,67 +3,102 @@
     ViewData["Title"] = "Đăng nhập";
 }
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-4">
-        <div class="card shadow border-0 rounded-4">
-            <div class="card-body p-5">
-                <h3 class="text-center mb-4 fw-bold text-primary">Đăng Nhập</h3>
-                
-                @if (ViewBag.ErrorMessage != null)
-                {
-                    <div class="alert alert-danger fade show" role="alert">
-                        @ViewBag.ErrorMessage
+<div class="login-page">
+    <div class="container">
+        <div class="row align-items-center g-0">
+            <!-- Left Side: Illustration or Info -->
+            <div class="col-lg-7 d-none d-lg-block">
+                <div class="login-illustration pe-lg-5">
+                    <div class="icon-circle mb-4 animate__animated animate__fadeIn">
+                        <i class="bi bi-mortarboard-fill"></i>
                     </div>
-                }
+                    <h2 class="display-4 fw-bold text-gradient mb-3">Hệ Thống <br/>Quản Lý Đào Tạo</h2>
+                    <p class="fs-5 text-muted-foreground max-w-md">
+                        Cổng thông tin tích hợp dành cho sinh viên và giảng viên. Quản lý điểm, thời khóa biểu và đăng ký tín chỉ một cách thông minh.
+                    </p>
+                </div>
+            </div>
 
-                @if (TempData["SuccessMessage"] != null)
-                {
-                    <div class="alert alert-success fade show" role="alert">
-                        @TempData["SuccessMessage"]
-                    </div>
-                }
-
-                <form asp-action="Login" method="post">
-                    
-                    <div class="form-group mb-4 text-center">
-                        <div class="d-flex justify-content-center gap-4">
-                            <div class="form-check">
-                                <input class="form-check-input role-switch" type="radio" name="IsSinhVien" id="roleGV" value="false" checked>
-                                <label class="form-check-label fw-bold text-secondary" for="roleGV">Giảng viên / Quản trị</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input role-switch" type="radio" name="IsSinhVien" id="roleSV" value="true">
-                                <label class="form-check-label fw-bold text-secondary" for="roleSV">Sinh viên</label>
-                            </div>
+            <!-- Right Side: Login Form -->
+            <div class="col-lg-5">
+                <div class="login-card animate__animated animate__fadeInRight">
+                    <div class="card-header border-0 bg-transparent text-center mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <a href="/" class="text-decoration-none text-muted small d-flex align-items-center gap-1 hover-primary transition-base">
+                                <i class="bi bi-arrow-left"></i> Quay lại trang chủ
+                            </a>
+                            <span class="badge badge-status badge-info">V2.0.1</span>
                         </div>
+                        <h1 class="h3 fw-bold text-primary mb-2">Xin chào trở lại!</h1>
+                        <p class="text-muted small">Vui lòng đăng nhập để tiếp tục</p>
                     </div>
 
-                    <div class="mb-3">
-                        <label id="lblLoginName" for="LoginName" class="form-label fw-semibold">Tên đăng nhập</label>
-                        <input asp-for="LoginName" id="LoginName" class="form-control" placeholder="Nhập tên đăng nhập giảng viên..." required />
-                        <span asp-validation-for="LoginName" class="text-danger small"></span>
-                    </div>
-
-                    <div class="mb-4">
-                        <label asp-for="Password" class="form-label fw-semibold">Mật khẩu</label>
-                        <div class="input-group">
-                            <input asp-for="Password" type="password" id="Password" class="form-control border-end-0" placeholder="••••••••" />
-                            <button class="btn btn-outline-secondary bg-transparent border-start-0 text-muted" type="button" id="togglePassword">
-                                <i class="bi bi-eye"></i>
-                            </button>
+                    @if (ViewBag.ErrorMessage != null)
+                    {
+                        <div class="alert alert-danger border-0 shadow-sm mb-4 py-3 rounded-pill d-flex align-items-center gap-2" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <span class="small fw-medium">@ViewBag.ErrorMessage</span>
                         </div>
-                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    }
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success border-0 shadow-sm mb-4 py-3 rounded-pill d-flex align-items-center gap-2" role="alert">
+                            <i class="bi bi-check-circle-fill"></i>
+                            <span class="small fw-medium">@TempData["SuccessMessage"]</span>
+                        </div>
+                    }
+
+                    <form asp-action="Login" method="post" class="login-form">
+                        <!-- Role Selection Switchers -->
+                        <div class="role-switch-group mb-4">
+                            <input type="radio" class="btn-check role-switch" name="IsSinhVien" id="roleGV" value="false" checked autocomplete="off">
+                            <label class="role-switch-btn" for="roleGV">Giảng viên / Quản trị</label>
+
+                            <input type="radio" class="btn-check role-switch" name="IsSinhVien" id="roleSV" value="true" autocomplete="off">
+                            <label class="role-switch-btn" for="roleSV">Sinh viên</label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label id="lblLoginName" for="LoginName" class="form-label small fw-bold text-muted">Tên đăng nhập</label>
+                            <div class="input-group-premium">
+                                <i class="bi bi-person input-icon text-muted"></i>
+                                <input asp-for="LoginName" id="LoginName" class="form-control-premium" placeholder="Nhập tên đăng nhập..." required />
+                            </div>
+                            <span asp-validation-for="LoginName" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Password" class="form-label small fw-bold text-muted">Mật khẩu</label>
+                            <div class="input-group-premium">
+                                <i class="bi bi-lock input-icon text-muted"></i>
+                                <input asp-for="Password" type="password" id="Password" class="form-control-premium pe-5" placeholder="••••••••" required />
+                                <button class="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted p-3 text-decoration-none" type="button" id="togglePassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="rememberMe">
+                                <label class="form-check-label small text-muted" for="rememberMe">Ghi nhớ đăng nhập</label>
+                            </div>
+                            <a href="@RouteConstants.Home.ComingSoonPath" class="small text-primary text-decoration-none fw-medium">Quên mật khẩu?</a>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-action btn-action-primary w-100 py-3 fw-bold shadow-lg mt-2">
+                            Đăng nhập ngay <i class="bi bi-box-arrow-in-right ms-2 font-bold"></i>
+                        </button>
+                    </form>
+
+                    <div class="mt-5 pt-3 border-top text-center">
+                        <p class="text-muted small mb-0">Chưa có tài khoản? <a href="@RouteConstants.Home.ComingSoonPath" class="text-primary fw-bold text-decoration-none">Yêu cầu cấp tài khoản</a></p>
                     </div>
-                    
-                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm">
-                        Xác Nhận
-                    </button>
-                </form>
+                </div>
             </div>
         </div>
-        <p class="text-center mt-4 text-muted small">
-            &copy; @DateTime.Now.Year Hệ thống quản lý điểm
-        </p>
     </div>
 </div>
 

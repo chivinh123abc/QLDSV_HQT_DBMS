@@ -24,7 +24,7 @@ BEGIN
     SELECT 
         MASV AS LoginName, 
         HO + ' ' + TEN AS UserName, 
-        'SINHVIEN' AS GroupName
+        'SV' AS GroupName
     FROM SINHVIEN 
     WHERE MASV = @MASV AND PASSWORD = @PASSWORD
 END

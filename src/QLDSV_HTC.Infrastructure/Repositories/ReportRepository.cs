@@ -11,20 +11,20 @@ namespace QLDSV_HTC.Infrastructure.Repositories
         public async Task<DataTable> LayPhieuDiemAsync(string maSV)
         {
             return await ExecuteQueryAsync(
-                AppConstants.SpNames.LayPhieuDiem,
+                AppConstants.SpNames.GetGradesReport,
                 CommandType.StoredProcedure,
-                new SqlParameter(StoredProcedureConstants.LayPhieuDiem.MASV, maSV)
+                new SqlParameter(StoredProcedureConstants.GetGradesReport.StudentId, maSV)
             );
         }
 
         public async Task<DataTable> LayDanhSachLopTinChiAsync(string nienKhoa, int hocKy, string maKhoa)
         {
             return await ExecuteQueryAsync(
-                AppConstants.SpNames.LayDanhSachLopTinChi,
+                AppConstants.SpNames.GetCreditClassList,
                 CommandType.StoredProcedure,
-                new SqlParameter(StoredProcedureConstants.LayDanhSachLopTinChi.NIENKHOA, nienKhoa),
-                new SqlParameter(StoredProcedureConstants.LayDanhSachLopTinChi.HOCKY, hocKy),
-                new SqlParameter(StoredProcedureConstants.LayDanhSachLopTinChi.MAKHOA, maKhoa)
+                new SqlParameter(StoredProcedureConstants.GetCreditClassList.SchoolYear, nienKhoa),
+                new SqlParameter(StoredProcedureConstants.GetCreditClassList.Semester, hocKy),
+                new SqlParameter(StoredProcedureConstants.GetCreditClassList.FacultyId, maKhoa)
             );
         }
     }

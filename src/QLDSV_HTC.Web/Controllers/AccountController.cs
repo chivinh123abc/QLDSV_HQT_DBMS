@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QLDSV_HTC.Models;
 using QLDSV_HTC.Application.Interfaces;
@@ -12,6 +13,7 @@ namespace QLDSV_HTC.Controllers
     public class AccountController(IAuthRepository authRepository) : Controller
     {
         [HttpGet]
+        [AllowAnonymous]
         [Route(RouteConstants.Account.Login)]
         public IActionResult Login()
         {
@@ -24,6 +26,7 @@ namespace QLDSV_HTC.Controllers
         }
 
         [HttpPost]
+        [AllowAnonymous]
         [Route(RouteConstants.Account.Login)]
         public async Task<IActionResult> Login(LoginViewModel model)
         {

@@ -9,7 +9,7 @@ namespace QLDSV_HTC.Web.Controllers
     public class ReportController(IReportRepository repository) : Controller
     {
         [HttpGet]
-        [Route(RouteConstants.Report.LayPhieuDiem)]
+        [Route(RouteConstants.Report.GetGradesReport)]
         public async Task<IActionResult> LayBangDiem(string maSV)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -31,7 +31,7 @@ namespace QLDSV_HTC.Web.Controllers
         }
 
         [HttpGet]
-        [Route(RouteConstants.Report.LayDanhSachLopTinChi)]
+        [Route(RouteConstants.Report.GetCreditClassList)]
         public async Task<IActionResult> ExportDanhSachLopTinChi(string khoaName, string maKhoa, string nienKhoa, int hocKy)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);

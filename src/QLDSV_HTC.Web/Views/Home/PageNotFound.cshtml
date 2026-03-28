@@ -1,0 +1,44 @@
+@{
+    ViewData["Title"] = "404 Not Found";
+    Layout = "_Layout";
+}
+
+<div class="d-flex align-items-center justify-content-center" style="min-height: 70vh;">
+    <div class="text-center animate__animated animate__fadeIn">
+        <div class="error-code-wrapper mb-4">
+            <h1 class="display-1 fw-black text-primary mb-0" style="font-size: 8rem; letter-spacing: -5px;">404</h1>
+            <div class="error-decoration bg-primary-light rounded-pill px-3 py-1 d-inline-block mt-n4 position-relative z-1">
+                <span class="text-primary fw-bold small">Trang không tồn tại</span>
+            </div>
+        </div>
+        
+        <h2 class="h3 fw-bold mb-3">Ôi không! Bạn bị lạc đường rồi.</h2>
+        <p class="text-muted mb-5 max-w-md mx-auto fs-5">
+            Trang bạn đang tìm kiếm có thể đã bị di chuyển, xóa hoặc chưa bao giờ tồn tại. Hãy quay lại trang chủ để tiếp tục.
+        </p>
+        
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+            <a href="/" class="btn btn-action btn-action-primary px-5 py-3 shadow-lg">
+                <i class="bi bi-house-door me-2"></i> Về Trang Chủ
+            </a>
+            <button onclick="history.back()" class="btn btn-action btn-action-secondary px-5 py-3">
+                <i class="bi bi-arrow-left me-2"></i> Quay lại
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black { font-weight: 900; }
+    .mt-n4 { margin-top: -1.5rem; }
+    .error-code-wrapper {
+        position: relative;
+    }
+    .display-1 {
+        background: linear-gradient(180deg, var(--color-primary) 0%, #1d4ed8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        opacity: 0.95;
+    }
+</style>
