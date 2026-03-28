@@ -1,54 +1,41 @@
 using System.Data;
 using Microsoft.Data.SqlClient;
-using System.Threading.Tasks;
 using QLDSV_HTC.Application.Interfaces;
 
 namespace QLDSV_HTC.Infrastructure.Repositories
 {
-    public abstract class BaseSqlRepository
+    public abstract class BaseSqlRepository(IDbConnectionProvider connectionProvider)
     {
-        private readonly IDbConnectionProvider _connectionProvider;
-
-        protected BaseSqlRepository(IDbConnectionProvider connectionProvider)
-        {
-            _connectionProvider = connectionProvider;
-        }
-
-        // Equivalent logic for ADO.NET query execution
+        // Tương đương ExecuteNonQuery của ADO.NET
         protected async Task<int> ExecuteNonQueryAsync(string commandText, CommandType commandType, params SqlParameter[] parameters)
         {
-            using (var conn = new SqlConnection(_connectionProvider.GetConnectionString()))
-            {
-                using (var cmd = new SqlCommand(commandText, conn))
-                {
-                    cmd.CommandType = commandType;
-                    if (parameters != null) cmd.Parameters.AddRange(parameters);
+            await using var conn = new SqlConnection(connectionProvider.GetConnectionString());
+            await using var cmd = new SqlCommand(commandText, conn);
 
-                    await conn.OpenAsync();
-                    return await cmd.ExecuteNonQueryAsync();
-                }
-            }
+            cmd.CommandType = commandType;
+            if (parameters != null) cmd.Parameters.AddRange(parameters);
+
+            await conn.OpenAsync();
+            return await cmd.ExecuteNonQueryAsync();
         }
 
-        // Equivalent logic for fetching DataTables via ExecSqlDataTable
+        // Tương đương ExecSqlDataTable
         protected async Task<DataTable> ExecuteQueryAsync(string commandText, CommandType commandType, params SqlParameter[] parameters)
         {
-            using (var conn = new SqlConnection(_connectionProvider.GetConnectionString()))
-            {
-                using (var cmd = new SqlCommand(commandText, conn))
-                {
-                    cmd.CommandType = commandType;
-                    if (parameters != null) cmd.Parameters.AddRange(parameters);
+            await using var conn = new SqlConnection(connectionProvider.GetConnectionString());
+            await using var cmd = new SqlCommand(commandText, conn);
 
-                    await conn.OpenAsync();
-                    using (var reader = await cmd.ExecuteReaderAsync())
-                    {
-                        var dt = new DataTable();
-                        dt.Load(reader);
-                        return dt;
-                    }
-                }
-            }
+            cmd.CommandType = commandType;
+            if (parameters != null) cmd.Parameters.AddRange(parameters);
+
+            await conn.OpenAsync();
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            var dt = new DataTable();
+            dt.Load(reader);
+
+            return dt;
         }
     }
 }

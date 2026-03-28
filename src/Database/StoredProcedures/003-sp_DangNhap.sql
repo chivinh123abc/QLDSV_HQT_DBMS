@@ -37,8 +37,3 @@ BEGIN
     JOIN sys.database_principals g ON g.principal_id = rm.role_principal_id
     WHERE u.name = @TENUSER;
 END
-GO
-
--- Cấp quyền cho tất cả các user được phép chạy SP này để xác thực
-GRANT EXECUTE ON OBJECT::dbo.sp_DangNhap TO public;
-GO
