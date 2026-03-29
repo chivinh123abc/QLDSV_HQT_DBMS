@@ -9,6 +9,13 @@ namespace QLDSV_HTC.Web.Controllers
     public class ReportController(IReportRepository repository) : Controller
     {
         [HttpGet]
+        [Route(RouteConstants.Report.Index)]
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        [HttpGet]
         [Route(RouteConstants.Report.GetGradesReport)]
         public async Task<IActionResult> GetGradesReport(string studentId)
         {
