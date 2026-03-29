@@ -47,5 +47,13 @@ namespace QLDSV_HTC.Web.Controllers
         {
             return View();
         }
+
+        [HttpGet]
+        [AllowAnonymous]
+        [Route(RouteConstants.Home.AccessDenied)]
+        public IActionResult AccessDenied()
+        {
+            return View();
+        }
     }
 }

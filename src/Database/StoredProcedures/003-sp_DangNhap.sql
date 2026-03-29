@@ -1,10 +1,8 @@
 USE [QLDSV_HTC]
-GO
 
 SET ANSI_NULLS ON
-GO
+
 SET QUOTED_IDENTIFIER ON
-GO
 
 -- =============================================
 -- Description: SP đăng nhập dành cho Giảng viên/Quản trị
@@ -31,7 +29,7 @@ BEGIN
         -- Dò tên Giảng viên. Nếu là tài khoản Admin không có trong bảng GV thì để chữ 'Quản trị viên'
         ISNULL((SELECT HO + ' ' + TEN FROM GIANGVIEN WHERE MAGV = @TENUSER), N'Quản trị viên') AS FullName, 
         
-        CAST(g.name AS NVARCHAR(100)) AS GroupName
+        UPPER(CAST(g.name AS NVARCHAR(100))) AS GroupName
     FROM sys.database_principals u
     JOIN sys.database_role_members rm ON rm.member_principal_id = u.principal_id
     JOIN sys.database_principals g ON g.principal_id = rm.role_principal_id

@@ -3,7 +3,10 @@
 @{
     var currentPath = Context.Request.Path.Value?.TrimEnd('/') ?? "";
     var group = User.FindFirst(AppConstants.SessionKeys.Group)?.Value ?? "";
+
     var isStudent = group == "SV";
+    var isPGV = group == "PGV";
+    var isKhoa = group == "KHOA";
 }
 
 <aside class="app-sidebar" id="appSidebar">
@@ -19,22 +22,26 @@
             @if (isStudent)
             {
                 <li>
-                    <a class="nav-link @(currentPath == "" || currentPath == "/" ? "active" : "")" href="@RouteConstants.Home.HomePath">
+                    <a class="nav-link @(currentPath == "" || currentPath == "/" ? "active" : "")"
+                        href="@RouteConstants.Home.HomePath">
                         <i class="bi bi-speedometer2"></i> Dashboard
                     </a>
                 </li>
                 <li>
-                    <a class="nav-link @(currentPath.Contains("/student/schedule") ? "active" : "")" href="@RouteConstants.Student.SchedulePath">
+                    <a class="nav-link @(currentPath.Contains("/student/schedule") ? "active" : "")"
+                        href="@RouteConstants.Student.SchedulePath">
                         <i class="bi bi-calendar-week"></i> Lịch học
                     </a>
                 </li>
                 <li>
-                    <a class="nav-link @(currentPath.Contains("/student/grades") ? "active" : "")" href="@RouteConstants.Student.GradesPath">
+                    <a class="nav-link @(currentPath.Contains("/student/grades") ? "active" : "")"
+                        href="@RouteConstants.Student.GradesPath">
                         <i class="bi bi-award"></i> Xem điểm
                     </a>
                 </li>
                 <li>
-                    <a class="nav-link @(currentPath.Contains("/registration") ? "active" : "")" href="@RouteConstants.Registration.RegistrationPath">
+                    <a class="nav-link @(currentPath.Contains("/registration") ? "active" : "")"
+                        href="@RouteConstants.Registration.RegistrationPath">
                         <i class="bi bi-file-earmark-text"></i> Đăng ký học phần
                     </a>
                 </li>
@@ -42,60 +49,70 @@
             else
             {
                 <li>
-                    <a class="nav-link @(currentPath == "" || currentPath == "/" ? "active" : "")" href="@RouteConstants.Home.HomePath">
+                    <a class="nav-link @(currentPath == "" || currentPath == "/" ? "active" : "")"
+                        href="@RouteConstants.Home.HomePath">
                         <i class="bi bi-speedometer2"></i> Dashboard
                     </a>
                 </li>
-                @if (group == "PGV")
+                @if (isPGV)
                 {
                     <li>
-                        <a class="nav-link @(currentPath.Contains("/class") ? "active" : "")" href="@RouteConstants.Class.ClassPath">
+                        <a class="nav-link @(currentPath.Contains("/class") ? "active" : "")"
+                            href="@RouteConstants.Class.ClassPath">
                             <i class="bi bi-people"></i> Lớp
                         </a>
                     </li>
                 }
                 <li>
-                    <a class="nav-link @(currentPath.Contains("/student") ? "active" : "")" href="@RouteConstants.Student.StudentPath">
+                    <a class="nav-link @(currentPath.Contains("/student") ? "active" : "")"
+                        href="@RouteConstants.Student.StudentPath">
                         <i class="bi bi-mortarboard"></i> Sinh viên
                     </a>
                 </li>
                 <li>
-                    <a class="nav-link @(currentPath.Contains("/subject") ? "active" : "")" href="@RouteConstants.Subject.SubjectPath">
+                    <a class="nav-link @(currentPath.Contains("/subject") ? "active" : "")"
+                        href="@RouteConstants.Subject.SubjectPath">
                         <i class="bi bi-book"></i> Môn học
                     </a>
                 </li>
                 <li>
-                    <a class="nav-link @(currentPath.Contains("/lecturer") ? "active" : "")" href="@RouteConstants.Lecturer.LecturerPath">
+                    <a class="nav-link @(currentPath.Contains("/lecturer") ? "active" : "")"
+                        href="@RouteConstants.Lecturer.LecturerPath">
                         <i class="bi bi-person-badge"></i> Giảng viên
                     </a>
                 </li>
                 <li>
-                    <a class="nav-link @(currentPath.Contains("/credit-class") ? "active" : "")" href="@RouteConstants.CreditClass.CreditClassPath">
+                    <a class="nav-link @(currentPath.Contains("/credit-class") ? "active" : "")"
+                        href="@RouteConstants.CreditClass.CreditClassPath">
                         <i class="bi bi-clipboard-check"></i> Lớp tín chỉ
                     </a>
                 </li>
-                @if (group == "PGV")
+                @if (isPGV)
                 {
                     <li>
-                        <a class="nav-link @(currentPath.Contains("/registration") ? "active" : "")" href="@RouteConstants.Registration.RegistrationPath">
+                        <a class="nav-link @(currentPath.Contains("/registration") ? "active" : "")"
+                            href="@RouteConstants.Registration.RegistrationPath">
                             <i class="bi bi-file-earmark-text"></i> Đăng ký tín chỉ
                         </a>
                     </li>
                 }
                 <li>
-                    <a class="nav-link @(currentPath.Contains("/grade") && !currentPath.Contains("grades") ? "active" : "")" href="@RouteConstants.Grade.GradePath">
+                    <a class="nav-link @(currentPath.Contains("/grade") && !currentPath.Contains("grades") ? "active" : "")"
+                        href="@RouteConstants.Grade.GradePath">
                         <i class="bi bi-bar-chart-line"></i> Nhập điểm
                     </a>
                 </li>
                 <li>
-                    <a class="nav-link @(currentPath.Contains("/report") ? "active" : "")" href="@RouteConstants.Report.ReportPath">
+                    <a class="nav-link @(currentPath.Contains("/report") ? "active" : "")"
+                        href="@RouteConstants.Report.ReportPath">
                         <i class="bi bi-bar-chart-line"></i> Báo cáo / In ấn
                     </a>
                 </li>
-                @if (group == "PGV")
+                @if (isPGV)
                 {
                     <li>
-                        <a class="nav-link @(currentPath.Contains("/account/management") ? "active" : "")" href="@RouteConstants.Account.ManagementPath">
+                        <a class="nav-link @(currentPath.Contains("/account/management") ? "active" : "")"
+                            href="@RouteConstants.Account.ManagementPath">
                             <i class="bi bi-gear"></i> Tài khoản / Phân quyền
                         </a>
                     </li>
