@@ -1,0 +1,247 @@
+@{
+    ViewData["Title"] = "Kết quả học tập";
+}
+
+<div class="container-fluid px-0">
+    <!-- Header Section -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="h3 fw-bold mb-1 text-gradient">Kết quả học tập</h2>
+            <p class="text-muted small mb-0">
+                <i class="bi bi-info-circle me-1"></i> Xem điểm các môn học và kết quả tích lũy
+            </p>
+        </div>
+        <button class="btn btn-primary d-inline-flex align-items-center gap-2 px-4 shadow-sm transition-base">
+            <i class="bi bi-file-earmark-pdf"></i>
+            Xuất bảng điểm (PDF)
+        </button>
+    </div>
+
+    <!-- Cumulative Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="stat-card border-0 shadow-sm hover-elevate h-100">
+                <div class="stat-icon bg-blue shadow-sm">
+                    <i class="bi bi-book"></i>
+                </div>
+                <div>
+                    <div class="stat-value">69/87</div>
+                    <div class="stat-label">Tín chỉ tích lũy</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="stat-card border-0 shadow-sm hover-elevate h-100">
+                <div class="stat-icon bg-green shadow-sm">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <div>
+                    <div class="stat-value text-success">3.45</div>
+                    <div class="stat-label">GPA tích lũy (Hệ 4)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="stat-card border-0 shadow-sm hover-elevate h-100">
+                <div class="stat-icon bg-purple shadow-sm">
+                    <i class="bi bi-award"></i>
+                </div>
+                <div>
+                    <div class="stat-value text-primary">Khá</div>
+                    <div class="stat-label">Xếp loại học lực</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="stat-card border-0 shadow-sm hover-elevate h-100">
+                <div class="stat-icon bg-orange shadow-sm">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+                <div>
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">Học kỳ hoàn thành</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Semester Selector -->
+    <div class="qldsv-card border-0 shadow-sm mb-4 p-2">
+        <div class="nav nav-pills gap-2" id="semester-tabs" role="tablist">
+            <button class="nav-link active px-4 py-2 rounded-pill transition-base" data-index="0">
+                Học kỳ 1 - 2025-2026
+            </button>
+            <button class="nav-link px-4 py-2 rounded-pill transition-base" data-index="1">
+                Học kỳ 3 - 2024-2025
+            </button>
+        </div>
+    </div>
+
+    <!-- Semesters Content -->
+    <div id="semesters-content">
+        <!-- Semester 0 (Current) -->
+        <div class="semester-group">
+            <div class="qldsv-card border-0 shadow-sm bg-primary bg-gradient text-white mb-4 p-4 overflow-hidden position-relative">
+                <!-- Decorative background icon -->
+                <i class="bi bi-stars position-absolute end-0 bottom-0 opacity-25" style="font-size: 8rem; margin-right: -2rem; margin-bottom: -2rem;"></i>
+                
+                <h3 class="h6 fw-bold mb-4 d-flex align-items-center gap-2">
+                    <i class="bi bi-lightning-charge-fill"></i> Tóm tắt Học kỳ 1 - 2025-2026
+                </h3>
+                <div class="row g-4 position-relative">
+                    <div class="col-4 border-end border-white border-opacity-25 text-center">
+                        <div class="text-white text-opacity-75 small mb-1">Số môn học</div>
+                        <div class="h3 fw-bold mb-0">6</div>
+                    </div>
+                    <div class="col-4 border-end border-white border-opacity-25 text-center">
+                        <div class="text-white text-opacity-75 small mb-1">Tín chỉ HK</div>
+                        <div class="h3 fw-bold mb-0">18</div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <div class="text-white text-opacity-75 small mb-1">GPA HK</div>
+                        <div class="h3 fw-bold mb-0">3.25</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="qldsv-card border-0 shadow-sm p-0 overflow-hidden mb-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4 border-0 small fw-bold">Mã MH</th>
+                                <th class="border-0 small fw-bold">Tên môn học</th>
+                                <th class="text-center border-0 small fw-bold">Tín chỉ</th>
+                                <th class="text-center border-0 small fw-bold">Giữa kỳ</th>
+                                <th class="text-center border-0 small fw-bold">Cuối kỳ</th>
+                                <th class="text-center border-0 small fw-bold">Trung bình</th>
+                                <th class="text-center border-0 small fw-bold">Điểm chữ</th>
+                                <th class="pe-4 text-center border-0 small fw-bold">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody class="border-top-0">
+                            <tr>
+                                <td class="ps-4"><span class="text-muted font-monospace">IT301</span></td>
+                                <td class="fw-semibold">Cơ sở dữ liệu</td>
+                                <td class="text-center">3</td>
+                                <td class="text-center">8.5</td>
+                                <td class="text-center">7.5</td>
+                                <td class="text-center"><span class="fw-bold text-primary">7.8</span></td>
+                                <td class="text-center"><span class="badge-status badge-info">B+</span></td>
+                                <td class="pe-4 text-center"><span class="badge-status badge-success">Đã hoàn thành</span></td>
+                            </tr>
+                            <tr>
+                                <td class="ps-4"><span class="text-muted font-monospace">IT302</span></td>
+                                <td class="fw-semibold">Lập trình Web</td>
+                                <td class="text-center">3</td>
+                                <td class="text-center">9.0</td>
+                                <td class="text-center">8.5</td>
+                                <td class="text-center"><span class="fw-bold text-primary">8.7</span></td>
+                                <td class="text-center"><span class="badge-status badge-success">A</span></td>
+                                <td class="pe-4 text-center"><span class="badge-status badge-success">Đã hoàn thành</span></td>
+                            </tr>
+                            <tr>
+                                <td class="ps-4"><span class="text-muted font-monospace">IT303</span></td>
+                                <td class="fw-semibold">Mạng máy tính</td>
+                                <td class="text-center">3</td>
+                                <td class="text-center">7.0</td>
+                                <td class="text-center">--</td>
+                                <td class="text-center text-muted">--</td>
+                                <td class="text-center text-muted">--</td>
+                                <td class="pe-4 text-center"><span class="badge-status badge-warning">Đang cập nhật</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Semester 1 (Hidden) -->
+        <div class="semester-group d-none">
+            <div class="qldsv-card border-0 shadow-sm bg-secondary bg-gradient text-white mb-4 p-4">
+                <h3 class="h6 fw-bold mb-4">Tóm tắt Học kỳ 3 - 2024-2025</h3>
+                <div class="row g-4">
+                    <div class="col-4 border-end border-white border-opacity-25 text-center">
+                        <div class="text-white text-opacity-75 small">Số môn học</div>
+                        <div class="h3 fw-bold mb-0">3</div>
+                    </div>
+                    <div class="col-4 border-end border-white border-opacity-25 text-center">
+                        <div class="text-white text-opacity-75 small">Tín chỉ HK</div>
+                        <div class="h3 fw-bold mb-0">9</div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <div class="text-white text-opacity-75 small">GPA HK</div>
+                        <div class="h3 fw-bold mb-0">3.10</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="qldsv-card border-0 shadow-sm p-0 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                         <thead class="bg-light">
+                             <tr>
+                                 <th class="ps-4 border-0 small fw-bold">Mã MH</th>
+                                 <th class="border-0 small fw-bold">Tên môn học</th>
+                                 <th class="text-center border-0 small fw-bold">Trung bình</th>
+                                 <th class="pe-4 text-center border-0 small fw-bold">Điểm chữ</th>
+                             </tr>
+                         </thead>
+                         <tbody>
+                             <tr>
+                                 <td class="ps-4 text-muted font-monospace">IT201</td>
+                                 <td class="fw-semibold">Cấu trúc dữ liệu và giải thuật</td>
+                                 <td class="text-center">7.7</td>
+                                 <td class="pe-4 text-center"><span class="badge-status badge-info">B+</span></td>
+                             </tr>
+                         </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes Section -->
+    <div class="mt-5 p-4 border rounded-3 bg-light">
+        <h4 class="h6 fw-bold mb-3"><i class="bi bi-info-circle-fill text-primary me-2"></i>Ghi chú:</h4>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <ul class="list-unstyled small text-muted mb-0">
+                    <li class="mb-2">• <strong>Giữa kỳ:</strong> Chiếm 30% tổng điểm</li>
+                    <li>• <strong>Cuối kỳ:</strong> Chiếm 70% tổng điểm</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <ul class="list-unstyled small text-muted mb-0">
+                    <li class="mb-2">• <strong>Công thức:</strong> TB = (GK × 0.3) + (CK × 0.7)</li>
+                    <li>• <strong>Thang điểm chữ:</strong> A (>= 8.5), B (7.0 - 8.4), C (5.5 - 6.9), D (4.0 - 5.4), F (&lt; 4.0)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll("#semester-tabs .nav-link");
+        const semesterGroups = document.querySelectorAll(".semester-group");
+
+        tabs.forEach((tab, index) => {
+            tab.addEventListener("click", () => {
+                // Style updates
+                tabs.forEach(t => t.classList.remove("active"));
+                tab.classList.add("active");
+
+                // Content updates
+                semesterGroups.forEach(group => group.classList.add("d-none"));
+                if (semesterGroups[index]) {
+                    semesterGroups[index].classList.remove("d-none");
+                    semesterGroups[index].classList.add("animate__animated", "animate__fadeIn");
+                }
+            });
+        });
+    });
+</script>

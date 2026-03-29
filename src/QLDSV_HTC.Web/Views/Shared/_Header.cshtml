@@ -1,61 +1,23 @@
+@using QLDSV_HTC.Domain.Constants
 
-<header>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-3">
-        <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="@RouteConstants.Home.HomePath">
-                <i class="bi bi-mortarboard-fill me-2"></i> QLDSV HTC
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="navbar-collapse collapse d-lg-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="@RouteConstants.Home.HomePath">Trang chủ</a>
-                    </li>
-                    @if (User.Identity != null && User.Identity.IsAuthenticated)
-                    {
-                        <!-- Navigation items specific to roles can go here -->
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="#">Sinh Viên</a>
-                        </li>
-                    }
-                </ul>
-                <ul class="navbar-nav">
-                    @if (User.Identity != null && User.Identity.IsAuthenticated)
-                    {
-                        var group = User.FindFirst(QLDSV_HTC.Domain.Constants.AppConstants.SessionKeys.Group)?.Value ?? "";
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-white fw-semibold" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-person-circle me-1"></i> @User.Identity.Name (@group)
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Account" asp-action="Register">
-                                        <i class="bi bi-person-plus me-2"></i> Tạo tài khoản mới
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm" class="form-inline">
-                                        <button type="submit" class="dropdown-item text-danger">
-                                            <i class="bi bi-box-arrow-right me-2"></i> Đăng xuất
-                                        </button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </li>
-                    }
-                    else
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link text-white border border-light rounded px-3" href="@RouteConstants.Account.LoginPath">
-                                Đăng nhập
-                            </a>
-                        </li> 
-                    }
-                </ul>
-            </div>
+@{
+    var username = User.FindFirst(AppConstants.SessionKeys.Username)?.Value ?? "User";
+    var group = User.FindFirst(AppConstants.SessionKeys.Group)?.Value ?? "";
+    var initial = username.Length > 0 ? username[0].ToString().ToUpper() : "U";
+}
+
+<header class="app-header">
+    <div class="d-flex align-items-center gap-3">
+        <button class="btn d-lg-none" id="sidebarToggle" type="button" aria-label="Toggle Navigation Sidebar" aria-expanded="false" aria-controls="appSidebar">
+            <i class="bi bi-list fs-4" aria-hidden="true"></i>
+        </button>
+        <h1>@ViewData["Title"]</h1>
+    </div>
+    <div class="header-user" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
+        <div class="header-user-info d-none d-sm-block">
+            <div class="name">@username</div>
+            <div class="role">@group</div>
         </div>
-    </nav>
+        <div class="header-avatar" aria-hidden="true">@initial</div>
+    </div>
 </header>

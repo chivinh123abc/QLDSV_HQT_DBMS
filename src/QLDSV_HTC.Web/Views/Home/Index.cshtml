@@ -2,31 +2,77 @@
     ViewData["Title"] = "Trang chủ";
 }
 
-<div class="text-center mt-5">
-    <div class="p-5 mb-4 bg-light rounded-4 shadow-sm">
-        <div class="container-fluid py-5">
-            <h1 class="display-4 fw-bold text-gradient">Chào mừng đến QLDSV_HTC</h1>
-            <p class="col-md-8 mx-auto fs-4 text-muted">Hệ thống quản lý điểm sinh viên chuyên nghiệp sử dụng SQL Server và mô hình MVC Core.</p>
-            <hr class="my-4">
-            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                <a class="btn btn-primary btn-lg px-5 py-3 fw-bold rounded-pill" href="@RouteConstants.Account.LoginPath">
-                    Bắt đầu ngay
-                </a>
-                <a class="btn btn-outline-danger btn-lg px-4 py-3 fw-bold rounded-pill" href="@RouteConstants.Report.LayPhieuDiemPath?maSV=N15DCCN001">
-                    <i class="fa fa-file-pdf"></i> Thử Xuất Phiếu Điểm N15DCCN001 (PDF)
-                </a>
-                <a class="btn btn-outline-success btn-lg px-4 py-3 fw-bold rounded-pill" href="@RouteConstants.Report.LayDanhSachLopTinChiPath?nienKhoa=2021-2022&hocKy=1&khoaName=Công Nghệ Thông Tin&maKhoa=CNTT">
-                    <i class="fa fa-file-pdf"></i> Thử Xuất DS Lớp Tín Chỉ (PDF)
-                </a>
+<div class="homepage-container">
+    <div class="welcome-hero qldsv-card glass-panel shadow-xl border-0 overflow-hidden position-relative">
+        <div class="hero-bg-accent"></div>
+        <div class="container-fluid py-5 position-relative z-1">
+            <div class="row align-items-center">
+                <div class="col-lg-8 mx-auto text-center">
+                    <h1 class="display-5 fw-bold text-gradient text-wrap-balance mb-4">
+                        Khám phá cổng thông tin QLDSV_HTC
+                    </h1>
+                    <p class="fs-5 text-muted text-wrap-balance mb-5">
+                        Trải nghiệm hệ thống quản lý điểm chuyên nghiệp, nhanh chóng và mượt mà dành riêng cho sinh viên và giảng viên học viện.
+                    </p>
+                    
+                    <div class="d-flex flex-wrap flex-column flex-sm-row justify-content-center gap-3">
+                        <a class="btn-action btn-action-primary btn-lg shadow-sm" href="@RouteConstants.Account.LoginPath">
+                            <i class="bi bi-person-circle" aria-hidden="true"></i> Đăng nhập hệ thống
+                        </a>
+                        <a class="btn-action btn-action-secondary btn-lg" href="#quick-reports">
+                            <i class="bi bi-file-earmark-bar-graph" aria-hidden="true"></i> Xem báo cáo mẫu
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<style>
-    .text-gradient {
-        background: -webkit-linear-gradient(#007bff, #0056b3);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-</style>
+    <!-- Quick Reports Section -->
+    <div id="quick-reports" class="mt-5 pt-3">
+        <h2 class="h4 fw-bold mb-4 text-center">Tiện ích nội bộ</h2>
+        <div class="row g-4 justify-content-center">
+            
+            <div class="col-md-6 col-lg-5">
+                <div class="qldsv-card h-100 hover-elevate transition-base border-0 shadow-sm">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="stat-icon bg-blue shadow-sm">
+                            <i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+                        </div>
+                        <div>
+                            <h3 class="h6 fw-bold mb-1">Phiếu Điểm Cá Nhân</h3>
+                            <p class="text-muted small mb-0">Xuất PDF phiếu điểm của sinh viên</p>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-4">
+                        Hỗ trợ xuất phiếu điểm cho sinh viên để đánh giá quá trình học tập chi tiết và đầy đủ thông tin.
+                    </p>
+                    <a class="btn-action btn-action-secondary w-100 justify-content-center" href="@RouteConstants.Report.GetGradesReportPath?studentId=N15DCCN001">
+                        Xuất phiếu điểm N15DCCN001
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-5">
+                <div class="qldsv-card h-100 hover-elevate transition-base border-0 shadow-sm">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="stat-icon bg-green shadow-sm">
+                            <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
+                        </div>
+                        <div>
+                            <h3 class="h6 fw-bold mb-1">Danh Sách Lớp Tín Chỉ</h3>
+                            <p class="text-muted small mb-0">Xuất báo cáo dưới dạng PDF</p>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-4">
+                        Hiển thị danh sách lớp tín chỉ của khoa theo niên khóa, học kỳ tương ứng.
+                    </p>
+                    <a class="btn-action btn-action-accent w-100 justify-content-center" href="@RouteConstants.Report.GetCreditClassListPath?schoolYear=2021-2022&semester=1&facultyName=Công Nghệ Thông Tin&facultyId=CNTT">
+                        Xuất danh sách mẫu (CNTT)
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

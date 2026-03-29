@@ -1,0 +1,79 @@
+@{
+    ViewData["Title"] = "Coming Soon";
+    Layout = "_Layout";
+}
+
+<div class="coming-soon-wrapper d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+    <div class="container text-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 animate__animated animate__fadeInUp">
+                <!-- Branding Decoration -->
+                <div class="d-flex justify-content-center mb-5 mt-n4">
+                    <div class="coming-soon-badge bg-primary-light text-primary border border-primary border-opacity-25 rounded-pill px-4 py-2 small fw-bold shadow-sm">
+                        <i class="bi bi-stars me-2"></i> Đang được nâng cấp
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <h1 class="display-3 fw-black text-gradient mb-3 text-wrap-balance">Tính năng này sắp ra mắt!</h1>
+                <p class="fs-4 text-muted mb-5 text-wrap-balance max-w-2xl mx-auto">
+                    Chúng tôi đang làm việc hăng say để mang đến cho bạn trải nghiệm tuyệt vời nhất. Vui lòng quay lại sau!
+                </p>
+
+                <!-- Status Cards -->
+                <div class="row g-4 mb-5 text-start px-md-5">
+                    <div class="col-md-6">
+                        <div class="qldsv-card h-100 border-0 shadow-sm bg-light-subtle hover-elevate p-4">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="stat-icon-sm p-3 bg-primary bg-opacity-10 text-primary rounded-3">
+                                    <i class="bi bi-rocket-takeoff-fill"></i>
+                                </div>
+                                <h3 class="h6 fw-bold mb-0">Tiến độ phát triển</h3>
+                            </div>
+                            <div class="progress rounded-pill mb-2" style="height: 10px;">
+                                <div class="progress-bar progress-bar-animated progress-bar-stripes" style="width: 75%"></div>
+                            </div>
+                            <span class="text-xs text-muted fw-medium">Đã hoàn thành 75% giai đoạn thiết kế & tích hợp</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="qldsv-card h-100 border-0 shadow-sm bg-light-subtle hover-elevate p-4">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="stat-icon-sm p-3 bg-accent bg-opacity-10 text-accent rounded-3">
+                                    <i class="bi bi-shield-check"></i>
+                                </div>
+                                <h3 class="h6 fw-bold mb-0">Đảm bảo chất lượng</h3>
+                            </div>
+                            <p class="text-muted small mb-0">Hệ thống đang được kiểm tra bảo mật và tối ưu hiệu năng trước khi công bố rộng rãi.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action -->
+                <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
+                    <a href="/" class="btn btn-action btn-action-primary px-5 py-3 shadow-lg">
+                        <i class="bi bi-house-door me-2"></i> Quay lại trang chủ
+                    </a>
+                    <button class="btn btn-action btn-action-secondary px-5 py-3" onclick="location.reload()">
+                        <i class="bi bi-bell me-2"></i> Nhận thông báo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black { font-weight: 900; }
+    .max-w-2xl { max-width: 42rem; }
+    .bg-light-subtle { background-color: rgba(248, 250, 252, 0.8) !important; }
+    
+    .progress-bar-animated {
+        animation: progress-bar-stripes 1s linear infinite;
+    }
+    
+    .coming-soon-badge {
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+</style>

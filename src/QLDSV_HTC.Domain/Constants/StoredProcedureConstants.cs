@@ -2,27 +2,27 @@ namespace QLDSV_HTC.Domain.Constants
 {
     public static class StoredProcedureConstants
     {
-        public static class LayPhieuDiem
+        public static class GetGradesReport
         {
-            public const string MASV = "@MASV";
+            public const string StudentId = "@MASV";
         }
 
-        public static class LayDanhSachLopTinChi
+        public static class GetCreditClassList
         {
-            public const string NIENKHOA = "@NIENKHOA";
-            public const string HOCKY = "@HOCKY";
-            public const string MAKHOA = "@MAKHOA";
+            public const string SchoolYear = "@NIENKHOA";
+            public const string Semester = "@HOCKY";
+            public const string FacultyId = "@MAKHOA";
         }
 
-        public static class DangNhap
+        public static class Login
         {
-            public const string TENLOGIN = "@TENLOGIN";
+            public const string LoginName = "@TENLOGIN";
         }
 
-        public static class DangNhapSinhVien
+        public static class StudentLogin
         {
-            public const string MASV = "@MASV";
-            public const string PASSWORD = "@PASSWORD";
+            public const string StudentId = "@MASV";
+            public const string Password = "@PASSWORD";
         }
     }
 }

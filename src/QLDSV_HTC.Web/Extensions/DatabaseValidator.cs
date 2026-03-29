@@ -56,8 +56,9 @@ namespace QLDSV_HTC.Web.Extensions
             HashSet<string> existingSps = [];
             var query = "SELECT name FROM sys.procedures";
 
-            using var cmd = new SqlCommand(query, conn);
-            using var reader = await cmd.ExecuteReaderAsync();
+            await using var cmd = new SqlCommand(query, conn);
+            cmd.CommandTimeout = 60; // Extend timeout for slower initial connections
+            await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 existingSps.Add(reader.GetString(0).ToLower());

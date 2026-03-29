@@ -8,23 +8,23 @@ namespace QLDSV_HTC.Infrastructure.Repositories
     public class ReportRepository(IDbConnectionProvider connectionProvider)
          : BaseSqlRepository(connectionProvider), IReportRepository
     {
-        public async Task<DataTable> LayPhieuDiemAsync(string maSV)
+        public async Task<DataTable> GetGradesReportAsync(string studentId)
         {
             return await ExecuteQueryAsync(
-                AppConstants.SpNames.LayPhieuDiem,
+                AppConstants.SpNames.GetGradesReport,
                 CommandType.StoredProcedure,
-                new SqlParameter(StoredProcedureConstants.LayPhieuDiem.MASV, maSV)
+                new SqlParameter(StoredProcedureConstants.GetGradesReport.StudentId, studentId)
             );
         }
 
-        public async Task<DataTable> LayDanhSachLopTinChiAsync(string nienKhoa, int hocKy, string maKhoa)
+        public async Task<DataTable> GetCreditClassListAsync(string schoolYear, int semester, string facultyId)
         {
             return await ExecuteQueryAsync(
-                AppConstants.SpNames.LayDanhSachLopTinChi,
+                AppConstants.SpNames.GetCreditClassList,
                 CommandType.StoredProcedure,
-                new SqlParameter(StoredProcedureConstants.LayDanhSachLopTinChi.NIENKHOA, nienKhoa),
-                new SqlParameter(StoredProcedureConstants.LayDanhSachLopTinChi.HOCKY, hocKy),
-                new SqlParameter(StoredProcedureConstants.LayDanhSachLopTinChi.MAKHOA, maKhoa)
+                new SqlParameter(StoredProcedureConstants.GetCreditClassList.SchoolYear, schoolYear),
+                new SqlParameter(StoredProcedureConstants.GetCreditClassList.Semester, semester),
+                new SqlParameter(StoredProcedureConstants.GetCreditClassList.FacultyId, facultyId)
             );
         }
     }

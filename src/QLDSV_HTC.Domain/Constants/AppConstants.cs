@@ -4,10 +4,10 @@ namespace QLDSV_HTC.Domain.Constants
     {
         public static class SpNames
         {
-            public const string DangNhap = "sp_DangNhap";
-            public const string DangNhapSinhVien = "sp_DangNhap_SinhVien";
-            public const string LayPhieuDiem = "sp_LayPhieuDiem";
-            public const string LayDanhSachLopTinChi = "sp_LayDanhSachLopTinChi";
+            public const string Login = "sp_DangNhap";
+            public const string StudentLogin = "sp_DangNhap_SinhVien";
+            public const string GetGradesReport = "sp_LayPhieuDiem";
+            public const string GetCreditClassList = "sp_LayDanhSachLopTinChi";
         }
 
         public static class Configs
@@ -17,6 +17,8 @@ namespace QLDSV_HTC.Domain.Constants
             public const string Username = "DB_USER";
             public const string Password = "DB_PASSWORD";
             public const string TrustServerCertificate = "DB_TRUST_SERVER_CERTIFICATE";
+            public const string StudentUsername = "DB_STUDENT_USER";
+            public const string StudentPassword = "DB_STUDENT_PASSWORD";
         }
 
         public static class SessionKeys
@@ -25,6 +27,13 @@ namespace QLDSV_HTC.Domain.Constants
             public const string FullName = "FullName";
             public const string Group = "Group";
             public const string UserConnectionString = "UserConnectionString";
+        }
+
+        public static class Groups
+        {
+            public const string PGV = "PGV";
+            public const string KHOA = "KHOA";
+            public const string SV = "SV";
         }
     }
 }
