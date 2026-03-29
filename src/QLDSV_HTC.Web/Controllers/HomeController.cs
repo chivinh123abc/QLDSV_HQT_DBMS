@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QLDSV_HTC.Domain.Constants;
+using QLDSV_HTC.Web.Extensions;
 
 namespace QLDSV_HTC.Web.Controllers
 {
@@ -12,14 +13,13 @@ namespace QLDSV_HTC.Web.Controllers
         [Route(RouteConstants.Home.Index)]
         public IActionResult Index()
         {
-            var group = User.FindFirst(AppConstants.SessionKeys.Group)?.Value;
-            if (string.Equals(group, AppConstants.Groups.SV, StringComparison.OrdinalIgnoreCase))
+            if (User.IsStudent())
             {
-                return View("StudentDashboard");
+                return View(RouteConstants.Home.StudentDashboard);
             }
             if (User.Identity?.IsAuthenticated == true)
             {
-                return View("AdminDashboard");
+                return View(RouteConstants.Home.AdminDashboard);
             }
             return View();
         }

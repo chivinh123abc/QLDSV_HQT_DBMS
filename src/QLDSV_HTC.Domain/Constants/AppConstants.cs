@@ -34,6 +34,7 @@ namespace QLDSV_HTC.Domain.Constants
             public const string PGV = "PGV";
             public const string KHOA = "KHOA";
             public const string SV = "SV";
+            public const string Faculty = PGV + "," + KHOA;
         }
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QLDSV_HTC.Application.Interfaces;
 using QLDSV_HTC.Domain.Constants;
@@ -6,6 +7,7 @@ using QLDSV_HTC.Web.Reports;
 namespace QLDSV_HTC.Web.Controllers
 {
     [Route(RouteConstants.Report.Prefix)]
+    [Authorize(Roles = AppConstants.Groups.Faculty)]
     public class ReportController(IReportRepository repository) : Controller
     {
         [HttpGet]

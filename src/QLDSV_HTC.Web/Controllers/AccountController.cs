@@ -83,13 +83,9 @@ namespace QLDSV_HTC.Controllers
 
         [HttpGet]
         [Route(RouteConstants.Account.Management)]
+        [Authorize(Roles = AppConstants.Groups.PGV)]
         public IActionResult Management()
         {
-            var group = User.FindFirst(AppConstants.SessionKeys.Group)?.Value;
-            if (!string.Equals(group, AppConstants.Groups.PGV, StringComparison.OrdinalIgnoreCase))
-            {
-                return Redirect(RouteConstants.Home.AccessDeniedPath);
-            }
             return View();
         }
     }

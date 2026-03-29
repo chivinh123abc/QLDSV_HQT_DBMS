@@ -22,7 +22,7 @@ BEGIN
     SELECT 
         MASV AS LoginName, 
         HO + ' ' + TEN AS UserName, 
-        'SV' AS GroupName
+        UPPER(CAST('SV') AS NVARCHAR(100)) AS GroupName
     FROM SINHVIEN 
     WHERE MASV = @MASV AND PASSWORD = @PASSWORD
 END
