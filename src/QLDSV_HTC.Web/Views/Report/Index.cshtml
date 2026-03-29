@@ -1,0 +1,148 @@
+@{
+    ViewData["Title"] = "Báo cáo - In ấn";
+}
+
+<div class="dashboard-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Báo cáo & In ấn</h1>
+    </div>
+
+    <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-info-circle-fill me-2 fs-4"></i>
+        <div>
+            Màn hình này hiện đang hiển thị tạm các chức năng in báo cáo theo yêu cầu của Đề Tài.
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- 1. Danh sách lớp tín chỉ -->
+        <div class="col-md-4">
+            <div class="qldsv-card h-100 border-0 shadow-sm p-4 d-flex flex-column text-center">
+                <div class="mb-3 text-primary">
+                    <i class="bi bi-list-columns-reverse fs-1"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Danh Sách Lớp Tín Chỉ</h5>
+                <p class="text-muted small mb-4 flex-grow-1">In danh sách các lớp tín chỉ được mở trong một học kỳ của một niên khóa.</p>
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reportModal" data-report-type="DanhSachLopTinChi">
+                    <i class="bi bi-printer me-1"></i> In Báo Cáo
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. Danh sách sinh viên đăng ký LTC -->
+        <div class="col-md-4">
+            <div class="qldsv-card h-100 border-0 shadow-sm p-4 d-flex flex-column text-center">
+                <div class="mb-3 text-info">
+                    <i class="bi bi-people fs-1"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Danh Sách SV Đăng Ký LTC</h5>
+                <p class="text-muted small mb-4 flex-grow-1">In danh sách chi tiết sinh viên đã đăng ký vào một lớp tín chỉ cụ thể.</p>
+                <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#reportModal" data-report-type="DanhSachSVDangKyLTC">
+                    <i class="bi bi-printer me-1"></i> In Báo Cáo
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. Bảng điểm môn học của 1 LTC -->
+        <div class="col-md-4">
+            <div class="qldsv-card h-100 border-0 shadow-sm p-4 d-flex flex-column text-center">
+                <div class="mb-3 text-success">
+                    <i class="bi bi-journal-check fs-1"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Bảng Điểm Môn Học</h5>
+                <p class="text-muted small mb-4 flex-grow-1">In bảng điểm tổng kết môn học của một lớp tín chỉ (đã nhập xong điểm).</p>
+                <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#reportModal" data-report-type="BangDiemMonHocLTC">
+                    <i class="bi bi-printer me-1"></i> In Báo Cáo
+                </button>
+            </div>
+        </div>
+
+        <!-- 4. Phiếu điểm -->
+        <div class="col-md-4">
+            <div class="qldsv-card h-100 border-0 shadow-sm p-4 d-flex flex-column text-center">
+                <div class="mb-3 text-warning">
+                    <i class="bi bi-person-lines-fill fs-1"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Phiếu Điểm Của Sinh Viên</h5>
+                <p class="text-muted small mb-4 flex-grow-1">In phiếu điểm tất cả các môn học mà một sinh viên (Mã SV) đã thi và có điểm.</p>
+                <button type="button" class="btn btn-outline-warning text-dark border-warning" data-bs-toggle="modal" data-bs-target="#reportModal" data-report-type="PhieuDiem">
+                    <i class="bi bi-printer me-1"></i> In Báo Cáo
+                </button>
+            </div>
+        </div>
+
+        <!-- 5. Bảng điểm tổng kết -->
+        <div class="col-md-4">
+            <div class="qldsv-card h-100 border-0 shadow-sm p-4 d-flex flex-column text-center">
+                <div class="mb-3 text-danger">
+                    <i class="bi bi-award fs-1"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Bảng Điểm Tổng Kết Lớp</h5>
+                <p class="text-muted small mb-4 flex-grow-1">In bảng điểm tổng kết toàn bộ môn học cho toàn sinh viên trong một Lớp.</p>
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#reportModal" data-report-type="BangDiemTongKetLop">
+                    <i class="bi bi-printer me-1"></i> In Báo Cáo
+                </button>
+            </div>
+        </div>
+        
+        <!-- 6. In danh sách đóng học phí -->
+        <div class="col-md-4">
+            <div class="qldsv-card h-100 border-0 shadow-sm p-4 d-flex flex-column text-center">
+                <div class="mb-3 text-secondary">
+                    <i class="bi bi-cash-coin fs-1"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Danh Sách Học Phí</h5>
+                <p class="text-muted small mb-4 flex-grow-1">In danh sách đóng học phí của một Lớp trong một Học kỳ và Niên khóa xác định.</p>
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#reportModal" data-report-type="DanhSachHocPhi">
+                    <i class="bi bi-printer me-1"></i> In Báo Cáo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Printing Modal (Placeholder) -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="reportModalLabel">Thông số in Báo Cáo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mb-0">Form nhập tham số cho loại báo cáo này đang được xây dựng...</p>
+                <p class="text-muted small mt-2 d-none" id="reportTypeTbd"></p>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" disabled>
+                    <i class="bi bi-printer me-1"></i> Xác Nhận In
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var reportModal = document.getElementById('reportModal');
+            if (reportModal) {
+                reportModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var reportType = button.getAttribute('data-report-type');
+                    
+                    var modalTitle = reportModal.querySelector('.modal-title');
+                    var reportTypeTbd = document.getElementById('reportTypeTbd');
+                    
+                    modalTitle.textContent = 'Thông số in: ' + button.parentElement.querySelector('h5').textContent;
+                    reportTypeTbd.textContent = 'Mã tham chiếu: ' + reportType;
+                    reportTypeTbd.classList.remove('d-none');
+                });
+            }
+        });
+    </script>
+}

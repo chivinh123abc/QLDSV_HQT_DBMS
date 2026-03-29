@@ -7,6 +7,6 @@ namespace QLDSV_HTC.Models
         [Required]
         public string LoginName { get; set; } = string.Empty;
         public string? Password { get; set; }
-        public bool? IsStudent { get; set; }
+        public bool IsStudent { get; set; } = false;
     }
 }

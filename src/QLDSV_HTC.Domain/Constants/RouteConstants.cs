@@ -11,6 +11,9 @@ namespace QLDSV_HTC.Domain.Constants
             public const string ComingSoon = "coming-soon";
             public const string AccessDenied = "access-denied";
 
+            public const string StudentDashboard = "StudentDashboard";
+            public const string AdminDashboard = "AdminDashboard";
+
             public const string HomePath = Prefix;
             public const string ErrorPath = $"{Prefix}{Error}";
             public const string NotFoundPath = $"{Prefix}{NotFound}";

@@ -1,10 +1,8 @@
 USE [QLDSV_HTC]
-GO
 
 SET ANSI_NULLS ON
-GO
+
 SET QUOTED_IDENTIFIER ON
-GO
 
 -- =============================================
 -- Author:      Antigravity
@@ -24,7 +22,7 @@ BEGIN
     SELECT 
         MASV AS LoginName, 
         HO + ' ' + TEN AS UserName, 
-        'SV' AS GroupName
+        UPPER(CAST('SV') AS NVARCHAR(100)) AS GroupName
     FROM SINHVIEN 
     WHERE MASV = @MASV AND PASSWORD = @PASSWORD
 END

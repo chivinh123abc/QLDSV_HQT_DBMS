@@ -22,7 +22,7 @@ namespace QLDSV_HTC.Controllers
             {
                 return Redirect(RouteConstants.Home.HomePath);
             }
-            return View();
+            return View(new LoginViewModel { IsStudent = false });
         }
 
         [HttpPost]
@@ -35,7 +35,7 @@ namespace QLDSV_HTC.Controllers
                 return View(model);
             }
 
-            var session = await authRepository.ValidateUserAsync(model.LoginName, model.Password ?? string.Empty, model.IsStudent ?? false);
+            var session = await authRepository.ValidateUserAsync(model.LoginName, model.Password ?? string.Empty, model.IsStudent);
 
             if (session != null && session.IsValid)
             {
@@ -79,6 +79,14 @@ namespace QLDSV_HTC.Controllers
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Redirect(RouteConstants.Account.LoginPath);
+        }
+
+        [HttpGet]
+        [Route(RouteConstants.Account.Management)]
+        [Authorize(Roles = AppConstants.Groups.PGV)]
+        public IActionResult Management()
+        {
+            return View();
         }
     }
 }
