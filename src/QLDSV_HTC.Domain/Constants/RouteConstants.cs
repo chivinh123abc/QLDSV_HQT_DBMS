@@ -49,7 +49,16 @@ namespace QLDSV_HTC.Domain.Constants
         {
             public const string Prefix = "/class";
             public const string Index = "";
+            public const string Add = "add";
+            public const string Edit = "edit";
+            public const string Delete = "delete";
+            public const string GetDepartments = "departments";
+
             public const string ClassPath = Prefix;
+            public const string AddPath = $"{Prefix}/{Add}";
+            public const string EditPath = $"{Prefix}/{Edit}";
+            public const string DeletePath = $"{Prefix}/{Delete}";
+            public const string GetDepartmentsPath = $"{Prefix}/{GetDepartments}";
         }
 
         public static class Student

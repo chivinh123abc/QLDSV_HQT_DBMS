@@ -8,6 +8,10 @@ namespace QLDSV_HTC.Domain.Constants
             public const string StudentLogin = "sp_DangNhap_SinhVien";
             public const string GetGradesReport = "sp_LayPhieuDiem";
             public const string GetCreditClassList = "sp_LayDanhSachLopTinChi";
+            public const string GetClassList = "sp_LayDanhSachLop";
+            public const string AddClass = "sp_ThemLop";
+            public const string UpdateClass = "sp_SuaLop";
+            public const string DeleteClass = "sp_XoaLop";
         }
 
         public static class Configs
