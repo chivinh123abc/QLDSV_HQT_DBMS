@@ -1,82 +1,250 @@
+@using QLDSV_HTC.Domain.Constants
+@model QLDSV_HTC.Web.Models.StudentManagementViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
-    ViewData["Title"] = "Quản lý Sinh viên";
+    ViewData["Title"] = "Quản lý Sinh viên - Theo Lớp";
+    bool isPGV = string.IsNullOrEmpty(Model.CurrentFacultyId);
+    var requestToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }
 
 <div class="dashboard-container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Hồ sơ Sinh viên</h1>
-        <button class="btn btn-primary shadow-sm">
-            <i class="bi bi-person-plus me-2"></i> Thêm Sinh viên
-        </button>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0 text-gray-800">Quản lý Sinh viên <small class="text-muted fs-6">(SubForm 2 tầng)</small></h1>
     </div>
 
-    <!-- Filter/Search -->
-    <div class="qldsv-card border-0 shadow-sm mb-4 p-3">
-        <form class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label text-sm fw-medium">Khoa</label>
-                <select class="form-select form-select-sm">
-                    <option selected>Công nghệ thông tin</option>
-                    <option>Viễn thông</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label text-sm fw-medium">Lớp</label>
-                <select class="form-select form-select-sm">
-                    <option selected>D15CQCN01-N</option>
-                    <option>D15CQCN02-N</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label text-sm fw-medium">Tìm kiếm</label>
-                <div class="input-group input-group-sm">
-                    <input type="text" class="form-control" placeholder="Mã SV hoặc Tên SN">
-                    <button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button>
-                </div>
-            </div>
-        </form>
-    </div>
+    <!-- Master: Lớp -->
+    @{
+        ViewData["isPGV"] = isPGV;
+        ViewData["Faculties"] = Model.Faculties;
+    }
+    @await Html.PartialAsync("_StudentClassTable", Model.Classes, ViewData)
 
-    <div class="qldsv-card border-0 shadow-sm">
-        <div class="table-responsive p-3">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">Mã SV</th>
-                        <th scope="col">Họ và Tên</th>
-                        <th scope="col">Phái</th>
-                        <th scope="col">Ngày sinh</th>
-                        <th scope="col">Mã Lớp</th>
-                        <th scope="col" class="text-end">Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="fw-medium text-primary">N15DCCN001</td>
-                        <td>Nguyễn Văn A</td>
-                        <td>Nam</td>
-                        <td>01/01/1997</td>
-                        <td>D15CQCN01-N</td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-info me-1" title="Chi tiết"><i class="bi bi-eye"></i></button>
-                            <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="fw-medium text-primary">N15DCCN002</td>
-                        <td>Trần Thị B</td>
-                        <td>Nữ</td>
-                        <td>15/05/1997</td>
-                        <td>D15CQCN01-N</td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-info me-1" title="Chi tiết"><i class="bi bi-eye"></i></button>
-                            <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+    <!-- Detail: Sinh viên -->
+    <div class="qldsv-card border-0 shadow-sm" id="studentsSection">
+        <div class="card-header bg-white pt-3 pb-2 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-success"><i class="bi bi-mortarboard me-2"></i>Sinh viên <span id="lblSelectedClass" class="fw-bold text-dark"></span></h5>
+            @if (User.IsInRole(AppConstants.Groups.PGV))
+            {
+                <button class="btn btn-sm btn-primary" onclick="showAddStudentModal()" id="btnAddStudent" disabled>
+                    <i class="bi bi-plus-circle me-1"></i> Thêm Sinh viên
+                </button>
+            }
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="studentTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã SV</th>
+                            <th>Họ và Tên</th>
+                            <th>Phái</th>
+                            <th>Ngày sinh</th>
+                            <th>Địa chỉ</th>
+                            <th>Trạng thái</th>
+                            @if (User.IsInRole(AppConstants.Groups.PGV))
+                            {
+                                <th class="text-end">Hành động</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="7" class="text-center text-muted">Vui lòng chọn 1 lớp ở bảng trên.</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Modal Thêm/Sửa Sinh Viên -->
+<div class="modal fade" id="studentModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="studentModalTitle">Thông tin Sinh viên</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @await Html.PartialAsync("_StudentForm")
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const token = '@requestToken';
+        const isPGV = @(isPGV.ToString().ToLower());
+        let currentSelectedClassId = '';
+        let studentModal;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            studentModal = new bootstrap.Modal(document.getElementById('studentModal'));
+        });
+
+        function filterClasses() {
+            // Logic handled internally by _StudentClassTable.cshtml
+        }
+
+        // Exposed to global for _StudentClassTable.cshtml
+        window.loadStudentsForClass = function(classId, className) {
+            currentSelectedClassId = classId;
+            document.getElementById('lblSelectedClass').innerText = `- Lớp: ${className} (${classId})`;
+            const btnAdd = document.getElementById('btnAddStudent');
+            if(btnAdd) btnAdd.disabled = false;
+
+            document.querySelector('#studentTable tbody').innerHTML = '<tr><td colspan="7" class="text-center"><div class="spinner-border text-primary spinner-border-sm"></div> Đang tải...</td></tr>';
+            
+            fetch(`@RouteConstants.Student.ListPath?classId=${encodeURIComponent(classId)}`)
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        renderStudents(res.data);
+                    } else {
+                        window.showToast("Lỗi tải danh sách sinh viên: " + res.message, 'danger');
+                    }
+                })
+                .catch(err => {
+                    console.error("AJAX Error: ", err);
+                    window.showToast("Có lỗi xảy ra khi gọi API.", 'danger');
+                });
+        };
+
+        function renderStudents(data) {
+            const tbody = document.querySelector('#studentTable tbody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Không có sinh viên nào trong lớp này.</td></tr>';
+                return;
+            }
+
+            data.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="fw-medium text-primary">${s.studentId}</td>
+                    <td>${s.firstName} ${s.lastName}</td>
+                    <td>${s.gender ? 'Nữ' : 'Nam'}</td>
+                    <td>${s.dob ? formatDateDisplay(s.dob) : ''}</td>
+                    <td>${s.address || ''}</td>
+                    <td>${s.onLeave ? '<span class="badge bg-danger">Nghỉ học</span>' : '<span class="badge bg-success">Đang học</span>'}</td>
+                    ${isPGV ? `
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent('${s.studentId}')"><i class="bi bi-trash"></i></button>
+                    </td>` : ''}
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function formatDateDisplay(dateString) {
+            if(!dateString) return '';
+            const d = new Date(dateString);
+            return d.toLocaleDateString('vi-VN');
+        }
+
+        // MODAL FUNCTIONS
+        function hideStudentModal() {
+            studentModal.hide();
+        }
+
+        function showAddStudentModal() {
+            if(!currentSelectedClassId) return;
+            document.getElementById('studentForm').reset();
+            document.getElementById('studentFormMode').value = 'add';
+            document.getElementById('oldStudentId').value = '';
+            document.getElementById('formClassId').value = currentSelectedClassId;
+            document.getElementById('studentId').readOnly = false;
+            document.getElementById('onLeaveContainer').style.display = 'none'; // Only show when editing
+            document.getElementById('passwordHint').style.display = 'none';
+            document.getElementById('studentModalTitle').innerText = `Thêm Sinh Viên Nhóm ${currentSelectedClassId}`;
+            studentModal.show();
+        }
+
+        function editStudent(s) {
+            document.getElementById('studentForm').reset();
+            document.getElementById('studentFormMode').value = 'edit';
+            document.getElementById('oldStudentId').value = s.studentId;
+            document.getElementById('studentId').value = s.studentId;
+            document.getElementById('firstName').value = s.firstName;
+            document.getElementById('lastName').value = s.lastName;
+            document.getElementById('gender').value = s.gender ? 'true' : 'false';
+            document.getElementById('dob').value = s.dob ? s.dob : '';
+            document.getElementById('address').value = s.address || '';
+            document.getElementById('onLeave').checked = s.onLeave;
+            document.getElementById('formClassId').value = s.classId;
+            
+            document.getElementById('studentId').readOnly = false; // Usually true, but the SP supports update
+            document.getElementById('onLeaveContainer').style.display = 'block';
+            document.getElementById('passwordHint').style.display = 'block';
+            document.getElementById('studentModalTitle').innerText = 'Cập nhật Sinh Viên';
+            studentModal.show();
+        }
+
+        // SUBMIT
+        function submitStudentForm(e) {
+            e.preventDefault();
+            const mode = document.getElementById('studentFormMode').value;
+            const form = document.getElementById('studentForm');
+            const url = mode === 'add' ? '@RouteConstants.Student.AddPath' : '@RouteConstants.Student.EditPath';
+
+            // Gộp data
+            const formData = new FormData(form);
+            const dataObj = Object.fromEntries(formData.entries());
+            dataObj.Gender = dataObj.Gender === 'true';
+            dataObj.OnLeave = dataObj.OnLeave === 'true';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify(dataObj)
+            })
+            .then(res => res.json())
+            .then(res => {
+                if(res.success) {
+                    window.showToast(res.message, 'success');
+                    hideStudentModal();
+                    // reload
+                    window.loadStudentsForClass(currentSelectedClassId, document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', ''));
+                } else {
+                    window.showToast('Lỗi: ' + res.message, 'danger');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                window.showToast("Lỗi kết nối.", 'danger');
+            });
+        }
+
+        // DELETE
+        function deleteStudent(studentId) {
+            if(!confirm(`Bạn có chắc chắn muốn xóa sinh viên ${studentId}? Hành động này sẽ không thể phục hồi (kể cả trên server phân mảnh).`)) return;
+
+            fetch('@RouteConstants.Student.DeletePath', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({ studentId: studentId })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if(res.success) {
+                    window.showToast(res.message, 'success');
+                    window.loadStudentsForClass(currentSelectedClassId, document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', ''));
+                } else {
+                    window.showToast('Lỗi: ' + res.message, 'danger');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                window.showToast("Lỗi kết nối.", 'danger');
+            });
+        }
+    </script>
+}

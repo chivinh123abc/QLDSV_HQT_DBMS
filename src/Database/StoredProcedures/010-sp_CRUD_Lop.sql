@@ -13,13 +13,6 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Kiểm tra quyền: Chỉ PGV mới được nhập/sửa/xóa
-    IF IS_MEMBER('PGV') = 0 AND USER_NAME() <> 'dbo'
-    BEGIN
-        RAISERROR(N'Bạn không có quyền thực hiện chức năng này. Chỉ dành cho nhóm PGV.', 16, 1);
-        RETURN;
-    END
-
     IF EXISTS (SELECT 1 FROM LOP WHERE MALOP = @MALOP)
     BEGIN
         RAISERROR(N'Mã lớp đã tồn tại.', 16, 1);
@@ -86,13 +79,6 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Kiểm tra quyền: Chỉ PGV mới được nhập/sửa/xóa
-    IF IS_MEMBER('PGV') = 0 AND USER_NAME() <> 'dbo'
-    BEGIN
-        RAISERROR(N'Bạn không có quyền thực hiện chức năng này. Chỉ dành cho nhóm PGV.', 16, 1);
-        RETURN;
-    END
-
     IF NOT EXISTS (SELECT 1 FROM LOP WHERE MALOP = @MALOP_OLD)
     BEGIN
         RAISERROR(N'Mã lớp gốc không tồn tại.', 16, 1);
@@ -125,13 +111,6 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Kiểm tra quyền: Chỉ PGV mới được nhập/sửa/xóa
-    IF IS_MEMBER('PGV') = 0 AND USER_NAME() <> 'dbo'
-    BEGIN
-        RAISERROR(N'Bạn không có quyền thực hiện chức năng này. Chỉ dành cho nhóm PGV.', 16, 1);
-        RETURN;
-    END
-
     IF NOT EXISTS (SELECT 1 FROM LOP WHERE MALOP = @MALOP)
     BEGIN
         RAISERROR(N'Mã lớp không tồn tại.', 16, 1);
@@ -148,5 +127,3 @@ BEGIN
     DELETE FROM LOP WHERE MALOP = @MALOP;
 END
 GO
-
-GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachLop TO [KHOA];
