@@ -1,12 +1,6 @@
 USE [QLDSV_HTC]
-
-SET ANSI_NULLS ON
-
-SET QUOTED_IDENTIFIER ON
-
+GO
 -- =============================================
--- Author:      Antigravity
--- Create date: 2026-03-21
 -- Description: SP đăng nhập dành cho Sinh Viên (Application-level Security)
 -- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[sp_DangNhap_SinhVien]
@@ -15,14 +9,19 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_DangNhap_SinhVien]
 AS
 BEGIN
     SET NOCOUNT ON;
+    -- Lấy GroupName từ thông tin của tài khoản SQL gọi procedure này (VD: user_sv)
+    DECLARE @GroupName NVARCHAR(100);
+    SELECT TOP 1 @GroupName = UPPER(CAST(g.name AS NVARCHAR(100)))
+    FROM sys.database_principals u
+    JOIN sys.database_role_members rm ON rm.member_principal_id = u.principal_id
+    JOIN sys.database_principals g ON g.principal_id = rm.role_principal_id
+    WHERE u.name = USER_NAME();
 
-    -- Kiểm tra thông tin trong bảng SINHVIEN
-    -- Lưu ý: Cột PASSWORD trong thực tế nên được mã hóa (MD5/SHA) 
-    -- nhưng ở đây dùng plaintext theo cấu trúc mẫu của đề bài.
+    -- Kết quả trả về
     SELECT 
         MASV AS LoginName, 
         HO + ' ' + TEN AS UserName, 
-        UPPER(CAST('SV') AS NVARCHAR(100)) AS GroupName
+        ISNULL(@GroupName, 'SV') AS GroupName
     FROM SINHVIEN 
     WHERE MASV = @MASV AND PASSWORD = @PASSWORD
 END

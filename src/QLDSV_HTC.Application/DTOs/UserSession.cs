@@ -8,6 +8,7 @@ namespace QLDSV_HTC.Application.DTOs
         public string Password { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public string Group { get; set; } = string.Empty;
+        public string? FacultyId { get; set; }
         public string ConnectionString { get; set; } = string.Empty;
     }
 }

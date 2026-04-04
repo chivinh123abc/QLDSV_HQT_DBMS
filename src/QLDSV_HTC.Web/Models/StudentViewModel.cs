@@ -17,10 +17,10 @@ namespace QLDSV_HTC.Web.Models
     {
         public IEnumerable<StudentViewModel> Students { get; set; } = [];
         public IEnumerable<string> Classes { get; set; } = [];
-        public IEnumerable<string> Departments { get; set; } = [];
+        public IEnumerable<string> Faculties { get; set; } = [];
 
         public string SelectedClass { get; set; } = "all";
-        public string SelectedDepartment { get; set; } = "all";
+        public string SelectedFaculty { get; set; } = "all";
         public string SearchTerm { get; set; } = string.Empty;
 
         public StudentViewModel? SelectedStudent { get; set; }
