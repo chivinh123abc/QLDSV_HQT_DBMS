@@ -16,6 +16,7 @@ namespace QLDSV_HTC.Web.Models
         public IEnumerable<ClassViewModel> Classes { get; set; } = [];
         public IEnumerable<FacultyViewModel> Faculties { get; set; } = [];
         public string CurrentFacultyId { get; set; } = string.Empty;
+        public PaginationViewModel Pagination { get; set; } = new();
     }
 
     public class ClassInputModel

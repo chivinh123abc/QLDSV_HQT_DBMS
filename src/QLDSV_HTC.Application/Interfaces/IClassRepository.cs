@@ -10,6 +10,11 @@ namespace QLDSV_HTC.Application.Interfaces
         Task<IEnumerable<ClassDto>> GetClassListAsync();
 
         /// <summary>
+        /// Lấy danh sách lớp có phân trang.
+        /// </summary>
+        Task<Domain.Models.PagedResult<ClassDto>> GetPagedClassListAsync(Domain.Models.PaginationQuery paging);
+
+        /// <summary>
         /// Thêm mới lớp.
         /// </summary>
         Task AddClassAsync(ClassDto dto);

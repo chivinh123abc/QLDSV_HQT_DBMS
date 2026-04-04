@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using QLDSV_HTC.Application.DTOs;
 using QLDSV_HTC.Application.Interfaces;
 using QLDSV_HTC.Domain.Constants;
+using QLDSV_HTC.Domain.Models;
 
 namespace QLDSV_HTC.Infrastructure.Repositories
 {
@@ -29,6 +30,51 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                 ClassName = row[DbConstants.Columns.Student.ClassName]?.ToString() ?? string.Empty,
                 OnLeave = row[DbConstants.Columns.Student.OnLeave] as bool? ?? false
             });
+        }
+
+        public async Task<PagedResult<StudentDto>> GetPagedStudentListAsync(PaginationQuery paging, string? classId = null)
+        {
+            const string selectCols = "sv.MASV, sv.HO, sv.TEN, sv.PHAI, sv.DIACHI, sv.NGAYSINH, sv.MALOP, sv.DANGHIHOC, ISNULL(l.TENLOP, sv.MALOP) AS TENLOP";
+            const string tableName = "SINHVIEN sv";
+            const string joinClause = "LEFT JOIN LOP l ON l.MALOP = sv.MALOP";
+            const string rlsClause = "(IS_MEMBER('PGV') = 1 OR USER_NAME() = 'dbo' OR (IS_MEMBER('KHOA') = 1 AND l.MAKHOA = (SELECT MAKHOA FROM GIANGVIEN WHERE MAGV = USER_NAME())))";
+
+            var whereClause = string.IsNullOrEmpty(classId)
+                                ? rlsClause
+                                : $"sv.MALOP = '{classId.Replace("'", "''")}' AND {rlsClause}";
+
+            const string orderBy = "sv.MALOP, sv.MASV";
+
+            var (dt, totalCount) = await ExecutePaginatedQueryAsync(
+                AppConstants.SpNames.DynamicPagination,
+                CommandType.StoredProcedure,
+                new SqlParameter(StoredProcedureConstants.Pagination.SelectCols, selectCols),
+                new SqlParameter(StoredProcedureConstants.Pagination.TableName, tableName),
+                new SqlParameter(StoredProcedureConstants.Pagination.JoinClause, joinClause),
+                new SqlParameter(StoredProcedureConstants.Pagination.WhereClause, whereClause),
+                new SqlParameter(StoredProcedureConstants.Pagination.OrderBy, orderBy),
+                new SqlParameter(StoredProcedureConstants.Pagination.PageNumber, paging.PageNumber),
+                new SqlParameter(StoredProcedureConstants.Pagination.PageSize, paging.PageSize)
+            );
+
+            return new QLDSV_HTC.Domain.Models.PagedResult<StudentDto>
+            {
+                Items = dt.AsEnumerable().Select(row => new StudentDto
+                {
+                    StudentId = row[DbConstants.Columns.Student.Id]?.ToString() ?? string.Empty,
+                    FirstName = row[DbConstants.Columns.Student.FirstName]?.ToString() ?? string.Empty,
+                    LastName = row[DbConstants.Columns.Student.LastName]?.ToString() ?? string.Empty,
+                    Gender = row[DbConstants.Columns.Student.Gender] as bool? ?? false,
+                    Address = row[DbConstants.Columns.Student.Address]?.ToString() ?? string.Empty,
+                    Dob = row[DbConstants.Columns.Student.Dob] as DateTime?,
+                    ClassId = row[DbConstants.Columns.Student.ClassId]?.ToString() ?? string.Empty,
+                    ClassName = row[DbConstants.Columns.Student.ClassName]?.ToString() ?? string.Empty,
+                    OnLeave = row[DbConstants.Columns.Student.OnLeave] as bool? ?? false
+                }),
+                TotalCount = totalCount,
+                PageNumber = paging.PageNumber,
+                PageSize = paging.PageSize
+            };
         }
 
         public async Task AddStudentAsync(StudentDto dto)
