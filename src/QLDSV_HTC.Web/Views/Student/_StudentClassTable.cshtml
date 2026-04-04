@@ -51,14 +51,14 @@
             {
                 @foreach (var c in Model)
                 {
-                    <tr data-class-id="@c.Id" class="selectable-row" style="cursor: pointer;" 
-                        data-faculty-name="@c.FacultyName">
-                        <td class="fw-semibold font-monospace text-primary">@c.Id</td>
+                    <tr data-class-id="@c.Id?.Trim()" class="selectable-row" style="cursor: pointer;" 
+                        data-faculty-id="@c.FacultyId?.Trim()">
+                        <td class="fw-semibold font-monospace text-primary">@c.Id?.Trim()</td>
                         <td>@c.Name</td>
                         <td>@c.Year</td>
                         <td>
                             <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">
-                                @c.FacultyId
+                                @c.FacultyId?.Trim()
                             </span>
                         </td>
                     </tr>
@@ -105,15 +105,15 @@
 
         function performFiltering() {
             const searchText = searchInput.value.toLowerCase();
-            const facultyName = facultyFilter ? facultyFilter.value.toLowerCase() : "";
+            const facultyId = facultyFilter ? facultyFilter.value : "";
 
             rows.forEach(row => {
-                const classId = row.children[0].innerText.toLowerCase();
+                const classId = (row.dataset.classId || "").toLowerCase();
                 const className = row.children[1].innerText.toLowerCase();
-                const rowFaculty = row.getAttribute("data-faculty-name").toLowerCase();
+                const rowFacultyId = row.dataset.facultyId || "";
 
                 const matchesSearch = classId.includes(searchText) || className.includes(searchText);
-                const matchesFaculty = facultyName === "" || rowFaculty === facultyName;
+                const matchesFaculty = facultyId === "" || rowFacultyId === facultyId;
 
                 row.style.display = (matchesSearch && matchesFaculty) ? "" : "none";
             });

@@ -3,112 +3,82 @@
 
 @{
     var modalModel = new GenericFormModalViewModel
+    {
 
-                        {
+        ModeBadgeSection = @<text>
+            <span class="badge bg-white text-primary ms-2 animate__animated animate__fadeIn" id="studentFormModeLabel"
+                style="font-size:.7rem">Chế độ: Xem</span>
+        </text>,
 
-                            ModeBadgeSection = @<text>
-        <span class="badge bg-white text-primary ms-2 animate__animated animate__fadeIn" id="studentFormModeLabel"
-            style="font-size:.7rem">Chế độ: Xem</span>
-    </text>,
+        ToolbarSection = @<text>
+            @{ ViewData["IdPrefix"] = "StudentForm"; }
+            @await Html.PartialAsync("_CrudToolbar", null, ViewData)
+        </text>,
 
+        BodySection = @<text>
+            <input type="hidden" id="fldStudentClassId" name="ClassId" />
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="fldStudentId" class="form-label fw-semibold">
+                        Mã Sinh Viên <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control font-monospace border-primary-subtle" id="fldStudentId"
+                        name="StudentId" maxlength="10" placeholder="VD: N15DCCN001" disabled>
+                    <div class="invalid-feedback">Vui lòng nhập mã sinh viên hợp lệ.</div>
+                </div>
+                <div class="col-md-8">
+                    <label for="fldPassword" class="form-label fw-semibold">
+                        Mật khẩu
+                    </label>
+                    <input type="password" class="form-control" id="fldPassword" name="Password"
+                        placeholder="Bỏ qua nếu không thay đổi" disabled>
+                </div>
 
+                <div class="col-md-4">
+                    <label for="fldFirstName" class="form-label fw-semibold">
+                        Họ <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="fldFirstName" name="FirstName" maxlength="50"
+                        placeholder="VD: Nguyễn Văn" disabled>
+                    <div class="invalid-feedback">Vui lòng nhập họ.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="fldLastName" class="form-label fw-semibold">
+                        Tên <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="fldLastName" name="LastName" maxlength="10" placeholder="VD: A"
+                        disabled>
+                    <div class="invalid-feedback">Vui lòng nhập tên.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="fldGender" class="form-label fw-semibold">
+                        Phái <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" id="fldGender" name="Gender" disabled>
+                        <option value="false">Nam</option>
+                        <option value="true">Nữ</option>
+                    </select>
+                </div>
 
-    ToolbarSection = @<text>
-        <button type="button" class="btn btn-success btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-            id="btnStudentFormThem" title="Thêm bản ghi mới">
-            <i class="bi bi-plus-circle"></i> Thêm
-        </button>
-        <button type="button" class="btn btn-danger btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-            id="btnStudentFormXoa" title="Xóa bản ghi đang chọn" disabled>
-            <i class="bi bi-trash"></i> Xóa
-        </button>
-        <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-            id="btnStudentFormGhi" title="Lưu dữ liệu vào CSDL" disabled>
-            <i class="bi bi-floppy"></i> Ghi
-        </button>
-        <button type="button" class="btn btn-warning btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-            id="btnStudentFormPhucHoi" title="Phục hồi dữ liệu gốc" disabled>
-            <i class="bi bi-arrow-counterclockwise"></i> Phục hồi
-        </button>
-        <button type="button" class="btn btn-secondary btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-            id="btnStudentFormHuy" title="Hủy thao tác hiện tại" disabled>
-            <i class="bi bi-x-octagon"></i> Hủy
-        </button>
-        <button type="button"
-            class="btn btn-secondary btn-sm ms-auto d-flex align-items-center gap-1 shadow-sm hover-elevate"
-            id="btnStudentFormThoat" data-bs-dismiss="modal" title="Đóng form">
-            <i class="bi bi-x-circle"></i> Thoát
-        </button>
-    </text>,
+                <div class="col-md-4">
+                    <label for="fldDob" class="form-label fw-semibold">Ngày Sinh</label>
+                    <input type="date" class="form-control" id="fldDob" name="Dob" disabled>
+                </div>
+                <div class="col-md-8">
+                    <label for="fldAddress" class="form-label fw-semibold">Địa Chỉ</label>
+                    <input type="text" class="form-control" id="fldAddress" name="Address" maxlength="100"
+                        placeholder="VD: Quận 9, TP.HCM" disabled>
+                </div>
 
-
-
-    BodySection = @<text>
-        <input type="hidden" id="fldStudentClassId" name="ClassId" />
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label for="fldStudentId" class="form-label fw-semibold">
-                    Mã Sinh Viên <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control font-monospace border-primary-subtle" id="fldStudentId"
-                    name="StudentId" maxlength="10" placeholder="VD: N15DCCN001" disabled>
-                <div class="invalid-feedback">Vui lòng nhập mã sinh viên hợp lệ.</div>
-            </div>
-            <div class="col-md-8">
-                <label for="fldPassword" class="form-label fw-semibold">
-                    Mật khẩu
-                </label>
-                <input type="password" class="form-control" id="fldPassword" name="Password"
-                    placeholder="Bỏ qua nếu không thay đổi" disabled>
-            </div>
-
-            <div class="col-md-4">
-                <label for="fldFirstName" class="form-label fw-semibold">
-                    Họ <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" id="fldFirstName" name="FirstName" maxlength="50"
-                    placeholder="VD: Nguyễn Văn" disabled>
-                <div class="invalid-feedback">Vui lòng nhập họ.</div>
-            </div>
-            <div class="col-md-4">
-                <label for="fldLastName" class="form-label fw-semibold">
-                    Tên <span class="text-danger">*</span>
-                </label>
-                <input type="text" class="form-control" id="fldLastName" name="LastName" maxlength="10" placeholder="VD: A"
-                    disabled>
-                <div class="invalid-feedback">Vui lòng nhập tên.</div>
-            </div>
-            <div class="col-md-4">
-                <label for="fldGender" class="form-label fw-semibold">
-                    Phái <span class="text-danger">*</span>
-                </label>
-                <select class="form-select" id="fldGender" name="Gender" disabled>
-                    <option value="false">Nam</option>
-                    <option value="true">Nữ</option>
-                </select>
-            </div>
-
-            <div class="col-md-4">
-                <label for="fldDob" class="form-label fw-semibold">Ngày Sinh</label>
-                <input type="date" class="form-control" id="fldDob" name="Dob" disabled>
-            </div>
-            <div class="col-md-8">
-                <label for="fldAddress" class="form-label fw-semibold">Địa Chỉ</label>
-                <input type="text" class="form-control" id="fldAddress" name="Address" maxlength="100"
-                    placeholder="VD: Quận 9, TP.HCM" disabled>
-            </div>
-
-            <div class="col-12" id="onLeaveContainer">
-                <div class="form-check mt-2">
-                    <input class="form-check-input" type="checkbox" id="fldOnLeave" name="OnLeave" value="true" disabled>
-                    <label class="form-check-label fw-semibold" for="fldOnLeave">Đã nghỉ học</label>
+                <div class="col-12" id="onLeaveContainer">
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="fldOnLeave" name="OnLeave" value="true" disabled>
+                        <label class="form-check-label fw-semibold" for="fldOnLeave">Đã nghỉ học</label>
+                    </div>
                 </div>
             </div>
-        </div>
-    </text>
+        </text>
 };
-
-
 
     ViewData["ModalId"] = "studentFormModal";
 

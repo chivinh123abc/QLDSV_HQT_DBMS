@@ -11,7 +11,7 @@
 
 <div class="dashboard-container">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h3 mb-0 text-gray-800">Quản lý Sinh viên <small class="text-muted fs-6">(SubForm 2 tầng)</small></h1>
+        <h1 class="h3 mb-0 text-gray-800">Quản lý Sinh viên</h1>
     </div>
 
     <!-- Master: Lớp -->
@@ -68,6 +68,7 @@
 @await Html.PartialAsync("_StudentFormModal", Model, ViewData)
 
 @section Scripts {
+    <script src="~/js/form-helpers.js" asp-append-version="true"></script>
     <script>
         const token = '@requestToken';
         const isPGV = @(isPGV.ToString().ToLower());
@@ -90,14 +91,21 @@
         const fldOnLeave = document.getElementById('fldOnLeave');
         const fldClassId = document.getElementById('fldStudentClassId');
 
-        const modeLabel = document.getElementById('studentFormModeLabel');
-        const formAlert = document.getElementById('studentFormAlert');
-
         const btnThem = document.getElementById('btnStudentFormThem');
         const btnXoa = document.getElementById('btnStudentFormXoa');
         const btnGhi = document.getElementById('btnStudentFormGhi');
         const btnPhucHoi = document.getElementById('btnStudentFormPhucHoi');
         const btnHuy = document.getElementById('btnStudentFormHuy');
+
+        // Shared form helpers
+        const helpers = createFormHelpers({
+            alertEl: document.getElementById('studentFormAlert'),
+            modeLabelEl: document.getElementById('studentFormModeLabel'),
+            buttons: { them: btnThem, xoa: btnXoa, ghi: btnGhi, phucHoi: btnPhucHoi, huy: btnHuy },
+            allFields: [fldStudentId, fldPassword, fldFirstName, fldLastName, fldGender, fldDob, fldAddress, fldOnLeave],
+            requiredFields: [fldStudentId, fldFirstName, fldLastName],
+            getSelectedId: () => selectedStudentId,
+        });
 
         document.addEventListener("DOMContentLoaded", function () {
             const modalEl = document.getElementById('studentFormModal');
@@ -111,10 +119,10 @@
                 selectedStudentId = null;
                 snapshotData = null;
                 clearFields();
-                clearValidation();
-                setMode('add');
+                helpers.clearValidation();
+                helpers.setMode('add');
                 fldStudentId.focus();
-                showAlert('Nhập thông tin sinh viên mới rồi nhấn <b>Ghi</b> để lưu.', 'info');
+                helpers.showAlert('Nhập thông tin sinh viên mới rồi nhấn <b>Ghi</b> để lưu.', 'info');
             });
 
             btnXoa?.addEventListener('click', () => {
@@ -127,8 +135,8 @@
             btnPhucHoi?.addEventListener('click', () => {
                 if (!snapshotData) { resetToView(); return; }
                 populateFieldsFromSnapshot(snapshotData);
-                clearValidation();
-                showAlert('Dữ liệu đã được phục hồi về trạng thái ban đầu.', 'warning');
+                helpers.clearValidation();
+                helpers.showAlert('Dữ liệu đã được phục hồi về trạng thái ban đầu.', 'warning');
             });
 
             btnHuy?.addEventListener('click', resetToView);
@@ -202,50 +210,9 @@
         function editStudent(s) {
             resetToView();
             populateFieldsFromSnapshot(s);
-            setMode('edit');
+            helpers.setMode('edit');
             studentModalInstance.show();
-            hideAlert();
-        }
-
-        function setMode(m) {
-            mode = m;
-            const labels = { view: 'Chế độ: Xem', add: 'Chế độ: Thêm', edit: 'Chế độ: Sửa' };
-            const colors = {
-                view: 'badge bg-white text-primary ms-2 border',
-                add: 'badge bg-success text-white ms-2',
-                edit: 'badge bg-warning text-dark ms-2',
-            };
-            modeLabel.textContent = labels[m];
-            modeLabel.className = colors[m];
-            modeLabel.style.fontSize = '.7rem';
-
-            const editing = m !== 'view';
-            fldStudentId.disabled = !editing;
-            // Cho phép nhập password kể cả sửa để đổi pass
-            fldPassword.disabled = !editing;
-            fldFirstName.disabled = !editing;
-            fldLastName.disabled = !editing;
-            fldGender.disabled = !editing;
-            fldDob.disabled = !editing;
-            fldAddress.disabled = !editing;
-            fldOnLeave.disabled = !editing;
-
-            // Nút Thêm trên thanh công cụ chỉ mở khi đang ở View (giống Class)
-            btnThem.disabled = (m !== 'view');
-            btnXoa.disabled = !(m === 'edit' && !!selectedStudentId);
-            btnGhi.disabled = !editing;
-            btnPhucHoi.disabled = !editing;
-            if (btnHuy) btnHuy.disabled = (m === 'view');
-        }
-
-        function resetToView() {
-            selectedStudentId = null;
-            snapshotData = null;
-            originalStudentId = null;
-            clearFields();
-            clearValidation();
-            hideAlert();
-            setMode('view');
+            helpers.hideAlert();
         }
 
         function clearFields() {
@@ -272,37 +239,21 @@
             snapshotData = { ...s };
         }
 
-        function validateForm() {
-            let ok = true;
-            [fldStudentId, fldFirstName, fldLastName].forEach(f => {
-                if (!f.value.trim()) { f.classList.add('is-invalid'); ok = false; }
-                else { f.classList.remove('is-invalid'); }
-            });
-            return ok;
-        }
-
-        function clearValidation() {
-            [fldStudentId, fldFirstName, fldLastName]
-                .forEach(f => f.classList.remove('is-invalid', 'is-valid'));
-        }
-
-        function showAlert(msg, type) {
-            const icons = {
-                success: 'bi-check-circle-fill', danger: 'bi-x-circle-fill',
-                warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill'
-            };
-            formAlert.className = `alert alert-${type} d-flex align-items-center gap-2`;
-            formAlert.innerHTML = `<i class="bi ${icons[type]}"></i><span>${msg}</span>`;
-        }
-        function hideAlert() {
-            formAlert.className = 'alert d-none'; formAlert.innerHTML = '';
+        function resetToView() {
+            selectedStudentId = null;
+            snapshotData = null;
+            originalStudentId = null;
+            clearFields();
+            helpers.clearValidation();
+            helpers.hideAlert();
+            helpers.setMode('view');
         }
 
         // SUBMIT
         function submitStudentForm() {
-            if (!validateForm()) return;
+            if (!helpers.validateForm()) return;
 
-            const url = mode === 'add' ? '@RouteConstants.Student.AddPath' : '@RouteConstants.Student.EditPath';
+            const url = helpers.getMode() === 'add' ? '@RouteConstants.Student.AddPath' : '@RouteConstants.Student.EditPath';
 
             const dataObj = {
                 OldStudentId: originalStudentId,
@@ -337,15 +288,15 @@
                         snapshotData = { ...dataObj };
                         selectedStudentId = dataObj.StudentId;
                         originalStudentId = dataObj.StudentId;
-                        setMode('edit');
-                        showAlert('Ghi dữ liệu thành công', 'success');
+                        helpers.setMode('edit');
+                        helpers.showAlert('Ghi dữ liệu thành công', 'success');
                     } else {
-                        showAlert('Lỗi: ' + res.message, 'danger');
+                        helpers.showAlert('Lỗi: ' + res.message, 'danger');
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    showAlert("Lỗi kết nối.", 'danger');
+                    helpers.showAlert("Lỗi kết nối.", 'danger');
                 });
         }
 

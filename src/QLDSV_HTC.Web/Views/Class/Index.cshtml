@@ -50,6 +50,7 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
 <partial name="_DeleteConfirmModal" />
 
 @section Scripts {
+    <script src="~/js/form-helpers.js" asp-append-version="true"></script>
     <script>
         (function () {
             'use strict';
@@ -58,7 +59,6 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
             const URL_EDIT = '@Url.Action("Edit",   "Class")';
             const URL_DELETE = '@Url.Action("Delete", "Class")';
 
-            let mode = 'view';
             let snapshotData = null;
             let selectedId = null;
             let originalId = null;
@@ -69,6 +69,22 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
             const fldClassName = document.getElementById('fldClassName');
             const fldSchoolYear = document.getElementById('fldSchoolYear');
             const fldFacultyId = document.getElementById('fldFacultyId');
+
+            const btnThem = document.getElementById('btnFormThem');
+            const btnXoa = document.getElementById('btnFormXoa');
+            const btnGhi = document.getElementById('btnFormGhi');
+            const btnPhucHoi = document.getElementById('btnFormPhucHoi');
+            const btnHuy = document.getElementById('btnFormHuy');
+
+            // ── Shared form helpers ──────────────────────────────────
+            const helpers = createFormHelpers({
+                alertEl: document.getElementById('formAlert'),
+                modeLabelEl: document.getElementById('formModeLabel'),
+                buttons: { them: btnThem, xoa: btnXoa, ghi: btnGhi, phucHoi: btnPhucHoi, huy: btnHuy },
+                allFields: [fldClassId, fldClassName, fldSchoolYear, fldFacultyId],
+                requiredFields: [fldClassId, fldClassName, fldSchoolYear, fldFacultyId],
+                getSelectedId: () => selectedId,
+            });
 
             // ── Xử lý modal xác nhận xóa ────────────────────────────
             let pendingDeleteId = null;
@@ -88,14 +104,6 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 document.getElementById('deleteTargetName').textContent = name;
                 bootstrap.Modal.getOrCreateInstance(deleteModal).show();
             }
-            const formAlert = document.getElementById('formAlert');
-            const modeLabel = document.getElementById('formModeLabel');
-
-            const btnThem = document.getElementById('btnFormThem');
-            const btnXoa = document.getElementById('btnFormXoa');
-            const btnGhi = document.getElementById('btnFormGhi');
-            const btnPhucHoi = document.getElementById('btnFormPhucHoi');
-            const btnHuy = document.getElementById('btnFormHuy');
 
             if (!modal) return;
 
@@ -107,7 +115,7 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
 
             // Chọn hàng trong mini-table → chỉ block khi đang ở chế độ Thêm
             document.getElementById('miniClassBody').addEventListener('click', e => {
-                if (mode === 'add') return; // Đang Thêm → không cho chuyển sang Sửa
+                if (helpers.getMode() === 'add') return; // Đang Thêm → không cho chuyển sang Sửa
                 const row = e.target.closest('tr.mini-row');
                 if (!row) return;
                 selectMiniRow(row);
@@ -119,11 +127,11 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 selectedId = null;
                 snapshotData = null;
                 clearFields();
-                clearValidation();
-                setMode('add');
+                helpers.clearValidation();
+                helpers.setMode('add');
                 fldClassId.disabled = false;
                 fldClassId.focus();
-                showAlert('Nhập thông tin lớp mới rồi nhấn <b>Ghi</b> để lưu.', 'info');
+                helpers.showAlert('Nhập thông tin lớp mới rồi nhấn <b>Ghi</b> để lưu.', 'info');
             });
 
             // ── Nút Xóa ──────────────────────────────────────────────
@@ -134,7 +142,7 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
 
             // ── Nút Ghi ──────────────────────────────────────────────
             btnGhi.addEventListener('click', async () => {
-                if (!validateForm()) return;
+                if (!helpers.validateForm()) return;
 
                 const payload = {
                     oldClassId: originalId,
@@ -145,21 +153,21 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 };
 
                 try {
-                    const res = await fetchJson(mode === 'add' ? URL_ADD : URL_EDIT, payload);
+                    const res = await fetchJson(helpers.getMode() === 'add' ? URL_ADD : URL_EDIT, payload);
                     if (res.success) {
                         window.showToast(res.message, 'success');
-                        if (mode === 'add') addRowToTables(payload);
+                        if (helpers.getMode() === 'add') addRowToTables(payload);
                         else updateRowInTables(payload, originalId);
                         snapshotData = { ...payload };
                         selectedId = payload.classId;
                         originalId = payload.classId;
-                        setMode('edit'); // sau ghi → chế độ sửa
+                        helpers.setMode('edit');
                         highlightMiniRow(selectedId);
                     } else {
-                        showAlert(res.message, 'danger');
+                        helpers.showAlert(res.message, 'danger');
                     }
                 } catch (err) {
-                    showAlert('Lỗi: ' + err.message, 'danger');
+                    helpers.showAlert('Lỗi: ' + err.message, 'danger');
                 }
             });
 
@@ -170,8 +178,8 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 fldClassName.value = snapshotData.className;
                 fldSchoolYear.value = snapshotData.schoolYear;
                 fldFacultyId.value = snapshotData.facultyId;
-                clearValidation();
-                showAlert('Dữ liệu đã được phục hồi về trạng thái ban đầu.', 'warning');
+                helpers.clearValidation();
+                helpers.showAlert('Dữ liệu đã được phục hồi về trạng thái ban đầu.', 'warning');
             });
 
             // ── Nút Hủy ──────────────────────────────────────────────
@@ -190,9 +198,9 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                     bootstrap.Modal.getOrCreateInstance(modal).show();
                     setTimeout(() => {
                         populateFields(id, name, year, facultyId);
-                        setMode('edit');
+                        helpers.setMode('edit');
                         highlightMiniRow(id);
-                        hideAlert();
+                        helpers.hideAlert();
                     }, 200);
                 }
 
@@ -205,37 +213,10 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
 
             // ── Helpers ──────────────────────────────────────────────
 
-            function setMode(m) {
-                mode = m;
-                const labels = { view: 'Chế độ: Xem', add: 'Chế độ: Thêm', edit: 'Chế độ: Sửa' };
-                const colors = {
-                    view: 'badge bg-white   text-primary   ms-2 border',
-                    add: 'badge bg-success text-white     ms-2',
-                    edit: 'badge bg-warning text-dark      ms-2',
-                };
-                modeLabel.textContent = labels[m];
-                modeLabel.className = colors[m];
-                modeLabel.style.fontSize = '.7rem';
-
-                const editing = m !== 'view';
-                fldClassId.disabled = !editing;
-                fldClassName.disabled = !editing;
-                fldSchoolYear.disabled = !editing;
-                fldFacultyId.disabled = !editing;
-
-                // Chỉ cho phép Thêm khi đang ở chế độ Xem
-                // → Khi đang Thêm hoặc Sửa, không được chuyển sang chế độ khác
-                btnThem.disabled = (m !== 'view');
-                btnXoa.disabled = !(m === 'edit' && !!selectedId);
-                btnGhi.disabled = !editing;
-                btnPhucHoi.disabled = !editing;
-                if (btnHuy) btnHuy.disabled = (m === 'view');
-            }
-
             function resetToView() {
                 selectedId = null; snapshotData = null; originalId = null;
-                clearFields(); clearValidation(); hideAlert(); deselectMiniRow();
-                setMode('view');
+                clearFields(); helpers.clearValidation(); helpers.hideAlert(); deselectMiniRow();
+                helpers.setMode('view');
             }
 
             function populateFields(id, name, year, facultyId) {
@@ -257,8 +238,8 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 deselectMiniRow();
                 row.classList.add('table-active', 'fw-semibold');
                 populateFields(row.dataset.id, row.dataset.name, row.dataset.year, row.dataset.faculty);
-                setMode('edit');
-                hideAlert();
+                helpers.setMode('edit');
+                helpers.hideAlert();
             }
 
             function highlightMiniRow(id) {
@@ -272,32 +253,6 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                     .forEach(r => r.classList.remove('table-active', 'fw-semibold'));
             }
 
-            function validateForm() {
-                let ok = true;
-                [fldClassId, fldClassName, fldSchoolYear, fldFacultyId].forEach(f => {
-                    if (!f.value.trim()) { f.classList.add('is-invalid'); ok = false; }
-                    else { f.classList.remove('is-invalid'); }
-                });
-                return ok;
-            }
-
-            function clearValidation() {
-                [fldClassId, fldClassName, fldSchoolYear, fldFacultyId]
-                    .forEach(f => f.classList.remove('is-invalid', 'is-valid'));
-            }
-
-            function showAlert(msg, type) {
-                const icons = {
-                    success: 'bi-check-circle-fill', danger: 'bi-x-circle-fill',
-                    warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill'
-                };
-                formAlert.className = `alert alert-${type} d-flex align-items-center gap-2`;
-                formAlert.innerHTML = `<i class="bi ${icons[type]}"></i><span>${msg}</span>`;
-            }
-            function hideAlert() {
-                formAlert.className = 'alert d-none'; formAlert.innerHTML = '';
-            }
-
             async function doDelete(id) {
                 try {
                     const res = await fetchJson(URL_DELETE, { classId: id });
@@ -306,9 +261,9 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                         resetToView();
                         window.showToast(res.message, 'success');
                     } else {
-                        showAlert(res.message, 'danger');
+                        helpers.showAlert(res.message, 'danger');
                     }
-                } catch (err) { showAlert('Lỗi: ' + err.message, 'danger'); }
+                } catch (err) { helpers.showAlert('Lỗi: ' + err.message, 'danger'); }
             }
 
             // ── DOM table helpers ─────────────────────────────────────
@@ -345,23 +300,23 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
             }
 
             function mainRowHtml(p, facultyName) {
-                return `<tr data-id="${h(p.classId)}" data-name="${h(p.className)}"
-                                data-year="${h(p.schoolYear)}" data-faculty="${h(p.facultyId)}"
-                                data-faculty-filter="${h(p.facultyId)}">
-                        <td class="fw-semibold font-monospace text-primary">${h(p.classId)}</td>
-                        <td>${h(p.className)}</td>
-                        <td>${h(p.schoolYear)}</td>
+                return `<tr data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
+                                data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}"
+                                data-faculty-filter="${escapeHtml(p.facultyId)}">
+                        <td class="fw-semibold font-monospace text-primary">${escapeHtml(p.classId)}</td>
+                        <td>${escapeHtml(p.className)}</td>
+                        <td>${escapeHtml(p.schoolYear)}</td>
                         <td>
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">${h(p.facultyId)}</span>
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">${escapeHtml(p.facultyId)}</span>
                         </td>
                         <td class="text-end">
                             <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row" title="Sửa"
-                                    data-id="${h(p.classId)}" data-name="${h(p.className)}"
-                                    data-year="${h(p.schoolYear)}" data-faculty="${h(p.facultyId)}">
+                                    data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
+                                    data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <button class="btn btn-sm btn-outline-danger btn-delete-row" title="Xóa"
-                                    data-id="${h(p.classId)}" data-name="${h(p.className)}">
+                                    data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>
@@ -370,19 +325,13 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
 
             function miniRowHtml(p) {
                 return `<tr class="mini-row" role="button"
-                                data-id="${h(p.classId)}" data-name="${h(p.className)}"
-                                data-year="${h(p.schoolYear)}" data-faculty="${h(p.facultyId)}">
-                        <td class="fw-semibold font-monospace text-primary small">${h(p.classId)}</td>
-                        <td class="small">${h(p.className)}</td>
-                        <td class="small">${h(p.schoolYear)}</td>
-                        <td><span class="badge bg-secondary-subtle text-secondary border small">${h(p.facultyId)}</span></td>
+                                data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
+                                data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}">
+                        <td class="fw-semibold font-monospace text-primary small">${escapeHtml(p.classId)}</td>
+                        <td class="small">${escapeHtml(p.className)}</td>
+                        <td class="small">${escapeHtml(p.schoolYear)}</td>
+                        <td><span class="badge bg-secondary-subtle text-secondary border small">${escapeHtml(p.facultyId)}</span></td>
                     </tr>`;
-            }
-
-            function h(str) {
-                return String(str ?? '')
-                    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
             }
 
             async function fetchJson(url, body) {
