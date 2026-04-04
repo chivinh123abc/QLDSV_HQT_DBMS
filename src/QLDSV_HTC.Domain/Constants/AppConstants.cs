@@ -30,6 +30,7 @@ namespace QLDSV_HTC.Domain.Constants
             public const string Username = "Username";
             public const string FullName = "FullName";
             public const string Group = "Group";
+            public const string FacultyId = "FacultyId";
             public const string UserConnectionString = "UserConnectionString";
         }
 

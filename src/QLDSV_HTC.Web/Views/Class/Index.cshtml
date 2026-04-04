@@ -3,10 +3,13 @@
 @{
     ViewData["Title"] = "Quản lý Lớp";
     var isPGV = User.IsInRole("PGV");
-    var hasDept = !string.IsNullOrEmpty(Model.CurrentFacultyId);
-    var pageTitle = hasDept
+    var hasFaculty = !string.IsNullOrEmpty(Model.CurrentFacultyId);
+    var pageTitle = hasFaculty
         ? $"Danh sách Lớp — Khoa {Model.CurrentFacultyId}"
         : "Danh sách Lớp toàn trường";
+
+    ViewData["isPGV"] = isPGV;
+    ViewData["hasFaculty"] = hasFaculty;
 }
 
 <div class="dashboard-container fade-in-up">
@@ -18,7 +21,7 @@
             <p class="text-muted mb-0 small">
                 <i class="bi bi-mortarboard me-1"></i>
                 Tổng: <strong>@Model.Classes.Count()</strong> lớp
-                @if (hasDept)
+                @if (hasFaculty)
                 {
                     <span class="ms-2 badge bg-primary-subtle text-primary border border-primary-subtle">
                         <i class="bi bi-building me-1"></i>@Model.CurrentFacultyId
@@ -38,272 +41,14 @@
     </div>
 
     @* ── Bảng danh sách lớp ── *@
-    <div class="qldsv-card border-0 shadow-sm">
-        @* Thanh tìm kiếm *@
-        <div class="p-3 border-bottom d-flex align-items-center gap-3">
-            <div class="input-group" style="max-width:340px">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="bi bi-search text-muted"></i>
-                </span>
-                <input type="text" id="classSearch" class="form-control border-start-0"
-                       placeholder="Tìm mã lớp hoặc tên lớp…">
-            </div>
-            @if (!hasDept && Model.Departments.Any())
-            {
-                <select id="deptFilter" class="form-select" style="max-width:200px">
-                    <option value="">— Tất cả khoa —</option>
-                    @foreach (var d in Model.Departments)
-                    {
-                        <option value="@d.Id">@d.Name (@d.Id)</option>
-                    }
-                </select>
-            }
-        </div>
-
-        <div class="table-responsive p-3">
-            <table class="table table-hover align-middle mb-0" id="classTable">
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col" style="width:160px">Mã Lớp</th>
-                        <th scope="col">Tên Lớp</th>
-                        <th scope="col" style="width:110px">Khóa Học</th>
-                        <th scope="col" style="width:200px">Khoa</th>
-                        @if (isPGV)
-                        {
-                            <th scope="col" class="text-end" style="width:100px">Hành động</th>
-                        }
-                    </tr>
-                </thead>
-                <tbody id="classTableBody">
-                    @if (!Model.Classes.Any())
-                    {
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-5">
-                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-                                Chưa có lớp nào.
-                            </td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var cls in Model.Classes)
-                        {
-                            <tr data-id="@cls.Id" data-name="@cls.Name"
-                                data-year="@cls.Year" data-dept="@cls.Department"
-                                data-dept-filter="@cls.Department">
-                                <td class="fw-semibold font-monospace text-primary">@cls.Id</td>
-                                <td>@cls.Name</td>
-                                <td>@cls.Year</td>
-                                <td>
-                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">
-                                        @cls.Department
-                                    </span>
-                                    <span class="text-muted small ms-1">@cls.DepartmentName</span>
-                                </td>
-                                @if (isPGV)
-                                {
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row"
-                                                title="Sửa lớp này"
-                                                data-id="@cls.Id" data-name="@cls.Name"
-                                                data-year="@cls.Year" data-dept="@cls.Department">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger btn-delete-row"
-                                                title="Xóa lớp này"
-                                                data-id="@cls.Id" data-name="@cls.Name">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </td>
-                                }
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        <div class="p-3 border-top d-flex justify-content-between align-items-center">
-            <span class="text-muted small">
-                Hiển thị <strong id="visibleCount">@Model.Classes.Count()</strong>
-                / @Model.Classes.Count() lớp
-            </span>
-        </div>
-    </div>
+    @await Html.PartialAsync("_ClassTable", Model, ViewData)
 </div>
 
 @* ══════════════════════════════════════════════════════════
-   MODAL: Nhập danh mục lớp — Thêm / Xóa / Ghi / Phục hồi / Thoát
+   MODAL: Nhập danh mục lớp / Xác nhận xóa
 ══════════════════════════════════════════════════════════ *@
-@if (isPGV)
-{
-    <div class="modal fade" id="classFormModal" tabindex="-1"
-         aria-labelledby="classFormModalLabel" aria-hidden="true"
-         data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-            <div class="modal-content border-0 shadow-lg">
-
-                @* Header *@
-                <div class="modal-header bg-primary text-white py-3">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-folder-plus fs-5"></i>
-                        <h5 class="modal-title fw-semibold mb-0" id="classFormModalLabel">
-                            Nhập danh mục Lớp
-                        </h5>
-                        <span class="badge bg-white text-primary ms-2" id="formModeLabel" style="font-size:.7rem">Chế độ: Xem</span>
-                    </div>
-                </div>
-
-                @* Body *@
-                <div class="modal-body p-4">
-
-                    @* Toolbar 5 nút chức năng *@
-                    <div class="d-flex flex-wrap gap-2 mb-4 p-3 bg-light rounded-3 border">
-                        <button type="button" class="btn btn-success btn-sm d-flex align-items-center gap-1"
-                                id="btnFormThem" title="Thêm bản ghi mới">
-                            <i class="bi bi-plus-circle"></i> Thêm
-                        </button>
-                        <button type="button" class="btn btn-danger btn-sm d-flex align-items-center gap-1"
-                                id="btnFormXoa" title="Xóa bản ghi đang chọn" disabled>
-                            <i class="bi bi-trash"></i> Xóa
-                        </button>
-                        <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1"
-                                id="btnFormGhi" title="Lưu dữ liệu vào CSDL" disabled>
-                            <i class="bi bi-floppy"></i> Ghi
-                        </button>
-                        <button type="button" class="btn btn-warning btn-sm d-flex align-items-center gap-1"
-                                id="btnFormPhucHoi" title="Phục hồi dữ liệu gốc" disabled>
-                            <i class="bi bi-arrow-counterclockwise"></i> Phục hồi
-                        </button>
-                        <button type="button" class="btn btn-secondary btn-sm ms-auto d-flex align-items-center gap-1"
-                                id="btnFormThoat" data-bs-dismiss="modal" title="Đóng form">
-                            <i class="bi bi-x-circle"></i> Thoát
-                        </button>
-                    </div>
-
-                    @* Alert thông báo *@
-                    <div id="formAlert" class="alert d-none align-items-center gap-2" role="alert"></div>
-
-                    @* Form nhập liệu *@
-                    <form id="classForm" novalidate autocomplete="off">
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label for="fldClassId" class="form-label fw-semibold">
-                                    Mã Lớp <span class="text-danger">*</span>
-                                </label>
-                                <input type="text" class="form-control font-monospace" id="fldClassId"
-                                       maxlength="20" placeholder="VD: D15CQCN01-N" disabled>
-                                <div class="invalid-feedback">Vui lòng nhập mã lớp.</div>
-                            </div>
-                            <div class="col-md-8">
-                                <label for="fldClassName" class="form-label fw-semibold">
-                                    Tên Lớp <span class="text-danger">*</span>
-                                </label>
-                                <input type="text" class="form-control" id="fldClassName"
-                                       maxlength="100" placeholder="VD: Công nghệ thông tin 01" disabled>
-                                <div class="invalid-feedback">Vui lòng nhập tên lớp.</div>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="fldSchoolYear" class="form-label fw-semibold">
-                                    Khóa Học <span class="text-danger">*</span>
-                                </label>
-                                <input type="text" class="form-control" id="fldSchoolYear"
-                                       maxlength="10" placeholder="VD: 2015" disabled>
-                                <div class="invalid-feedback">Vui lòng nhập khóa học.</div>
-                            </div>
-                            <div class="col-md-8">
-                                <label for="fldFacultyId" class="form-label fw-semibold">
-                                    Khoa <span class="text-danger">*</span>
-                                </label>
-                                <select class="form-select" id="fldFacultyId" disabled>
-                                    <option value="">— Chọn khoa —</option>
-                                    @foreach (var d in Model.Departments)
-                                    {
-                                        <option value="@d.Id">@d.Name (@d.Id)</option>
-                                    }
-                                </select>
-                                <div class="invalid-feedback">Vui lòng chọn khoa.</div>
-                            </div>
-                        </div>
-                    </form>
-
-                    <hr class="my-4">
-
-                    @* Mini-table: danh sách lớp trong modal *@
-                    <div>
-                        <h6 class="fw-semibold mb-2 text-muted">
-                            <i class="bi bi-list-ul me-1"></i>Danh sách lớp hiện có
-                            @if (hasDept) { <span class="fw-normal">(Khoa @Model.CurrentFacultyId)</span> }
-                        </h6>
-                        <div class="table-responsive" style="max-height:240px; overflow-y:auto">
-                            <table class="table table-sm table-hover align-middle mb-0" id="miniClassTable">
-                                <thead class="table-light sticky-top">
-                                    <tr>
-                                        <th>Mã Lớp</th>
-                                        <th>Tên Lớp</th>
-                                        <th>Khóa</th>
-                                        <th>Khoa</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="miniClassBody">
-                                    @foreach (var cls in Model.Classes)
-                                    {
-                                        <tr class="mini-row" role="button"
-                                            data-id="@cls.Id" data-name="@cls.Name"
-                                            data-year="@cls.Year" data-dept="@cls.Department">
-                                            <td class="fw-semibold font-monospace text-primary small">@cls.Id</td>
-                                            <td class="small">@cls.Name</td>
-                                            <td class="small">@cls.Year</td>
-                                            <td><span class="badge bg-secondary-subtle text-secondary border small">@cls.Department</span></td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                </div>@* /modal-body *@
-            </div>
-        </div>
-    </div>
-}
-@* Modal xac nhan xoa lop *@
-<div class="modal fade" id="deleteConfirmModal" tabindex="-1"
-     aria-labelledby="deleteConfirmModalLabel" aria-hidden="true"
-     data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header border-0 pb-0 pt-4 px-4">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-danger bg-opacity-10 p-2 d-flex align-items-center justify-content-center"
-                         style="width:44px;height:44px">
-                        <i class="bi bi-trash3-fill text-danger fs-5"></i>
-                    </div>
-                    <div>
-                        <h5 class="modal-title fw-bold mb-0" id="deleteConfirmModalLabel">Xác nhận xóa</h5>
-                        <p class="text-muted small mb-0">Thao tác này không thể hoàn tác</p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-body px-4 py-3">
-                <p class="mb-0">Bạn có chắc muốn xóa lớp:</p>
-                <div class="mt-2 p-3 bg-danger bg-opacity-10 rounded-3 border border-danger border-opacity-25">
-                    <span class="fw-semibold font-monospace text-danger" id="deleteTargetId"></span>
-                    <span class="text-muted mx-1">—</span>
-                    <span id="deleteTargetName"></span>
-                </div>
-            </div>
-            <div class="modal-footer border-0 pt-0 px-4 pb-4 gap-2">
-                <button type="button" class="btn btn-secondary flex-fill" data-bs-dismiss="modal">
-                    <i class="bi bi-x-lg me-1"></i>Hủy bỏ
-                </button>
-                <button type="button" class="btn btn-danger flex-fill" id="btnConfirmDelete">
-                    <i class="bi bi-trash3 me-1"></i>Xóa
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+@await Html.PartialAsync("_ClassFormModal", Model, ViewData)
+<partial name="_DeleteConfirmModal" />
 
 @section Scripts {
 <script>
@@ -317,6 +62,7 @@
     let mode         = 'view';
     let snapshotData = null;
     let selectedId   = null;
+    let originalId   = null;
 
     const modal         = document.getElementById('classFormModal');
     const deleteModal   = document.getElementById('deleteConfirmModal');
@@ -391,6 +137,7 @@
         if (!validateForm()) return;
 
         const payload = {
+            oldClassId: originalId,
             classId:    fldClassId.value.trim(),
             className:  fldClassName.value.trim(),
             schoolYear: fldSchoolYear.value.trim(),
@@ -402,9 +149,10 @@
             if (res.success) {
                 showAlert(res.message, 'success');
                 if (mode === 'add') addRowToTables(payload);
-                else                updateRowInTables(payload);
+                else                updateRowInTables(payload, originalId);
                 snapshotData = { ...payload };
                 selectedId   = payload.classId;
+                originalId   = payload.classId;
                 setMode('edit'); // sau ghi → chế độ sửa
                 highlightMiniRow(selectedId);
             } else {
@@ -435,10 +183,10 @@
             const id   = editBtn.dataset.id;
             const name = editBtn.dataset.name;
             const year = editBtn.dataset.year;
-            const dept = editBtn.dataset.dept;
+            const facultyId = editBtn.dataset.faculty;
             bootstrap.Modal.getOrCreateInstance(modal).show();
             setTimeout(() => {
-                populateFields(id, name, year, dept);
+                populateFields(id, name, year, facultyId);
                 setMode('edit');
                 highlightMiniRow(id);
                 hideAlert();
@@ -467,10 +215,10 @@
         modeLabel.style.fontSize = '.7rem';
 
         const editing = m !== 'view';
+        fldClassId.disabled    = !editing;
         fldClassName.disabled  = !editing;
         fldSchoolYear.disabled = !editing;
         fldFacultyId.disabled  = !editing;
-        if (m === 'edit') fldClassId.disabled = true; // khóa chính không sửa
 
         // Chỉ cho phép Thêm khi đang ở chế độ Xem
         // → Khi đang Thêm hoặc Sửa, không được chuyển sang chế độ khác
@@ -481,19 +229,19 @@
     }
 
     function resetToView() {
-        selectedId = null; snapshotData = null;
+        selectedId = null; snapshotData = null; originalId = null;
         clearFields(); clearValidation(); hideAlert(); deselectMiniRow();
         setMode('view');
-        fldClassId.disabled = true;
     }
 
-    function populateFields(id, name, year, dept) {
+    function populateFields(id, name, year, facultyId) {
         fldClassId.value    = id;
         fldClassName.value  = name;
         fldSchoolYear.value = year;
-        fldFacultyId.value  = dept;
+        fldFacultyId.value  = facultyId;
         selectedId          = id;
-        snapshotData        = { classId: id, className: name, schoolYear: year, facultyId: dept };
+        originalId          = id;
+        snapshotData        = { classId: id, className: name, schoolYear: year, facultyId: facultyId };
     }
 
     function clearFields() {
@@ -504,7 +252,7 @@
     function selectMiniRow(row) {
         deselectMiniRow();
         row.classList.add('table-active', 'fw-semibold');
-        populateFields(row.dataset.id, row.dataset.name, row.dataset.year, row.dataset.dept);
+        populateFields(row.dataset.id, row.dataset.name, row.dataset.year, row.dataset.faculty);
         setMode('edit');
         hideAlert();
     }
@@ -561,21 +309,21 @@
 
     function addRowToTables(p) {
         const opt  = fldFacultyId.querySelector(`option[value="${p.facultyId}"]`);
-        const deptTxt = opt ? opt.textContent : p.facultyId;
+        const facultyName = opt ? opt.textContent : p.facultyId;
         const tbody = document.getElementById('classTableBody');
         const empty = tbody.querySelector('td[colspan]');
         if (empty) empty.closest('tr').remove();
-        tbody.insertAdjacentHTML('beforeend', mainRowHtml(p, deptTxt));
+        tbody.insertAdjacentHTML('beforeend', mainRowHtml(p, facultyName));
         document.getElementById('miniClassBody').insertAdjacentHTML('beforeend', miniRowHtml(p));
         updateCount(1);
     }
 
-    function updateRowInTables(p) {
+    function updateRowInTables(p, oldId) {
         const opt     = fldFacultyId.querySelector(`option[value="${p.facultyId}"]`);
-        const deptTxt = opt ? opt.textContent : p.facultyId;
-        const main = document.querySelector(`#classTableBody tr[data-id="${CSS.escape(p.classId)}"]`);
-        if (main) main.outerHTML = mainRowHtml(p, deptTxt);
-        const mini = document.querySelector(`#miniClassBody  tr[data-id="${CSS.escape(p.classId)}"]`);
+        const facultyName = opt ? opt.textContent : p.facultyId;
+        const main = document.querySelector(`#classTableBody tr[data-id="${CSS.escape(oldId)}"]`);
+        if (main) main.outerHTML = mainRowHtml(p, facultyName);
+        const mini = document.querySelector(`#miniClassBody  tr[data-id="${CSS.escape(oldId)}"]`);
         if (mini) mini.outerHTML = miniRowHtml(p);
     }
 
@@ -590,21 +338,21 @@
         if (el) el.textContent = String(parseInt(el.textContent || '0', 10) + delta);
     }
 
-    function mainRowHtml(p, deptTxt) {
+    function mainRowHtml(p, facultyName) {
         return `<tr data-id="${h(p.classId)}" data-name="${h(p.className)}"
-                    data-year="${h(p.schoolYear)}" data-dept="${h(p.facultyId)}"
-                    data-dept-filter="${h(p.facultyId)}">
+                    data-year="${h(p.schoolYear)}" data-faculty="${h(p.facultyId)}"
+                    data-faculty-filter="${h(p.facultyId)}">
             <td class="fw-semibold font-monospace text-primary">${h(p.classId)}</td>
             <td>${h(p.className)}</td>
             <td>${h(p.schoolYear)}</td>
             <td>
                 <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">${h(p.facultyId)}</span>
-                <span class="text-muted small ms-1">${h(deptTxt)}</span>
+                <span class="text-muted small ms-1">${h(facultyName)}</span>
             </td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row" title="Sửa"
                         data-id="${h(p.classId)}" data-name="${h(p.className)}"
-                        data-year="${h(p.schoolYear)}" data-dept="${h(p.facultyId)}">
+                        data-year="${h(p.schoolYear)}" data-faculty="${h(p.facultyId)}">
                     <i class="bi bi-pencil"></i>
                 </button>
                 <button class="btn btn-sm btn-outline-danger btn-delete-row" title="Xóa"
@@ -618,7 +366,7 @@
     function miniRowHtml(p) {
         return `<tr class="mini-row" role="button"
                     data-id="${h(p.classId)}" data-name="${h(p.className)}"
-                    data-year="${h(p.schoolYear)}" data-dept="${h(p.facultyId)}">
+                    data-year="${h(p.schoolYear)}" data-faculty="${h(p.facultyId)}">
             <td class="fw-semibold font-monospace text-primary small">${h(p.classId)}</td>
             <td class="small">${h(p.className)}</td>
             <td class="small">${h(p.schoolYear)}</td>
@@ -644,20 +392,20 @@
         return json;
     }
 
-    // ── Client-side search + dept filter ─────────────────────
-    ['classSearch','deptFilter'].forEach(id => {
+    // ── Client-side search + faculty filter ─────────────────────
+    ['classSearch','facultyFilter'].forEach(id => {
         document.getElementById(id)?.addEventListener('input', applyFilters);
         document.getElementById(id)?.addEventListener('change', applyFilters);
     });
 
     function applyFilters() {
         const q    = (document.getElementById('classSearch')?.value ?? '').toLowerCase();
-        const dept = document.getElementById('deptFilter')?.value ?? '';
+        const faculty = document.getElementById('facultyFilter')?.value ?? '';
         let vis = 0;
         document.querySelectorAll('#classTableBody tr[data-id]').forEach(row => {
             const match =
                 (!q || row.dataset.id.toLowerCase().includes(q) || (row.dataset.name ?? '').toLowerCase().includes(q)) &&
-                (!dept || row.dataset.deptFilter === dept);
+                (!faculty || row.dataset.facultyFilter === faculty);
             row.style.display = match ? '' : 'none';
             if (match) vis++;
         });

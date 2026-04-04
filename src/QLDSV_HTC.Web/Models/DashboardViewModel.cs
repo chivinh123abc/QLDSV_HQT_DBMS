@@ -33,7 +33,7 @@ namespace QLDSV_HTC.Web.Models
     {
         public string UserName { get; set; } = string.Empty;
         public string RoleName { get; set; } = string.Empty;
-        public string DepartmentName { get; set; } = string.Empty;
+        public string FacultyName { get; set; } = string.Empty;
 
         public IEnumerable<StatItemViewModel> Stats { get; set; } = [];
         public IEnumerable<QuickActionViewModel> QuickActions { get; set; } = [];

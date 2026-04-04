@@ -5,14 +5,9 @@ namespace QLDSV_HTC.Application.Interfaces
     public interface IClassRepository
     {
         /// <summary>
-        /// Lấy danh sách lớp. Nếu facultyId = "" thì lấy tất cả (PGV toàn trường).
+        /// Lấy danh sách lớp. Lọc theo Khoa thông qua Authorization trong DB (Row-Level Security concept).
         /// </summary>
-        Task<IEnumerable<ClassDto>> GetClassListAsync(string facultyId = "");
-
-        /// <summary>
-        /// Lấy danh sách tất cả khoa.
-        /// </summary>
-        Task<IEnumerable<DepartmentDto>> GetDepartmentsAsync();
+        Task<IEnumerable<ClassDto>> GetClassListAsync();
 
         /// <summary>
         /// Thêm mới lớp.
@@ -28,11 +23,5 @@ namespace QLDSV_HTC.Application.Interfaces
         /// Xoá lớp theo mã lớp.
         /// </summary>
         Task DeleteClassAsync(string classId);
-
-        /// <summary>
-        /// Lấy mã khoa của giảng viên/tài khoản theo DB username.
-        /// Trả về "" nếu không tìm thấy (PGV toàn trường).
-        /// </summary>
-        Task<string> GetFacultyByUsernameAsync(string dbUsername);
     }
 }

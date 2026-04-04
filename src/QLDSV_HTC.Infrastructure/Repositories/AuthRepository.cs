@@ -62,6 +62,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                         LoginName = reader.GetString(0),
                         UserName = await reader.IsDBNullAsync(1) ? string.Empty : reader.GetString(1),
                         Group = await reader.IsDBNullAsync(2) ? string.Empty : reader.GetString(2),
+                        FacultyId = reader.FieldCount > 3 && !await reader.IsDBNullAsync(3) ? reader.GetString(3) : null,
                         Password = password ?? string.Empty,
                         ConnectionString = connString
                     };
