@@ -12,6 +12,11 @@ namespace QLDSV_HTC.Domain.Constants
             public const string AddClass = "sp_ThemLop";
             public const string UpdateClass = "sp_SuaLop";
             public const string DeleteClass = "sp_XoaLop";
+
+            public const string GetStudentList = "sp_LayDanhSachSinhVien";
+            public const string AddStudent = "sp_ThemSinhVien";
+            public const string UpdateStudent = "sp_SuaSinhVien";
+            public const string DeleteStudent = "sp_XoaSinhVien";
         }
 
         public static class Configs
@@ -40,6 +45,11 @@ namespace QLDSV_HTC.Domain.Constants
             public const string KHOA = "KHOA";
             public const string SV = "SV";
             public const string Faculty = PGV + "," + KHOA;
+        }
+
+        public static class Formats
+        {
+            public const string IsoDate = "yyyy-MM-dd";
         }
     }
 }

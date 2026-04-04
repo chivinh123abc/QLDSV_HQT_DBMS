@@ -1,0 +1,139 @@
+@using QLDSV_HTC.Web.Models
+@model IEnumerable<QLDSV_HTC.Web.Models.ClassViewModel>
+
+@{
+    var isPGV = (bool)(ViewData["isPGV"] ?? false);
+    
+    var tableModel = new GenericTableViewModel
+    {
+        FiltersSection = @<text>
+            <div class="input-group" style="max-width:340px">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" id="classSearch" class="form-control border-start-0"
+                       placeholder="Tìm mã lớp hoặc tên lớp…">
+            </div>
+            @if (isPGV)
+            {
+                <select id="facultyFilter" class="form-select" style="max-width:300px">
+                    <option value="">— Tất cả khoa —</option>
+                    @* Note: Faculties are passed via Index model, so we might need a better way if this partial is isolated. 
+                       But for now, we can assume the parent page handles the selector or we pass it in ViewData. *@
+                    @if (ViewData["Faculties"] is IEnumerable<FacultyViewModel> faculties)
+                    {
+                        @foreach (var f in faculties)
+                        {
+                            <option value="@f.Id?.Trim()">@f.Name (@f.Id?.Trim())</option>
+                        }
+                    }
+                </select>
+            }
+        </text>,
+        
+        HeadSection = @<text>
+            <tr>
+                <th scope="col" style="width: 160px">Mã lớp</th>
+                <th scope="col">Tên lớp</th>
+                <th scope="col" style="width: 120px">Khóa học</th>
+                <th scope="col" style="width: 100px">Khoa</th>
+            </tr>
+        </text>,
+        
+        BodySection = @<text>
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">Chưa có dữ liệu lớp.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var c in Model)
+                {
+                    <tr data-class-id="@c.Id?.Trim()" class="selectable-row" style="cursor: pointer;" 
+                        data-faculty-id="@c.FacultyId?.Trim()">
+                        <td class="fw-semibold font-monospace text-primary">@c.Id?.Trim()</td>
+                        <td>@c.Name</td>
+                        <td>@c.Year</td>
+                        <td>
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">
+                                @c.FacultyId?.Trim()
+                            </span>
+                        </td>
+                    </tr>
+                }
+            }
+        </text>,
+        
+        FooterSection = @<text>
+            <span class="text-muted small">
+                Chọn một dòng để xem danh sách sinh viên tương ứng.
+            </span>
+        </text>
+    };
+
+    ViewData["TableId"] = "classTable";
+    ViewData["TableBodyId"] = "classTableBody";
+}
+
+<style>
+    .selectable-row {
+        transition: all var(--transition-fast);
+        border-left: 4px solid transparent;
+    }
+
+    .selectable-row:hover {
+        background-color: var(--color-secondary) !important;
+        transform: translateX(4px);
+    }
+
+    .selectable-row.selected {
+        background-color: var(--color-primary-light) !important;
+        border-left-color: var(--color-primary);
+        font-weight: 600;
+    }
+</style>
+
+@await Html.PartialAsync("_CardTableWrapper", tableModel, ViewData)
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const rows = document.querySelectorAll("#classTable tbody tr.selectable-row");
+        const searchInput = document.getElementById("classSearch");
+        const facultyFilter = document.getElementById("facultyFilter");
+
+        function performFiltering() {
+            const searchText = searchInput.value.toLowerCase();
+            const facultyId = facultyFilter ? facultyFilter.value : "";
+
+            rows.forEach(row => {
+                const classId = (row.dataset.classId || "").toLowerCase();
+                const className = row.children[1].innerText.toLowerCase();
+                const rowFacultyId = row.dataset.facultyId || "";
+
+                const matchesSearch = classId.includes(searchText) || className.includes(searchText);
+                const matchesFaculty = facultyId === "" || rowFacultyId === facultyId;
+
+                row.style.display = (matchesSearch && matchesFaculty) ? "" : "none";
+            });
+        }
+
+        if (searchInput) searchInput.addEventListener("input", performFiltering);
+        if (facultyFilter) facultyFilter.addEventListener("change", performFiltering);
+
+        rows.forEach(row => {
+            row.addEventListener("click", function () {
+                rows.forEach(r => r.classList.remove("selected"));
+                this.classList.add("selected");
+
+                const classId = this.getAttribute("data-class-id");
+                const className = this.children[1].innerText;
+                
+                if (typeof window.loadStudentsForClass === "function") {
+                    window.loadStudentsForClass(classId, className);
+                }
+            });
+        });
+    });
+</script>

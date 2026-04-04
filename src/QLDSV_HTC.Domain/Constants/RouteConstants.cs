@@ -71,10 +71,18 @@ namespace QLDSV_HTC.Domain.Constants
         {
             public const string Prefix = "/student";
             public const string Index = "";
+            public const string Add = "add";
+            public const string Edit = "edit";
+            public const string Delete = "delete";
+            public const string List = "list";
             public const string Schedule = "schedule";
             public const string Grades = "grades";
 
             public const string StudentPath = Prefix;
+            public const string AddPath = $"{Prefix}/{Add}";
+            public const string EditPath = $"{Prefix}/{Edit}";
+            public const string DeletePath = $"{Prefix}/{Delete}";
+            public const string ListPath = $"{Prefix}/{List}";
             public const string SchedulePath = $"{Prefix}/{Schedule}";
             public const string GradesPath = $"{Prefix}/{Grades}";
         }
