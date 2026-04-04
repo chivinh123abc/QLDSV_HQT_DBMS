@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace QLDSV_HTC.Web.Models
 {
     public class ClassViewModel
@@ -5,17 +7,37 @@ namespace QLDSV_HTC.Web.Models
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string Year { get; set; } = string.Empty;
-        public string Department { get; set; } = string.Empty;
+        public string FacultyId { get; set; } = string.Empty;
+        public string FacultyName { get; set; } = string.Empty;
     }
 
     public class ClassManagementViewModel
     {
         public IEnumerable<ClassViewModel> Classes { get; set; } = [];
-        public IEnumerable<string> Departments { get; set; } = [];
+        public IEnumerable<FacultyViewModel> Faculties { get; set; } = [];
+        public string CurrentFacultyId { get; set; } = string.Empty;
+    }
 
-        public string SelectedDepartment { get; set; } = "all";
-        public string SearchTerm { get; set; } = string.Empty;
+    public class ClassInputModel
+    {
+        public string? OldClassId { get; set; }
 
-        public ClassViewModel? SelectedClass { get; set; }
+        [Required]
+        public string ClassId { get; set; } = string.Empty;
+
+        [Required]
+        public string ClassName { get; set; } = string.Empty;
+
+        [Required]
+        public string SchoolYear { get; set; } = string.Empty;
+
+        [Required]
+        public string FacultyId { get; set; } = string.Empty;
+    }
+
+    public class ClassDeleteModel
+    {
+        [Required]
+        public string ClassId { get; set; } = string.Empty;
     }
 }

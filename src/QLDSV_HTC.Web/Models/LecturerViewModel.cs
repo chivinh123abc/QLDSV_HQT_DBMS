@@ -8,13 +8,13 @@ namespace QLDSV_HTC.Web.Models
         public string Degree { get; set; } = string.Empty;
         public string Rank { get; set; } = string.Empty;
         public string Specialty { get; set; } = string.Empty;
-        public string Department { get; set; } = string.Empty;
+        public string Faculty { get; set; } = string.Empty;
     }
 
     public class LecturerManagementViewModel
     {
         public IEnumerable<LecturerViewModel> Lecturers { get; set; } = [];
-        public IEnumerable<string> Departments { get; set; } = [];
+        public IEnumerable<string> Faculties { get; set; } = [];
         public IEnumerable<string> Degrees { get; set; } = [];
         public IEnumerable<string> Ranks { get; set; } = [];
 

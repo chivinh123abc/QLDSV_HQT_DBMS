@@ -1,9 +1,5 @@
 USE [QLDSV_HTC]
-
-SET ANSI_NULLS ON
-
-SET QUOTED_IDENTIFIER ON
-
+GO
 -- =============================================
 -- Description: SP đăng nhập dành cho Giảng viên/Quản trị
 -- Trả về chính xác 3 cột: UserName (Index 0), FullName (Index 1), GroupName (Index 2)
@@ -22,6 +18,7 @@ BEGIN
 
     DECLARE @TENUSER NVARCHAR(100);
     DECLARE @HOTEN   NVARCHAR(200);
+    DECLARE @MAKHOA  NVARCHAR(10);
 
     -- 1. Lấy Mã GV (Tên User trong Database)
     SELECT @TENUSER = u.name 
@@ -29,19 +26,36 @@ BEGIN
     JOIN sys.database_principals u ON l.sid = u.sid
     WHERE l.name = @TENLOGIN;
 
-    -- 2. Lấy Họ Tên Giảng viên trước (phép chiếu trước, tránh subquery inline)
-    --    Nếu không tìm thấy (tài khoản Admin), @HOTEN vẫn = NULL
-    SELECT @HOTEN = HO + N' ' + TEN
+    -- 2. Lấy Họ Tên Giảng viên và Mã Khoa trước (phép chiếu trước, tránh subquery inline)
+    --    Nếu không tìm thấy (tài khoản Admin), @HOTEN và @MAKHOA vẫn = NULL
+    SELECT 
+        @HOTEN = HO + N' ' + TEN,
+        @MAKHOA = MAKHOA
     FROM GIANGVIEN
     WHERE MAGV = @TENUSER;
 
-    -- 3. Trả về kết quả — không còn subquery inline
-    SELECT 
-        @TENUSER AS UserName, 
-        ISNULL(@HOTEN, N'Quản trị viên') AS FullName, 
-        UPPER(CAST(g.name AS NVARCHAR(100))) AS GroupName
-    FROM sys.database_principals u
-    JOIN sys.database_role_members rm ON rm.member_principal_id = u.principal_id
-    JOIN sys.database_principals g ON g.principal_id = rm.role_principal_id
-    WHERE u.name = @TENUSER;
+    -- 3. Trả về kết quả
+    IF ISNULL(@MAKHOA, '') = ''
+    BEGIN
+        SELECT 
+            @TENUSER AS UserName, 
+            ISNULL(@HOTEN, N'Quản trị viên') AS FullName, 
+            UPPER(CAST(g.name AS NVARCHAR(100))) AS GroupName
+        FROM sys.database_principals u
+        JOIN sys.database_role_members rm ON rm.member_principal_id = u.principal_id
+        JOIN sys.database_principals g ON g.principal_id = rm.role_principal_id
+        WHERE u.name = @TENUSER;
+    END
+    ELSE
+    BEGIN
+        SELECT 
+            @TENUSER AS UserName, 
+            ISNULL(@HOTEN, N'Quản trị viên') AS FullName, 
+            UPPER(CAST(g.name AS NVARCHAR(100))) AS GroupName,
+            @MAKHOA AS FacultyId
+        FROM sys.database_principals u
+        JOIN sys.database_role_members rm ON rm.member_principal_id = u.principal_id
+        JOIN sys.database_principals g ON g.principal_id = rm.role_principal_id
+        WHERE u.name = @TENUSER;
+    END
 END
