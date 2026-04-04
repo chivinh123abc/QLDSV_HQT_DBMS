@@ -3,7 +3,9 @@
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     ViewData["Title"] = "Quản lý Sinh viên - Theo Lớp";
+
     bool isPGV = string.IsNullOrEmpty(Model.CurrentFacultyId);
+
     var requestToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }
 
@@ -15,18 +17,21 @@
     <!-- Master: Lớp -->
     @{
         ViewData["isPGV"] = isPGV;
+
         ViewData["Faculties"] = Model.Faculties;
     }
     @await Html.PartialAsync("_StudentClassTable", Model.Classes, ViewData)
 
     <!-- Detail: Sinh viên -->
-    <div class="qldsv-card border-0 shadow-sm" id="studentsSection">
+    <div class="qldsv-card border-0 shadow-sm mt-4" id="studentsSection">
         <div class="card-header bg-white pt-3 pb-2 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 text-success"><i class="bi bi-mortarboard me-2"></i>Sinh viên <span id="lblSelectedClass" class="fw-bold text-dark"></span></h5>
+            <h5 class="mb-0 text-success"><i class="bi bi-mortarboard me-2"></i>Sinh viên <span id="lblSelectedClass"
+                    class="fw-bold text-dark"></span></h5>
             @if (User.IsInRole(AppConstants.Groups.PGV))
             {
-                <button class="btn btn-sm btn-primary" onclick="showAddStudentModal()" id="btnAddStudent" disabled>
-                    <i class="bi bi-plus-circle me-1"></i> Thêm Sinh viên
+                <button class="btn btn-sm btn-primary shadow-sm" onclick="openStudentModalView()" id="btnActionStudent"
+                    disabled>
+                    <i class="bi bi-pencil-square me-1"></i> Cập nhật Sinh viên
                 </button>
             }
         </div>
@@ -42,13 +47,16 @@
                             <th>Địa chỉ</th>
                             <th>Trạng thái</th>
                             @if (User.IsInRole(AppConstants.Groups.PGV))
+
                             {
                                 <th class="text-end">Hành động</th>
                             }
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td colspan="7" class="text-center text-muted">Vui lòng chọn 1 lớp ở bảng trên.</td></tr>
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">Vui lòng chọn 1 lớp ở bảng trên.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -57,44 +65,84 @@
 </div>
 
 <!-- Modal Thêm/Sửa Sinh Viên -->
-<div class="modal fade" id="studentModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="studentModalTitle">Thông tin Sinh viên</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                @await Html.PartialAsync("_StudentForm")
-            </div>
-        </div>
-    </div>
-</div>
+@await Html.PartialAsync("_StudentFormModal", Model, ViewData)
 
 @section Scripts {
     <script>
         const token = '@requestToken';
         const isPGV = @(isPGV.ToString().ToLower());
         let currentSelectedClassId = '';
-        let studentModal;
+        let studentModalInstance;
+
+        // Modal Form variables
+        let mode = 'view';
+        let snapshotData = null;
+        let selectedStudentId = null;
+        let originalStudentId = null;
+
+        const fldStudentId = document.getElementById('fldStudentId');
+        const fldPassword = document.getElementById('fldPassword');
+        const fldFirstName = document.getElementById('fldFirstName');
+        const fldLastName = document.getElementById('fldLastName');
+        const fldGender = document.getElementById('fldGender');
+        const fldDob = document.getElementById('fldDob');
+        const fldAddress = document.getElementById('fldAddress');
+        const fldOnLeave = document.getElementById('fldOnLeave');
+        const fldClassId = document.getElementById('fldStudentClassId');
+
+        const modeLabel = document.getElementById('studentFormModeLabel');
+        const formAlert = document.getElementById('studentFormAlert');
+
+        const btnThem = document.getElementById('btnStudentFormThem');
+        const btnXoa = document.getElementById('btnStudentFormXoa');
+        const btnGhi = document.getElementById('btnStudentFormGhi');
+        const btnPhucHoi = document.getElementById('btnStudentFormPhucHoi');
+        const btnHuy = document.getElementById('btnStudentFormHuy');
 
         document.addEventListener("DOMContentLoaded", function () {
-            studentModal = new bootstrap.Modal(document.getElementById('studentModal'));
+            const modalEl = document.getElementById('studentFormModal');
+            if (modalEl) {
+                studentModalInstance = new bootstrap.Modal(modalEl);
+                modalEl.addEventListener('hidden.bs.modal', resetToView);
+            }
+
+            // Toolbar Events
+            btnThem?.addEventListener('click', () => {
+                selectedStudentId = null;
+                snapshotData = null;
+                clearFields();
+                clearValidation();
+                setMode('add');
+                fldStudentId.focus();
+                showAlert('Nhập thông tin sinh viên mới rồi nhấn <b>Ghi</b> để lưu.', 'info');
+            });
+
+            btnXoa?.addEventListener('click', () => {
+                if (!selectedStudentId) return;
+                deleteStudent(selectedStudentId);
+            });
+
+            btnGhi?.addEventListener('click', submitStudentForm);
+
+            btnPhucHoi?.addEventListener('click', () => {
+                if (!snapshotData) { resetToView(); return; }
+                populateFieldsFromSnapshot(snapshotData);
+                clearValidation();
+                showAlert('Dữ liệu đã được phục hồi về trạng thái ban đầu.', 'warning');
+            });
+
+            btnHuy?.addEventListener('click', resetToView);
         });
 
-        function filterClasses() {
-            // Logic handled internally by _StudentClassTable.cshtml
-        }
-
         // Exposed to global for _StudentClassTable.cshtml
-        window.loadStudentsForClass = function(classId, className) {
+        window.loadStudentsForClass = function (classId, className) {
             currentSelectedClassId = classId;
             document.getElementById('lblSelectedClass').innerText = `- Lớp: ${className} (${classId})`;
-            const btnAdd = document.getElementById('btnAddStudent');
-            if(btnAdd) btnAdd.disabled = false;
+            const btnAction = document.getElementById('btnActionStudent');
+            if (btnAction) btnAction.disabled = false;
 
             document.querySelector('#studentTable tbody').innerHTML = '<tr><td colspan="7" class="text-center"><div class="spinner-border text-primary spinner-border-sm"></div> Đang tải...</td></tr>';
-            
+
             fetch(`@RouteConstants.Student.ListPath?classId=${encodeURIComponent(classId)}`)
                 .then(res => res.json())
                 .then(res => {
@@ -113,7 +161,7 @@
         function renderStudents(data) {
             const tbody = document.querySelector('#studentTable tbody');
             tbody.innerHTML = '';
-            
+
             if (data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Không có sinh viên nào trong lớp này.</td></tr>';
                 return;
@@ -122,78 +170,152 @@
             data.forEach(s => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="fw-medium text-primary">${s.studentId}</td>
-                    <td>${s.firstName} ${s.lastName}</td>
-                    <td>${s.gender ? 'Nữ' : 'Nam'}</td>
-                    <td>${s.dob ? formatDateDisplay(s.dob) : ''}</td>
-                    <td>${s.address || ''}</td>
-                    <td>${s.onLeave ? '<span class="badge bg-danger">Nghỉ học</span>' : '<span class="badge bg-success">Đang học</span>'}</td>
-                    ${isPGV ? `
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent('${s.studentId}')"><i class="bi bi-trash"></i></button>
-                    </td>` : ''}
-                `;
+                        <td class="fw-medium text-primary">${s.studentId}</td>
+                        <td>${s.firstName} ${s.lastName}</td>
+                        <td>${s.gender ? 'Nữ' : 'Nam'}</td>
+                        <td>${s.dob ? formatDateDisplay(s.dob) : ''}</td>
+                        <td>${s.address || ''}</td>
+                        <td>${s.onLeave ? '<span class="badge bg-danger">Nghỉ học</span>' : '<span class="badge bg-success">Đang học</span>'}</td>
+                        ${isPGV ? `
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent('${s.studentId}')"><i class="bi bi-trash"></i></button>
+                        </td>` : ''}
+                    `;
                 tbody.appendChild(tr);
             });
         }
 
         function formatDateDisplay(dateString) {
-            if(!dateString) return '';
+            if (!dateString) return '';
             const d = new Date(dateString);
             return d.toLocaleDateString('vi-VN');
         }
 
-        // MODAL FUNCTIONS
-        function hideStudentModal() {
-            studentModal.hide();
-        }
-
-        function showAddStudentModal() {
-            if(!currentSelectedClassId) return;
-            document.getElementById('studentForm').reset();
-            document.getElementById('studentFormMode').value = 'add';
-            document.getElementById('oldStudentId').value = '';
-            document.getElementById('formClassId').value = currentSelectedClassId;
-            document.getElementById('studentId').readOnly = false;
-            document.getElementById('onLeaveContainer').style.display = 'none'; // Only show when editing
-            document.getElementById('passwordHint').style.display = 'none';
-            document.getElementById('studentModalTitle').innerText = `Thêm Sinh Viên Nhóm ${currentSelectedClassId}`;
-            studentModal.show();
+        // TOOLBAR AND MODAL LOGIC
+        function openStudentModalView() {
+            if (!currentSelectedClassId) return;
+            resetToView();
+            studentModalInstance.show();
         }
 
         function editStudent(s) {
-            document.getElementById('studentForm').reset();
-            document.getElementById('studentFormMode').value = 'edit';
-            document.getElementById('oldStudentId').value = s.studentId;
-            document.getElementById('studentId').value = s.studentId;
-            document.getElementById('firstName').value = s.firstName;
-            document.getElementById('lastName').value = s.lastName;
-            document.getElementById('gender').value = s.gender ? 'true' : 'false';
-            document.getElementById('dob').value = s.dob ? s.dob : '';
-            document.getElementById('address').value = s.address || '';
-            document.getElementById('onLeave').checked = s.onLeave;
-            document.getElementById('formClassId').value = s.classId;
-            
-            document.getElementById('studentId').readOnly = false; // Usually true, but the SP supports update
-            document.getElementById('onLeaveContainer').style.display = 'block';
-            document.getElementById('passwordHint').style.display = 'block';
-            document.getElementById('studentModalTitle').innerText = 'Cập nhật Sinh Viên';
-            studentModal.show();
+            resetToView();
+            populateFieldsFromSnapshot(s);
+            setMode('edit');
+            studentModalInstance.show();
+            hideAlert();
+        }
+
+        function setMode(m) {
+            mode = m;
+            const labels = { view: 'Chế độ: Xem', add: 'Chế độ: Thêm', edit: 'Chế độ: Sửa' };
+            const colors = {
+                view: 'badge bg-white text-primary ms-2 border',
+                add: 'badge bg-success text-white ms-2',
+                edit: 'badge bg-warning text-dark ms-2',
+            };
+            modeLabel.textContent = labels[m];
+            modeLabel.className = colors[m];
+            modeLabel.style.fontSize = '.7rem';
+
+            const editing = m !== 'view';
+            fldStudentId.disabled = !editing;
+            // Cho phép nhập password kể cả sửa để đổi pass
+            fldPassword.disabled = !editing;
+            fldFirstName.disabled = !editing;
+            fldLastName.disabled = !editing;
+            fldGender.disabled = !editing;
+            fldDob.disabled = !editing;
+            fldAddress.disabled = !editing;
+            fldOnLeave.disabled = !editing;
+
+            // Nút Thêm trên thanh công cụ chỉ mở khi đang ở View (giống Class)
+            btnThem.disabled = (m !== 'view');
+            btnXoa.disabled = !(m === 'edit' && !!selectedStudentId);
+            btnGhi.disabled = !editing;
+            btnPhucHoi.disabled = !editing;
+            if (btnHuy) btnHuy.disabled = (m === 'view');
+        }
+
+        function resetToView() {
+            selectedStudentId = null;
+            snapshotData = null;
+            originalStudentId = null;
+            clearFields();
+            clearValidation();
+            hideAlert();
+            setMode('view');
+        }
+
+        function clearFields() {
+            fldClassId.value = currentSelectedClassId;
+            fldStudentId.value = fldPassword.value = fldFirstName.value = fldLastName.value = '';
+            fldDob.value = fldAddress.value = '';
+            fldGender.value = 'false';
+            fldOnLeave.checked = false;
+        }
+
+        function populateFieldsFromSnapshot(s) {
+            fldClassId.value = currentSelectedClassId;
+            fldStudentId.value = s.studentId;
+            fldFirstName.value = s.firstName;
+            fldLastName.value = s.lastName;
+            fldGender.value = s.gender ? 'true' : 'false';
+            fldDob.value = s.dob ? s.dob : '';
+            fldAddress.value = s.address || '';
+            fldOnLeave.checked = s.onLeave;
+            fldPassword.value = ''; // không nạp password cũ
+
+            selectedStudentId = s.studentId;
+            originalStudentId = s.studentId;
+            snapshotData = { ...s };
+        }
+
+        function validateForm() {
+            let ok = true;
+            [fldStudentId, fldFirstName, fldLastName].forEach(f => {
+                if (!f.value.trim()) { f.classList.add('is-invalid'); ok = false; }
+                else { f.classList.remove('is-invalid'); }
+            });
+            return ok;
+        }
+
+        function clearValidation() {
+            [fldStudentId, fldFirstName, fldLastName]
+                .forEach(f => f.classList.remove('is-invalid', 'is-valid'));
+        }
+
+        function showAlert(msg, type) {
+            const icons = {
+                success: 'bi-check-circle-fill', danger: 'bi-x-circle-fill',
+                warning: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill'
+            };
+            formAlert.className = `alert alert-${type} d-flex align-items-center gap-2`;
+            formAlert.innerHTML = `<i class="bi ${icons[type]}"></i><span>${msg}</span>`;
+        }
+        function hideAlert() {
+            formAlert.className = 'alert d-none'; formAlert.innerHTML = '';
         }
 
         // SUBMIT
-        function submitStudentForm(e) {
-            e.preventDefault();
-            const mode = document.getElementById('studentFormMode').value;
-            const form = document.getElementById('studentForm');
+        function submitStudentForm() {
+            if (!validateForm()) return;
+
             const url = mode === 'add' ? '@RouteConstants.Student.AddPath' : '@RouteConstants.Student.EditPath';
 
-            // Gộp data
-            const formData = new FormData(form);
-            const dataObj = Object.fromEntries(formData.entries());
-            dataObj.Gender = dataObj.Gender === 'true';
-            dataObj.OnLeave = dataObj.OnLeave === 'true';
+            const dataObj = {
+                OldStudentId: originalStudentId,
+                StudentId: fldStudentId.value.trim(),
+                FirstName: fldFirstName.value.trim(),
+                LastName: fldLastName.value.trim(),
+                Gender: fldGender.value === 'true',
+                Dob: fldDob.value,
+                Address: fldAddress.value.trim(),
+                ClassId: fldClassId.value,
+                OnLeave: fldOnLeave.checked,
+                Password: fldPassword.value
+            };
 
             fetch(url, {
                 method: 'POST',
@@ -203,26 +325,33 @@
                 },
                 body: JSON.stringify(dataObj)
             })
-            .then(res => res.json())
-            .then(res => {
-                if(res.success) {
-                    window.showToast(res.message, 'success');
-                    hideStudentModal();
-                    // reload
-                    window.loadStudentsForClass(currentSelectedClassId, document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', ''));
-                } else {
-                    window.showToast('Lỗi: ' + res.message, 'danger');
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                window.showToast("Lỗi kết nối.", 'danger');
-            });
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        window.showToast(res.message, 'success');
+                        // Reload table
+                        const className = document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', '').split(' (')[0];
+                        window.loadStudentsForClass(currentSelectedClassId, className);
+
+                        // Update snapshot
+                        snapshotData = { ...dataObj };
+                        selectedStudentId = dataObj.StudentId;
+                        originalStudentId = dataObj.StudentId;
+                        setMode('edit');
+                        showAlert('Ghi dữ liệu thành công', 'success');
+                    } else {
+                        showAlert('Lỗi: ' + res.message, 'danger');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showAlert("Lỗi kết nối.", 'danger');
+                });
         }
 
         // DELETE
         function deleteStudent(studentId) {
-            if(!confirm(`Bạn có chắc chắn muốn xóa sinh viên ${studentId}? Hành động này sẽ không thể phục hồi (kể cả trên server phân mảnh).`)) return;
+            if (!confirm(`Bạn có chắc chắn muốn xóa sinh viên ${studentId}? Hành động này sẽ không thể phục hồi.`)) return;
 
             fetch('@RouteConstants.Student.DeletePath', {
                 method: 'POST',
@@ -232,19 +361,25 @@
                 },
                 body: JSON.stringify({ studentId: studentId })
             })
-            .then(res => res.json())
-            .then(res => {
-                if(res.success) {
-                    window.showToast(res.message, 'success');
-                    window.loadStudentsForClass(currentSelectedClassId, document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', ''));
-                } else {
-                    window.showToast('Lỗi: ' + res.message, 'danger');
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                window.showToast("Lỗi kết nối.", 'danger');
-            });
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        window.showToast(res.message, 'success');
+                        const className = document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', '').split(' (')[0];
+                        window.loadStudentsForClass(currentSelectedClassId, className);
+
+                        // If deleted from within modal
+                        if (selectedStudentId === studentId) {
+                            resetToView();
+                        }
+                    } else {
+                        window.showToast('Lỗi: ' + res.message, 'danger');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    window.showToast("Lỗi kết nối.", 'danger');
+                });
         }
     </script>
 }
