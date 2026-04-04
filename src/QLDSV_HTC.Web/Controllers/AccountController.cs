@@ -48,6 +48,11 @@ namespace QLDSV_HTC.Controllers
                     new(AppConstants.SessionKeys.UserConnectionString, session.ConnectionString)
                 ];
 
+                if (!string.IsNullOrEmpty(session.FacultyId))
+                {
+                    claims.Add(new Claim(AppConstants.SessionKeys.FacultyId, session.FacultyId));
+                }
+
                 ClaimsIdentity claimsIdentity = new(
                     claims,
                     CookieAuthenticationDefaults.AuthenticationScheme,

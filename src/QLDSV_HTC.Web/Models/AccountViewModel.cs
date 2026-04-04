@@ -6,7 +6,7 @@ namespace QLDSV_HTC.Web.Models
         public string Login { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
-        public string Department { get; set; } = string.Empty;
+        public string Faculty { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
     }
 
@@ -16,7 +16,7 @@ namespace QLDSV_HTC.Web.Models
         public string Password { get; set; } = string.Empty;
         public string ConfirmPassword { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
-        public string Department { get; set; } = string.Empty;
+        public string Faculty { get; set; } = string.Empty;
     }
 
     public class AccountManagementViewModel

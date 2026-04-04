@@ -1,0 +1,102 @@
+@model QLDSV_HTC.Web.Models.ClassManagementViewModel
+@using QLDSV_HTC.Web.Models
+
+@{
+    var isPGV = (bool)(ViewData["isPGV"] ?? false);
+    var hasFaculty = (bool)(ViewData["hasFaculty"] ?? false);
+    
+    var tableModel = new GenericTableViewModel
+    {
+        FiltersSection = @<text>
+            <div class="input-group" style="max-width:340px">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" id="classSearch" class="form-control border-start-0"
+                       placeholder="Tìm mã lớp hoặc tên lớp…">
+            </div>
+            @if (!hasFaculty && Model.Faculties.Any())
+            {
+                <select id="facultyFilter" class="form-select" style="max-width:300px">
+                    <option value="">— Tất cả khoa —</option>
+                    @foreach (var f in Model.Faculties)
+                    {
+                        @* Trim fix for Faculty ID *@
+                        <option value="@f.Id?.Trim()">@f.Name (@f.Id?.Trim())</option>
+                    }
+                </select>
+            }
+        </text>,
+        
+        HeadSection = @<text>
+            <tr>
+                <th scope="col" style="width:160px">Mã Lớp</th>
+                <th scope="col">Tên Lớp</th>
+                <th scope="col" style="width:120px">Khóa Học</th>
+                <th scope="col" style="width:100px">Khoa</th>
+                @if (isPGV)
+                {
+                    <th scope="col" class="text-end" style="width:150px">Hành động</th>
+                }
+            </tr>
+        </text>,
+        
+        BodySection = @<text>
+            @if (!Model.Classes.Any())
+            {
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                        Chưa có lớp nào.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var cls in Model.Classes)
+                {
+                    <tr data-id="@cls.Id?.Trim()" data-name="@cls.Name"
+                        data-year="@cls.Year" data-faculty="@cls.FacultyId?.Trim()"
+                        data-faculty-filter="@cls.FacultyId?.Trim()">
+                        <td class="fw-semibold font-monospace text-primary">@cls.Id?.Trim()</td>
+                        <td>@cls.Name</td>
+                        <td>@cls.Year</td>
+                        <td>
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">
+                                @cls.FacultyId?.Trim()
+                            </span>
+                        </td>
+                        @if (isPGV)
+                        {
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row shadow-sm hover-scale"
+                                        title="Sửa lớp này"
+                                        data-id="@cls.Id?.Trim()" data-name="@cls.Name"
+                                        data-year="@cls.Year" data-faculty="@cls.FacultyId?.Trim()">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-sm hover-scale"
+                                        title="Xóa lớp này"
+                                        data-id="@cls.Id?.Trim()" data-name="@cls.Name">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        }
+                    </tr>
+                }
+            }
+        </text>,
+        
+        FooterSection = @<text>
+            <span class="text-muted small">
+                Hiển thị <strong id="visibleCount">@Model.Classes.Count()</strong>
+                / @Model.Classes.Count() lớp
+            </span>
+        </text>
+    };
+
+    ViewData["TableId"] = "classTable";
+    ViewData["TableBodyId"] = "classTableBody";
+}
+
+@await Html.PartialAsync("_CardTableWrapper", tableModel, ViewData)

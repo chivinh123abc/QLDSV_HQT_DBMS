@@ -32,10 +32,16 @@ namespace QLDSV_HTC.Domain.Constants
 
         public static class ClassCrud
         {
+            public const string OldClassId = "@MALOP_OLD";
             public const string ClassId = "@MALOP";
             public const string ClassName = "@TENLOP";
             public const string SchoolYear = "@KHOAHOC";
             public const string FacultyId = "@MAKHOA";
+        }
+
+        public static class Faculty
+        {
+            public const string LecturerId = "@MAGV";
         }
     }
 }

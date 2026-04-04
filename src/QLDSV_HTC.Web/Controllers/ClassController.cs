@@ -10,7 +10,7 @@ namespace QLDSV_HTC.Web.Controllers
 {
     [Route(RouteConstants.Class.Prefix)]
     [Authorize(Roles = AppConstants.Groups.Faculty)]
-    public class ClassController(IClassRepository classRepository) : Controller
+    public class ClassController(IClassRepository classRepository, IFacultyRepository facultyRepository) : Controller
     {
         // ────────────────────────────────────────────────
         // GET /class  — Trang danh sách lớp
@@ -19,12 +19,17 @@ namespace QLDSV_HTC.Web.Controllers
         [Route(RouteConstants.Class.Index)]
         public async Task<IActionResult> Index()
         {
-            // PGV toàn trường: truyền "" để lấy tất cả
-            // KHOA: lấy theo mã khoa của tài khoản đang đăng nhập
-            var facultyId = await GetCurrentFacultyIdAsync();
+            // Lấy mã khoa từ Session
+            // Tuy nhiên, nếu là PGV thì ta xem như không có "Khoa hiện tại" để view hiển thị "Toàn trường"
+            var facultyId = string.Empty;
+            if (!User.IsInRole(AppConstants.Groups.PGV))
+            {
+                facultyId = User.FindFirst(AppConstants.SessionKeys.FacultyId)?.Value ?? string.Empty;
+            }
 
-            var classes = (await classRepository.GetClassListAsync(facultyId)).ToList();
-            var departments = (await classRepository.GetDepartmentsAsync()).ToList();
+            // Truy vấn danh sách lớp mà không cần truyền parameter vì SP đã tự query theo User db context
+            var classes = (await classRepository.GetClassListAsync()).ToList();
+            var faculties = (await facultyRepository.GetFacultiesAsync()).ToList();
 
             var vm = new ClassManagementViewModel
             {
@@ -33,13 +38,13 @@ namespace QLDSV_HTC.Web.Controllers
                     Id = c.ClassId,
                     Name = c.ClassName,
                     Year = c.SchoolYear,
-                    Department = c.FacultyId,
-                    DepartmentName = c.FacultyName,
+                    FacultyId = c.FacultyId,
+                    FacultyName = c.FacultyName,
                 }),
-                Departments = departments.Select(d => new DepartmentViewModel
+                Faculties = faculties.Select(f => new FacultyViewModel
                 {
-                    Id = d.FacultyId,
-                    Name = d.FacultyName,
+                    Id = f.FacultyId,
+                    Name = f.FacultyName,
                 }),
                 CurrentFacultyId = facultyId,
             };
@@ -52,6 +57,7 @@ namespace QLDSV_HTC.Web.Controllers
         // ────────────────────────────────────────────────
         [HttpPost]
         [Route(RouteConstants.Class.Add)]
+        [Authorize(Roles = AppConstants.Groups.PGV)]
         public async Task<IActionResult> Add([FromBody] ClassInputModel input)
         {
             if (!ModelState.IsValid)
@@ -79,6 +85,7 @@ namespace QLDSV_HTC.Web.Controllers
         // ────────────────────────────────────────────────
         [HttpPost]
         [Route(RouteConstants.Class.Edit)]
+        [Authorize(Roles = AppConstants.Groups.PGV)]
         public async Task<IActionResult> Edit([FromBody] ClassInputModel input)
         {
             if (!ModelState.IsValid)
@@ -88,6 +95,7 @@ namespace QLDSV_HTC.Web.Controllers
             {
                 await classRepository.UpdateClassAsync(new ClassDto
                 {
+                    OldClassId = input.OldClassId?.Trim(),
                     ClassId = input.ClassId.Trim(),
                     ClassName = input.ClassName.Trim(),
                     SchoolYear = input.SchoolYear.Trim(),
@@ -106,8 +114,12 @@ namespace QLDSV_HTC.Web.Controllers
         // ────────────────────────────────────────────────
         [HttpPost]
         [Route(RouteConstants.Class.Delete)]
+        [Authorize(Roles = AppConstants.Groups.PGV)]
         public async Task<IActionResult> Delete([FromBody] ClassDeleteModel input)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ." });
+
             if (string.IsNullOrWhiteSpace(input?.ClassId))
                 return BadRequest(new { success = false, message = "Mã lớp không hợp lệ." });
 
@@ -120,40 +132,6 @@ namespace QLDSV_HTC.Web.Controllers
             {
                 return BadRequest(new { success = false, message = ex.Message });
             }
-        }
-
-        // ────────────────────────────────────────────────
-        // GET /class/departments  — Lấy danh sách khoa (JSON)
-        // ────────────────────────────────────────────────
-        [HttpGet]
-        [Route(RouteConstants.Class.GetDepartments)]
-        public async Task<IActionResult> GetDepartments()
-        {
-            var departments = await classRepository.GetDepartmentsAsync();
-            return Ok(departments.Select(d => new { id = d.FacultyId, name = d.FacultyName }));
-        }
-
-        // ────────────────────────────────────────────────
-        // Helpers
-        // ────────────────────────────────────────────────
-
-        /// <summary>
-        /// Lấy mã khoa của người đang đăng nhập.
-        /// - PGV toàn trường → trả về ""
-        /// - Tài khoản KHOA → query GIANGVIEN lấy MAKHOA theo DB username
-        /// </summary>
-        private async Task<string> GetCurrentFacultyIdAsync()
-        {
-            // Nếu là PGV thì không cần lọc theo khoa
-            if (User.IsInRole(AppConstants.Groups.PGV))
-                return string.Empty;
-
-            // Lấy DB username từ claim (có thể là MAGV hoặc tên login)
-            var dbUsername = User.FindFirst(AppConstants.SessionKeys.Username)?.Value
-                          ?? User.Identity?.Name
-                          ?? string.Empty;
-
-            return await classRepository.GetFacultyByUsernameAsync(dbUsername);
         }
     }
 }

@@ -34,7 +34,7 @@ namespace QLDSV_HTC.Web.Models
         public string StudentName { get; set; } = string.Empty;
         public string StudentId { get; set; } = string.Empty;
         public string StudentClass { get; set; } = string.Empty;
-        public string DepartmentName { get; set; } = string.Empty;
+        public string FacultyName { get; set; } = string.Empty;
 
         public CurrentSemesterInfoViewModel CurrentSemester { get; set; } = new();
         public IEnumerable<UpcomingClassViewModel> UpcomingClasses { get; set; } = [];
