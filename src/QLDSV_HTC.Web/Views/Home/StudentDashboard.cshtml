@@ -1,0 +1,230 @@
+@{
+    ViewData["Title"] = "Bảng điều khiển sinh viên";
+    var fullName = User.FindFirst(QLDSV_HTC.Domain.Constants.AppConstants.SessionKeys.FullName)?.Value ?? "Sinh viên";
+    var maSV = User.FindFirst(QLDSV_HTC.Domain.Constants.AppConstants.SessionKeys.Username)?.Value ?? "---";
+}
+
+<div class="dashboard-container">
+    <div class="row g-4 mb-4">
+        <!-- Welcome Section -->
+        <div class="col-12">
+            <div class="qldsv-card welcome-hero glass-panel shadow-sm border-0 position-relative overflow-hidden mb-0">
+                <div class="hero-bg-accent position-absolute top-0 end-0 h-100 w-25 opacity-25" style="background: linear-gradient(135deg, transparent, var(--color-primary-light)); filter: blur(40px);"></div>
+                <div class="position-relative z-1 p-4">
+                    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
+                        <div>
+                            <span class="badge badge-status badge-info mb-2">Chào mừng trở lại!</span>
+                            <h1 class="h2 fw-bold text-gradient mb-1">@fullName</h1>
+                            <p class="text-muted mb-0">Hệ thống quản lý điểm sinh viên – Cổng thông tin học tập của bạn.</p>
+                        </div>
+                        <div class="d-flex flex-wrap gap-4 pt-2 pt-md-0 border-md-start ps-md-4 border-light-subtle">
+                            <div class="info-item">
+                                <label class="text-muted small text-uppercase fw-bold d-block mb-1">Mã sinh viên</label>
+                                <span class="fw-semibold">@maSV</span>
+                            </div>
+                            <div class="info-item">
+                                <label class="text-muted small text-uppercase fw-bold d-block mb-1">Niên khóa</label>
+                                <span class="fw-semibold">2021-2025</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="col-md-3">
+            <div class="qldsv-card h-100 hover-elevate border-0 shadow-sm p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon bg-blue shadow-sm">
+                        <i class="bi bi-calendar-event"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted small mb-0 fw-medium">Học kỳ hiện tại</p>
+                        <h4 class="h5 fw-bold mb-0">Học kỳ 1</h4>
+                        <span class="text-xs text-muted">2025-2026</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="qldsv-card h-100 hover-elevate border-0 shadow-sm p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon bg-green shadow-sm">
+                        <i class="bi bi-book"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted small mb-0 fw-medium">Môn học đăng ký</p>
+                        <h4 class="h5 fw-bold mb-0">06</h4>
+                        <span class="text-xs text-muted">Trong học kỳ 1</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="qldsv-card h-100 hover-elevate border-0 shadow-sm p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon bg-purple shadow-sm">
+                        <i class="bi bi-award"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted small mb-0 fw-medium">GPA Tích lũy</p>
+                        <h4 class="h5 fw-bold mb-0">3.45</h4>
+                        <span class="text-xs text-success fw-medium"><i class="bi bi-graph-up-arrow"></i> +0.15</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="qldsv-card h-100 hover-elevate border-0 shadow-sm p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="stat-icon bg-orange shadow-sm">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted small mb-0 fw-medium">Trạng thái</p>
+                        <h4 class="h5 fw-bold mb-0">Đang học</h4>
+                        <span class="text-xs text-info">Bình thường</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Main Content Area: Left Column -->
+        <div class="col-lg-8">
+            <div class="qldsv-card border-0 shadow-sm overflow-hidden h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <h3 class="h6 fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Lịch học hôm nay</h3>
+                    <span class="text-muted text-xs">Thứ 7, 28/03/2026</span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="timeline-schedule">
+                        <!-- Class 1 -->
+                        <div class="row g-0 mb-4 position-relative">
+                            <div class="col-auto text-center" style="width: 70px;">
+                                <div class="text-xs text-muted fw-bold mb-1">07:00</div>
+                                <div class="line mx-auto bg-light-subtle" style="width: 2px; height: 100%;"></div>
+                            </div>
+                            <div class="col">
+                                <div class="p-3 border rounded-3 bg-light-subtle hover-bg-light transition-base">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h4 class="h6 fw-bold mb-0">Cơ sở dữ liệu</h4>
+                                        <span class="badge badge-status badge-info">Lý thuyết</span>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-3 mt-2">
+                                        <div class="text-xs text-muted"><i class="bi bi-geo-alt me-1"></i>H301</div>
+                                        <div class="text-xs text-muted"><i class="bi bi-person me-1"></i>TS. Nguyễn Văn A</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Class 2 -->
+                        <div class="row g-0 mb-4 position-relative">
+                            <div class="col-auto text-center" style="width: 70px;">
+                                <div class="text-xs text-muted fw-bold mb-1">09:30</div>
+                                <div class="line mx-auto bg-light-subtle" style="width: 2px; height: 100%;"></div>
+                            </div>
+                            <div class="col">
+                                <div class="p-3 border rounded-3 border-primary-subtle bg-primary-subtle bg-opacity-10 hover-bg-light transition-base shadow-sm">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h4 class="h6 fw-bold mb-0 text-primary">Lập trình Web nâng cao</h4>
+                                        <span class="badge badge-status badge-success">Thực hành</span>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-3 mt-2">
+                                        <div class="text-xs text-primary"><i class="bi bi-geo-alt me-1"></i>Lab 101</div>
+                                        <div class="text-xs text-primary"><i class="bi bi-person me-1"></i>ThS. Trần Thị B</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Class 3 -->
+                        <div class="row g-0 position-relative">
+                            <div class="col-auto text-center" style="width: 70px;">
+                                <div class="text-xs text-muted fw-bold mb-1">13:30</div>
+                            </div>
+                            <div class="col">
+                                <div class="p-3 border rounded-3 bg-light-subtle">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h4 class="h6 fw-bold mb-0">Mạng máy tính</h4>
+                                        <span class="badge badge-status badge-info">Lý thuyết</span>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-3 mt-2">
+                                        <div class="text-xs text-muted"><i class="bi bi-geo-alt me-1"></i>H205</div>
+                                        <div class="text-xs text-muted"><i class="bi bi-person me-1"></i>PGS.TS. Lê Văn C</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0 p-4 text-center">
+                    <a href="@QLDSV_HTC.Domain.Constants.RouteConstants.Student.SchedulePath" class="btn btn-link text-decoration-none text-xs fw-bold p-0">
+                        Xem thời khóa biểu đầy đủ <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Area: Right Column -->
+        <div class="col-lg-4">
+            <div class="qldsv-card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h3 class="h6 fw-bold mb-0"><i class="bi bi-megaphone me-2 text-primary"></i>Thông báo mới</h3>
+                </div>
+                <div class="card-body p-4">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-3 pb-3 border-bottom border-light">
+                            <div class="d-flex gap-3">
+                                <div class="bg-primary-subtle text-primary stat-icon-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-bell text-xs"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm fw-bold mb-1 leading-tight">Yêu cầu đăng ký học phần HK2</h4>
+                                    <p class="text-xs text-muted mb-2 line-clamp-2">Thời hạn đăng ký sẽ kết thúc vào ngày 10/04/2026. Sinh viên lưu ý...</p>
+                                    <span class="text-xs text-muted opacity-75">2 giờ trước</span>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="mb-3 pb-3 border-bottom border-light">
+                            <div class="d-flex gap-3">
+                                <div class="bg-info-subtle text-info stat-icon-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-info-circle text-xs"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm fw-bold mb-1 leading-tight">Hướng dẫn đóng học phí</h4>
+                                    <p class="text-xs text-muted mb-2 line-clamp-2">Cập nhật phương thức thanh toán mới qua ví điện tử và app ngân hàng...</p>
+                                    <span class="text-xs text-muted opacity-75">Hôm qua</span>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="mb-0">
+                            <div class="d-flex gap-3">
+                                <div class="bg-warning-subtle text-warning stat-icon-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-exclamation-triangle text-xs"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm fw-bold mb-1 leading-tight">Lịch thi giữa học kỳ</h4>
+                                    <p class="text-xs text-muted mb-2 line-clamp-2">Cập nhật địa điểm phòng thi cho các môn cơ sở tại cơ sở III...</p>
+                                    <span class="text-xs text-muted opacity-75">3 ngày trước</span>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-footer bg-transparent border-0 p-4 text-center">
+                    <button class="btn btn-outline-primary btn-sm w-100 rounded-pill">
+                        Tất cả thông báo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

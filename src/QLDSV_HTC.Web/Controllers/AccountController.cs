@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QLDSV_HTC.Models;
 using QLDSV_HTC.Application.Interfaces;
@@ -12,6 +13,7 @@ namespace QLDSV_HTC.Controllers
     public class AccountController(IAuthRepository authRepository) : Controller
     {
         [HttpGet]
+        [AllowAnonymous]
         [Route(RouteConstants.Account.Login)]
         public IActionResult Login()
         {
@@ -20,10 +22,11 @@ namespace QLDSV_HTC.Controllers
             {
                 return Redirect(RouteConstants.Home.HomePath);
             }
-            return View();
+            return View(new LoginViewModel { IsStudent = false });
         }
 
         [HttpPost]
+        [AllowAnonymous]
         [Route(RouteConstants.Account.Login)]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
@@ -32,8 +35,7 @@ namespace QLDSV_HTC.Controllers
                 return View(model);
             }
 
-            // Gọi repository với tham số isSinhVien
-            var session = await authRepository.ValidateUserAsync(model.LoginName, model.Password ?? string.Empty, model.IsSinhVien ?? false);
+            var session = await authRepository.ValidateUserAsync(model.LoginName, model.Password ?? string.Empty, model.IsStudent);
 
             if (session != null && session.IsValid)
             {
@@ -77,6 +79,14 @@ namespace QLDSV_HTC.Controllers
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Redirect(RouteConstants.Account.LoginPath);
+        }
+
+        [HttpGet]
+        [Route(RouteConstants.Account.Management)]
+        [Authorize(Roles = AppConstants.Groups.PGV)]
+        public IActionResult Management()
+        {
+            return View();
         }
     }
 }

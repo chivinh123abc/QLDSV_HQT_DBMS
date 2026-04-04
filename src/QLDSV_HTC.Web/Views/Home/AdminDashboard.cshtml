@@ -1,0 +1,131 @@
+@using QLDSV_HTC.Domain.Constants
+@{
+    ViewData["Title"] = "Quản trị hệ thống";
+    var fullName = User.FindFirst(AppConstants.SessionKeys.FullName)?.Value ?? "Quản trị viên";
+    var group = User.FindFirst(AppConstants.SessionKeys.Group)?.Value ?? "";
+}
+
+<div class="dashboard-container">
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="qldsv-card welcome-hero shadow-sm border-0 mb-0">
+                <div class="p-4">
+                    <h1 class="h3 fw-bold text-gradient mb-1">Xin chào, @fullName</h1>
+                    <p class="text-muted mb-0">Hệ thống quản lý đào tạo – Phân quyền: <span class="badge badge-status badge-info">@group</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card border-0 shadow-sm hover-elevate h-100">
+                <div class="stat-icon bg-blue shadow-sm">
+                    <i class="bi bi-people"></i>
+                </div>
+                <div>
+                    <div class="stat-value">1,250</div>
+                    <div class="stat-label">Tổng sinh viên</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card border-0 shadow-sm hover-elevate h-100">
+                <div class="stat-icon bg-green shadow-sm">
+                    <i class="bi bi-clipboard-check"></i>
+                </div>
+                <div>
+                    <div class="stat-value">48</div>
+                    <div class="stat-label">Lớp tín chỉ mở</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card border-0 shadow-sm hover-elevate h-100">
+                <div class="stat-icon bg-purple shadow-sm">
+                    <i class="bi bi-person-badge"></i>
+                </div>
+                <div>
+                    <div class="stat-value">85</div>
+                    <div class="stat-label">Tổng giảng viên</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card border-0 shadow-sm hover-elevate h-100">
+                <div class="stat-icon bg-orange shadow-sm">
+                    <i class="bi bi-journal-text"></i>
+                </div>
+                <div>
+                    <div class="stat-value">124</div>
+                    <div class="stat-label">Môn học</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="qldsv-card border-0 shadow-sm h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="h6 fw-bold mb-0">Hoạt động gần đây</h3>
+                    <button class="btn btn-link btn-sm text-decoration-none">Xem tất cả</button>
+                </div>
+                <div class="activity-list">
+                    <div class="activity-item pb-3 mb-3 border-bottom">
+                        <div class="activity-avatar">AD</div>
+                        <div class="activity-content">
+                            <p class="mb-0 text-sm"><span class="fw-bold">Admin</span> đã cập nhật điểm môn <span class="fw-bold">Cấu trúc dữ liệu</span></p>
+                            <span class="text-xs text-muted">10 phút trước</span>
+                        </div>
+                    </div>
+                    <div class="activity-item pb-3 mb-3 border-bottom">
+                        <div class="activity-avatar">GV</div>
+                        <div class="activity-content">
+                            <p class="mb-0 text-sm"><span class="fw-bold">Giảng viên A</span> đã mở lớp tín chỉ mới</p>
+                            <span class="text-xs text-muted">2 giờ trước</span>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-avatar">SV</div>
+                        <div class="activity-content">
+                            <p class="mb-0 text-sm"><span class="fw-bold">N15DCCN001</span> đã đăng ký học phần thành công</p>
+                            <span class="text-xs text-muted">5 giờ trước</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="qldsv-card border-0 shadow-sm h-100">
+                <h3 class="h6 fw-bold mb-4">Lối tắt quản lý</h3>
+                <div class="d-grid gap-2">
+                    <a href="@RouteConstants.Class.ClassPath" class="btn btn-light-subtle text-start py-3 px-4 rounded-3 hover-elevate transition-base d-flex align-items-center gap-3">
+                        <i class="bi bi-people text-primary fs-5"></i>
+                        <div>
+                            <div class="fw-bold text-sm">Quản lý lớp</div>
+                            <div class="text-xs text-muted">Danh sách và thông tin lớp học</div>
+                        </div>
+                    </a>
+                    <a href="@RouteConstants.Student.StudentPath" class="btn btn-light-subtle text-start py-3 px-4 rounded-3 hover-elevate transition-base d-flex align-items-center gap-3">
+                        <i class="bi bi-mortarboard text-success fs-5"></i>
+                        <div>
+                            <div class="fw-bold text-sm">Quản lý sinh viên</div>
+                            <div class="text-xs text-muted">Hồ sơ và kết quả học tập</div>
+                        </div>
+                    </a>
+                    <a href="@RouteConstants.Report.ReportPath" class="btn btn-light-subtle text-start py-3 px-4 rounded-3 hover-elevate transition-base d-flex align-items-center gap-3">
+                        <i class="bi bi-file-earmark-bar-graph text-warning fs-5"></i>
+                        <div>
+                            <div class="fw-bold text-sm">Báo cáo & Thống kê</div>
+                            <div class="text-xs text-muted">Xuất dữ liệu và in ấn</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

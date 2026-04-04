@@ -1,0 +1,31 @@
+<div class="action-bar fade-in-up">
+    @if (ViewData["ShowSearch"] as bool? ?? true)
+    {
+        <div class="search-input-wrapper me-auto">
+            <i class="bi bi-search"></i>
+            <input type="text" class="form-control" id="searchInput" placeholder="@(ViewData["SearchPlaceholder"] ?? "Tìm kiếm...")">
+        </div>
+    }
+
+    @if (ViewData["ShowAdd"] as bool? ?? true)
+    {
+        <button class="btn btn-action btn-action-primary" id="btnAdd" type="button" 
+                data-bs-toggle="modal" data-bs-target="@(ViewData["AddModalTarget"] ?? "#addModal")">
+            <i class="bi bi-plus-lg"></i> Thêm mới
+        </button>
+    }
+
+    @if (ViewData["ShowDelete"] as bool? ?? true)
+    {
+        <button class="btn btn-action btn-action-destructive" id="btnDelete" type="button">
+            <i class="bi bi-trash"></i> Xóa đã chọn
+        </button>
+    }
+
+    @if (ViewData["ShowEdit"] as bool? == true)
+    {
+        <button class="btn btn-action btn-action-accent" id="btnEdit" type="button">
+            <i class="bi bi-pencil"></i> Sửa
+        </button>
+    }
+</div>

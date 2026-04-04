@@ -9,31 +9,34 @@ namespace QLDSV_HTC.Infrastructure.Repositories
 {
     public class AuthRepository(IDbConnectionProvider connectionProvider) : BaseSqlRepository(connectionProvider), IAuthRepository
     {
-        public async Task<UserSession> ValidateUserAsync(string loginName, string password, bool isSinhVien)
+        public async Task<UserSession> ValidateUserAsync(string loginName, string password, bool isStudent)
         {
             string connString;
             string spName;
             SqlParameter[] parameters;
 
-            if (isSinhVien)
+            if (isStudent)
             {
-                connString = SqlConfigHelper.GetConnectionString("sv", "sv");
-                spName = AppConstants.SpNames.DangNhapSinhVien;
+                var studentUser = Environment.GetEnvironmentVariable(AppConstants.Configs.StudentUsername) ?? "sv";
+                var studentPass = Environment.GetEnvironmentVariable(AppConstants.Configs.StudentPassword) ?? "sv";
+
+                connString = SqlConfigHelper.GetConnectionString(studentUser, studentPass);
+                spName = AppConstants.SpNames.StudentLogin;
 
                 parameters =
                 [
-                    new(StoredProcedureConstants.DangNhapSinhVien.MASV, loginName),
-                    new(StoredProcedureConstants.DangNhapSinhVien.PASSWORD, password ?? "")
+                    new(StoredProcedureConstants.StudentLogin.StudentId, loginName),
+                    new(StoredProcedureConstants.StudentLogin.Password, password ?? "")
                 ];
             }
             else
             {
                 connString = SqlConfigHelper.GetConnectionString(loginName, password);
-                spName = AppConstants.SpNames.DangNhap;
+                spName = AppConstants.SpNames.Login;
 
                 parameters =
                 [
-                    new(StoredProcedureConstants.DangNhap.TENLOGIN, loginName)
+                    new(StoredProcedureConstants.Login.LoginName, loginName)
                 ];
             }
 

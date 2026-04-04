@@ -1,0 +1,80 @@
+@{
+    ViewData["Title"] = "Từ chối truy cập";
+}
+
+<div class="container py-5 mt-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <!-- Header with gradient background -->
+                <div class="card-header border-0 bg-danger bg-gradient text-white text-center py-5">
+                    <i class="bi bi-shield-lock-fill display-1 mb-3 d-inline-block pulse-icon"></i>
+                    <h2 class="fw-bold mb-0">Từ chối truy cập!</h2>
+                </div>
+                
+                <!-- Body with modern typography and spacing -->
+                <div class="card-body p-5 text-center bg-white">
+                    <h4 class="fw-semibold text-dark mb-4">Rất tiếc, bạn không có quyền xem nội dung này.</h4>
+                    
+                    <p class="text-secondary mb-5 lh-lg">
+                        Tài khoản của bạn hiện tại không được cấp quyền để thực hiện chức năng này. 
+                        Vui lòng kiểm tra lại đường dẫn hoặc liên hệ với quản trị viên hệ thống nếu bạn cho rằng đây là một sự nhầm lẫn.
+                    </p>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                        <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-medium transition-all" onclick="window.history.back()">
+                            <i class="bi bi-arrow-left me-2"></i>Quay lại
+                        </button>
+                        <a href="~/" class="btn btn-primary px-4 py-2 rounded-pill fw-medium shadow-sm transition-all hover-lift">
+                            <i class="bi bi-house-door me-2"></i>Về trang chủ
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Footer for additional info -->
+                <div class="card-footer border-0 bg-light text-center py-3 text-muted small">
+                    <i class="bi bi-info-circle me-1"></i> Mã lỗi: <strong>403 Forbidden</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* CSS Animations & Interactivity */
+    .card {
+        animation: fadeInUp 0.5s ease-out forwards;
+        box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important;
+    }
+    
+    .pulse-icon {
+        animation: pulse 2s infinite ease-in-out;
+    }
+    
+    .transition-all {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15) !important;
+    }
+
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 40px, 0);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+    
+    @@keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.08); }
+        100% { transform: scale(1); }
+    }
+</style>

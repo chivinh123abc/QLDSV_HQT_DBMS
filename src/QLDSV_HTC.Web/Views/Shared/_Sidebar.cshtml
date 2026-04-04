@@ -1,0 +1,46 @@
+@using QLDSV_HTC.Domain.Constants
+@using QLDSV_HTC.Web.Extensions
+@using QLDSV_HTC.Web.Services
+@inject ISidebarService SidebarService
+
+@{
+    var currentPath = Context.Request.Path.Value?.TrimEnd('/') ?? "/";
+    var userGroup = User.GetUserGroup();
+    var menuItems = SidebarService.GetMenuItems();
+}
+
+<aside class="app-sidebar" id="appSidebar">
+    <div class="sidebar-brand">
+        <h2>QLDSV_HTC</h2>
+        <p>@(User.IsStudent() ? "Cổng thông tin sinh viên" : "Quản lý điểm sinh viên")</p>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Main Navigation">
+        <ul>
+            @foreach (var item in menuItems.Where(m => m.Roles.Any(r => string.Equals(r, userGroup, StringComparison.OrdinalIgnoreCase))))
+            {
+                var isActive = (item.Path == "/" && currentPath == "/") || 
+                              (item.Path != "/" && currentPath.StartsWith(item.Path, StringComparison.OrdinalIgnoreCase));
+
+                <li>
+                    <a class="nav-link @(isActive ? "active" : "")" href="@item.Path">
+                        <i class="bi @item.Icon"></i> @item.Title
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="sidebar-roles">
+            <span class="role-badge role-pgv @(User.IsPGV() ? "active" : "")">PGV</span>
+            <span class="role-badge role-khoa @(User.IsInGroup(AppConstants.Groups.KHOA) ? "active" : "")">KHOA</span>
+            <span class="role-badge role-sv @(User.IsStudent() ? "active" : "")">SV</span>
+        </div>
+        <form asp-controller="Account" asp-action="Logout" method="post">
+            <button type="submit" class="sidebar-logout" aria-label="Đăng xuất khỏi hệ thống">
+                <i class="bi bi-box-arrow-left" aria-hidden="true"></i> Đăng xuất
+            </button>
+        </form>
+    </div>
+</aside>
