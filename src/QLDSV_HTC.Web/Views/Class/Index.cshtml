@@ -261,9 +261,11 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                         resetToView();
                         window.showToast(res.message, 'success');
                     } else {
-                        helpers.showAlert(res.message, 'danger');
+                        window.showToast(res.message, 'danger');
                     }
-                } catch (err) { helpers.showAlert('Lỗi: ' + err.message, 'danger'); }
+                } catch (err) { 
+                    window.showToast('Lỗi: ' + err.message, 'danger'); 
+                }
             }
 
             // ── DOM table helpers ─────────────────────────────────────

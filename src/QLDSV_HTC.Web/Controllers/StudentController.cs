@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using QLDSV_HTC.Application.DTOs;
 using QLDSV_HTC.Application.Interfaces;
 using QLDSV_HTC.Domain.Constants;
+using QLDSV_HTC.Domain.Models;
 using QLDSV_HTC.Web.Models;
 using System.Security.Claims;
 
@@ -49,13 +50,26 @@ namespace QLDSV_HTC.Web.Controllers
         [HttpGet]
         [Route(RouteConstants.Student.List)]
         [Authorize(Roles = AppConstants.Groups.Faculty)]
-        public async Task<IActionResult> List(string classId)
+        public async Task<IActionResult> List(string classId, int page = 1, int pageSize = 10)
         {
+            if (!ModelState.IsValid)
+            {
+                return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+            }
+
             try
             {
                 // In Khoa role, the SP itself ensures only their students are retrieved 
                 // Alternatively it can be sent via parameter, but our SP fetches KHOA automatically
-                var students = await studentRepository.GetStudentListAsync(classId);
+                var paginationQuery = new PaginationQuery
+                {
+                    PageNumber = page,
+                    PageSize = pageSize
+                };
+
+                var pagedResult = await studentRepository.GetPagedStudentListAsync(paginationQuery, classId);
+                var students = pagedResult.Items;
+
                 var viewModels = students.Select(s => new StudentViewModel
                 {
                     StudentId = s.StudentId,
@@ -70,7 +84,15 @@ namespace QLDSV_HTC.Web.Controllers
                     Password = s.Password
                 });
 
-                return Json(new { success = true, data = viewModels });
+                var pagination = new PaginationViewModel
+                {
+                    PageNumber = pagedResult.PageNumber,
+                    PageSize = pagedResult.PageSize,
+                    TotalCount = pagedResult.TotalCount,
+                    TotalPages = pagedResult.TotalPages
+                };
+
+                return Json(new { success = true, data = viewModels, pagination });
             }
             catch (Exception ex)
             {

@@ -88,10 +88,14 @@
         </text>,
         
         FooterSection = @<text>
-            <span class="text-muted small">
-                Hiển thị <strong id="visibleCount">@Model.Classes.Count()</strong>
-                / @Model.Classes.Count() lớp
-            </span>
+            <div class="d-flex align-items-center w-100">
+                <span class="text-muted small me-auto">
+                    Hiển thị <strong id="visibleCount">@Model.Classes.Count()</strong>
+                    / @Model.Pagination.TotalCount lớp
+                </span>
+                
+                @await Html.PartialAsync("_PaginationControls", Model.Pagination)
+            </div>
         </text>
     };
 

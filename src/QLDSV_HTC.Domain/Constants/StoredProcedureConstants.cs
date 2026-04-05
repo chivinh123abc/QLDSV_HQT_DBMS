@@ -57,5 +57,17 @@ namespace QLDSV_HTC.Domain.Constants
         {
             public const string LecturerId = "@MAGV";
         }
+
+        public static class Pagination
+        {
+            public const string SelectCols = "@SelectCols";
+            public const string TableName = "@TableName";
+            public const string JoinClause = "@JoinClause";
+            public const string WhereClause = "@WhereClause";
+            public const string OrderBy = "@OrderBy";
+            public const string PageNumber = "@PageNumber";
+            public const string PageSize = "@PageSize";
+            public const string TotalCount = "TotalCount";
+        }
     }
 }

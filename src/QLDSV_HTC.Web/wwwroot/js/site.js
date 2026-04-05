@@ -38,7 +38,7 @@ window.showToast = function(message, type = 'success') {
     toast.show();
 
     // Remove from DOM after hide
-    toastEl.addEventListener('hidden.bs.modal', function() {
+    toastEl.addEventListener('hidden.bs.toast', function() {
         toastEl.remove();
     });
 };

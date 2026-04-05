@@ -37,5 +37,18 @@ namespace QLDSV_HTC.Infrastructure.Repositories
 
             return dt;
         }
+
+        protected async Task<(DataTable Data, int TotalCount)> ExecutePaginatedQueryAsync(string commandText, CommandType commandType, params SqlParameter[] parameters)
+        {
+            var dt = await ExecuteQueryAsync(commandText, commandType, parameters);
+
+            int totalCount = 0;
+            if (dt.Rows.Count > 0 && dt.Columns.Contains(QLDSV_HTC.Domain.Constants.StoredProcedureConstants.Pagination.TotalCount))
+            {
+                totalCount = Convert.ToInt32(dt.Rows[0][QLDSV_HTC.Domain.Constants.StoredProcedureConstants.Pagination.TotalCount]);
+            }
+
+            return (dt, totalCount);
+        }
     }
 }

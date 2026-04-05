@@ -17,6 +17,8 @@ namespace QLDSV_HTC.Domain.Constants
             public const string AddStudent = "sp_ThemSinhVien";
             public const string UpdateStudent = "sp_SuaSinhVien";
             public const string DeleteStudent = "sp_XoaSinhVien";
+
+            public const string DynamicPagination = "sp_PhanTrangDong";
         }
 
         public static class Configs

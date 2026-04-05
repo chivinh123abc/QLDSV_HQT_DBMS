@@ -5,6 +5,7 @@ using QLDSV_HTC.Application.DTOs;
 using QLDSV_HTC.Application.Interfaces;
 using QLDSV_HTC.Domain.Constants;
 using QLDSV_HTC.Web.Models;
+using QLDSV_HTC.Domain.Models;
 
 namespace QLDSV_HTC.Web.Controllers
 {
@@ -17,8 +18,13 @@ namespace QLDSV_HTC.Web.Controllers
         // ────────────────────────────────────────────────
         [HttpGet]
         [Route(RouteConstants.Class.Index)]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest("Dữ liệu không hợp lệ.");
+            }
+
             // Lấy mã khoa từ Session
             // Tuy nhiên, nếu là PGV thì ta xem như không có "Khoa hiện tại" để view hiển thị "Toàn trường"
             var facultyId = string.Empty;
@@ -27,8 +33,14 @@ namespace QLDSV_HTC.Web.Controllers
                 facultyId = User.FindFirst(AppConstants.SessionKeys.FacultyId)?.Value ?? string.Empty;
             }
 
-            // Truy vấn danh sách lớp mà không cần truyền parameter vì SP đã tự query theo User db context
-            var classes = (await classRepository.GetClassListAsync()).ToList();
+            var paginationQuery = new PaginationQuery
+            {
+                PageNumber = page,
+                PageSize = pageSize
+            };
+
+            var pagedResult = await classRepository.GetPagedClassListAsync(paginationQuery);
+            var classes = pagedResult.Items.ToList();
             var faculties = (await facultyRepository.GetFacultiesAsync()).ToList();
 
             var vm = new ClassManagementViewModel
@@ -47,6 +59,13 @@ namespace QLDSV_HTC.Web.Controllers
                     Name = f.FacultyName,
                 }),
                 CurrentFacultyId = facultyId,
+                Pagination = new PaginationViewModel
+                {
+                    PageNumber = pagedResult.PageNumber,
+                    PageSize = pagedResult.PageSize,
+                    TotalCount = pagedResult.TotalCount,
+                    TotalPages = pagedResult.TotalPages
+                }
             };
 
             return View(vm);
