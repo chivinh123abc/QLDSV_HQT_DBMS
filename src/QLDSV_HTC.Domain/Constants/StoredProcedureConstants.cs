@@ -39,9 +39,35 @@ namespace QLDSV_HTC.Domain.Constants
             public const string FacultyId = "@MAKHOA";
         }
 
+        public static class StudentCrud
+        {
+            public const string OldStudentId = "@MASV_OLD";
+            public const string StudentId = "@MASV";
+            public const string FirstName = "@HO";
+            public const string LastName = "@TEN";
+            public const string Gender = "@PHAI";
+            public const string Address = "@DIACHI";
+            public const string Dob = "@NGAYSINH";
+            public const string ClassId = "@MALOP";
+            public const string OnLeave = "@DANGHIHOC";
+            public const string Password = "@PASSWORD";
+        }
+
         public static class Faculty
         {
             public const string LecturerId = "@MAGV";
+        }
+
+        public static class Pagination
+        {
+            public const string SelectCols = "@SelectCols";
+            public const string TableName = "@TableName";
+            public const string JoinClause = "@JoinClause";
+            public const string WhereClause = "@WhereClause";
+            public const string OrderBy = "@OrderBy";
+            public const string PageNumber = "@PageNumber";
+            public const string PageSize = "@PageSize";
+            public const string TotalCount = "TotalCount";
         }
     }
 }

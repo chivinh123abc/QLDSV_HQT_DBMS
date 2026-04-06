@@ -1,0 +1,33 @@
+@* _CrudToolbar.cshtml — Shared CRUD toolbar (Thêm / Xóa / Ghi / Phục hồi / Hủy / Thoát)
+   Usage: pass ViewData["IdPrefix"] = "Form" | "StudentForm" | ...
+   Generated IDs: btn{Prefix}Them, btn{Prefix}Xoa, btn{Prefix}Ghi, btn{Prefix}PhucHoi, btn{Prefix}Huy, btn{Prefix}Thoat *@
+
+@{
+    var prefix = ViewData["IdPrefix"]?.ToString() ?? "Form";
+}
+
+<button type="button" class="btn btn-success btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
+        id="btn@(prefix)Them" title="Thêm bản ghi mới">
+    <i class="bi bi-plus-circle"></i> Thêm
+</button>
+<button type="button" class="btn btn-danger btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
+        id="btn@(prefix)Xoa" title="Xóa bản ghi đang chọn" disabled>
+    <i class="bi bi-trash"></i> Xóa
+</button>
+<button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
+        id="btn@(prefix)Ghi" title="Lưu dữ liệu vào CSDL" disabled>
+    <i class="bi bi-floppy"></i> Ghi
+</button>
+<button type="button" class="btn btn-warning btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
+        id="btn@(prefix)PhucHoi" title="Phục hồi dữ liệu gốc" disabled>
+    <i class="bi bi-arrow-counterclockwise"></i> Phục hồi
+</button>
+<button type="button" class="btn btn-secondary btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
+        id="btn@(prefix)Huy" title="Hủy thao tác hiện tại" disabled>
+    <i class="bi bi-x-octagon"></i> Hủy
+</button>
+<button type="button"
+        class="btn btn-secondary btn-sm ms-auto d-flex align-items-center gap-1 shadow-sm hover-elevate"
+        id="btn@(prefix)Thoat" data-bs-dismiss="modal" title="Đóng form">
+    <i class="bi bi-x-circle"></i> Thoát
+</button>

@@ -4,30 +4,44 @@ GO
 -- ========================================================
 -- 1. NHÓM PGV: TOÀN QUYỀN TRÊN DATABASE
 -- ========================================================
+-- PGV được add vào db_owner, có quyền execute tất cả SP
 ALTER ROLE [db_owner] ADD MEMBER [PGV];
 GO
 
 -- ========================================================
--- 2. NHÓM KHOA: QUYỀN HẠN CHẾ
+-- 2. NHÓM KHOA: QUYỀN HẠN CHẾ (LEAST PRIVILEGE)
 -- ========================================================
--- Cấp quyền Đọc/Ghi dữ liệu chung và chạy tất cả SP
+-- (A) Thu hồi sạch các quyền Execute cũ (để tránh rò rỉ quyền từ script cũ)
+REVOKE EXECUTE ON schema::dbo FROM [KHOA];
+GO
+
+-- (B) Cấp quyền Đọc dữ liệu (Chỉ SELECT)
 ALTER ROLE [db_datareader] ADD MEMBER [KHOA];
-ALTER ROLE [db_datawriter] ADD MEMBER [KHOA];
-GRANT EXECUTE TO [KHOA];
 GO
 
--- "Trói tay" không cho sửa đổi danh mục (DENY đè lên mọi quyền khác)
-DENY INSERT, UPDATE, DELETE ON OBJECT::dbo.KHOA TO [KHOA];
-DENY INSERT, UPDATE, DELETE ON OBJECT::dbo.LOP TO [KHOA];
-DENY INSERT, UPDATE, DELETE ON OBJECT::dbo.GIANGVIEN TO [KHOA];
-DENY INSERT, UPDATE, DELETE ON OBJECT::dbo.SINHVIEN TO [KHOA];
-DENY INSERT, UPDATE, DELETE ON OBJECT::dbo.LOPTINCHI TO [KHOA];
+-- (C) Cấp quyền thực thi các SP được phép
+GRANT EXECUTE ON OBJECT::dbo.sp_DangNhap TO [KHOA];
+GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachLop TO [KHOA];
+GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachSinhVien TO [KHOA];
+GRANT EXECUTE ON OBJECT::dbo.sp_PhanTrangDong TO [KHOA];
+
+-- (D) Đảm bảo KHOA không có quyền CUD (Xóa/Sửa/Thêm) Lớp và Sinh viên
+-- Mặc dù REVOKE ở trên đã làm việc này, nhưng DENY sẽ chặn tuyệt đối kể cả khi có GRANT rời rạc.
+DENY EXECUTE ON OBJECT::dbo.sp_ThemLop TO [KHOA];
+DENY EXECUTE ON OBJECT::dbo.sp_SuaLop TO [KHOA];
+DENY EXECUTE ON OBJECT::dbo.sp_XoaLop TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_ThemSinhVien TO [KHOA];
+DENY EXECUTE ON OBJECT::dbo.sp_SuaSinhVien TO [KHOA];
+DENY EXECUTE ON OBJECT::dbo.sp_XoaSinhVien TO [KHOA];
 GO
 
 -- ========================================================
--- 3. NHÓM SV: QUYỀN TỐI THIỂU (LEAST PRIVILEGE)
+-- 3. NHÓM SV: QUYỀN TỐI THIỂU
 -- ========================================================
--- Chỉ cấp quyền chạy đúng những SP dành riêng cho sinh viên
+REVOKE EXECUTE ON schema::dbo FROM [SV];
+GO
+
 GRANT EXECUTE ON OBJECT::dbo.sp_DangNhap_SinhVien TO [SV];
 GRANT EXECUTE ON OBJECT::dbo.sp_LayPhieuDiem TO [SV];
--- (Bổ sung sp_DangKyLopTC, sp_HuyDangKyLopTC... vào đây nếu có)
+GO

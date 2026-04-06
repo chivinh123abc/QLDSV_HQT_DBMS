@@ -1,0 +1,103 @@
+@model QLDSV_HTC.Web.Models.PaginationViewModel
+
+@if (Model.TotalPages > 0)
+{
+    var maxPagesToShow = 5;
+    var startPage = Math.Max(1, Model.PageNumber - maxPagesToShow / 2);
+    var endPage = Math.Min(Model.TotalPages, startPage + maxPagesToShow - 1);
+
+    // Adjust start page if we are near the end
+    if (endPage - startPage + 1 < maxPagesToShow)
+    {
+        startPage = Math.Max(1, endPage - maxPagesToShow + 1);
+    }
+
+    <nav aria-label="Pagination">
+        <ul class="pagination pagination-sm mb-0">
+            @* Previous Button *@
+            <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")">
+                @if (string.IsNullOrEmpty(Model.JsCallback))
+                {
+                    <a class="page-link" href="?page=@(Model.PageNumber - 1)&pageSize=@Model.PageSize"><i class="bi bi-chevron-left"></i></a>
+                }
+                else if (Model.HasPreviousPage)
+                {
+                    <button class="page-link" onclick="@(Model.JsCallback)(@(Model.PageNumber - 1), @Model.PageSize)"><i class="bi bi-chevron-left"></i></button>
+                }
+                else
+                {
+                    <button class="page-link" disabled><i class="bi bi-chevron-left"></i></button>
+                }
+            </li>
+
+            @* First Page & Ellipsis *@
+            @if (startPage > 1)
+            {
+                <li class="page-item">
+                    @if (string.IsNullOrEmpty(Model.JsCallback))
+                    {
+                        <a class="page-link" href="?page=1&pageSize=@Model.PageSize">1</a>
+                    }
+                    else
+                    {
+                        <button class="page-link" onclick="@(Model.JsCallback)(1, @Model.PageSize)">1</button>
+                    }
+                </li>
+                @if (startPage > 2)
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+            }
+
+            @* Page Numbers *@
+            @for (int i = startPage; i <= endPage; i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    @if (string.IsNullOrEmpty(Model.JsCallback))
+                    {
+                        <a class="page-link" href="?page=@i&pageSize=@Model.PageSize">@i</a>
+                    }
+                    else
+                    {
+                        <button class="page-link" onclick="@(Model.JsCallback)(@i, @Model.PageSize)">@i</button>
+                    }
+                </li>
+            }
+
+            @* Last Page & Ellipsis *@
+            @if (endPage < Model.TotalPages)
+            {
+                @if (endPage < Model.TotalPages - 1)
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+                <li class="page-item">
+                    @if (string.IsNullOrEmpty(Model.JsCallback))
+                    {
+                        <a class="page-link" href="?page=@Model.TotalPages&pageSize=@Model.PageSize">@Model.TotalPages</a>
+                    }
+                    else
+                    {
+                        <button class="page-link" onclick="@(Model.JsCallback)(@Model.TotalPages, @Model.PageSize)">@Model.TotalPages</button>
+                    }
+                </li>
+            }
+
+            @* Next Button *@
+            <li class="page-item @(Model.HasNextPage ? "" : "disabled")">
+                @if (string.IsNullOrEmpty(Model.JsCallback))
+                {
+                    <a class="page-link" href="?page=@(Model.PageNumber + 1)&pageSize=@Model.PageSize"><i class="bi bi-chevron-right"></i></a>
+                }
+                else if (Model.HasNextPage)
+                {
+                    <button class="page-link" onclick="@(Model.JsCallback)(@(Model.PageNumber + 1), @Model.PageSize)"><i class="bi bi-chevron-right"></i></button>
+                }
+                else
+                {
+                    <button class="page-link" disabled><i class="bi bi-chevron-right"></i></button>
+                }
+            </li>
+        </ul>
+    </nav>
+}

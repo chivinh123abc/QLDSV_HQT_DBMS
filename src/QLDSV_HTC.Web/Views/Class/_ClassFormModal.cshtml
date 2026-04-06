@@ -12,26 +12,8 @@
         </text>,
         
         ToolbarSection = @<text>
-            <button type="button" class="btn btn-success btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-                    id="btnFormThem" title="Thêm bản ghi mới">
-                <i class="bi bi-plus-circle"></i> Thêm
-            </button>
-            <button type="button" class="btn btn-danger btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-                    id="btnFormXoa" title="Xóa bản ghi đang chọn" disabled>
-                <i class="bi bi-trash"></i> Xóa
-            </button>
-            <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-                    id="btnFormGhi" title="Lưu dữ liệu vào CSDL" disabled>
-                <i class="bi bi-floppy"></i> Ghi
-            </button>
-            <button type="button" class="btn btn-warning btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-                    id="btnFormPhucHoi" title="Phục hồi dữ liệu gốc" disabled>
-                <i class="bi bi-arrow-counterclockwise"></i> Phục hồi
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm ms-auto d-flex align-items-center gap-1 shadow-sm hover-elevate"
-                    id="btnFormThoat" data-bs-dismiss="modal" title="Đóng form">
-                <i class="bi bi-x-circle"></i> Thoát
-            </button>
+            @{ ViewData["IdPrefix"] = "Form"; }
+            @await Html.PartialAsync("_CrudToolbar", null, ViewData)
         </text>,
         
         BodySection = @<text>
