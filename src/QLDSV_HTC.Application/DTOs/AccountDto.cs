@@ -1,8 +1,6 @@
-using System.ComponentModel.DataAnnotations;
-
-namespace QLDSV_HTC.Web.Models
+namespace QLDSV_HTC.Application.DTOs
 {
-    public class AccountViewModel
+    public class AccountDto
     {
         public string LoginName { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
@@ -12,42 +10,20 @@ namespace QLDSV_HTC.Web.Models
         public bool IsDisabled { get; set; }
     }
 
-    public class AccountManagementViewModel
+    public class CreateAccountDto
     {
-        public IEnumerable<AccountViewModel> Accounts { get; set; } = [];
-        public IEnumerable<LecturerViewModel> Lecturers { get; set; } = [];
-        public string CurrentUserGroup { get; set; } = string.Empty;
-    }
-
-    public class AccountInputModel
-    {
-        [Required]
         public string LoginName { get; set; } = string.Empty;
-
-        [Required]
         public string Password { get; set; } = string.Empty;
-
-        [Required]
         public string UserName { get; set; } = string.Empty;
-
-        [Required]
         public string Role { get; set; } = string.Empty;
     }
 
-    public class AccountUpdateInputModel
+    public class UpdateAccountDto
     {
-        [Required]
         public string OldLoginName { get; set; } = string.Empty;
-
         public string? NewLoginName { get; set; }
         public string? NewPassword { get; set; }
         public string? NewUserName { get; set; }
         public string? NewRole { get; set; }
-    }
-
-    public class AccountDeleteModel
-    {
-        [Required]
-        public string LoginName { get; set; } = string.Empty;
     }
 }

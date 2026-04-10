@@ -14,6 +14,10 @@ namespace QLDSV_HTC.Domain.Constants
             public const string DeleteClass = "sp_XoaLop";
 
             public const string GetStudentList = "sp_LayDanhSachSinhVien";
+            public const string GetStudentById = "sp_LayThongTinSinhVien";
+            public const string GetCreditClassListForSV = "sp_LayDanhSachLopTinChi_SinhVien";
+            public const string RegisterCreditClass = "sp_DangKyLopTinChi";
+            public const string UnregisterCreditClass = "sp_HuyDangKyLopTinChi";
             public const string AddStudent = "sp_ThemSinhVien";
             public const string UpdateStudent = "sp_SuaSinhVien";
             public const string DeleteStudent = "sp_XoaSinhVien";
@@ -33,6 +37,10 @@ namespace QLDSV_HTC.Domain.Constants
             public const string AddCreditClass = "sp_ThemLopTinChi";
             public const string UpdateCreditClass = "sp_SuaLopTinChi";
             public const string DeleteCreditClass = "sp_XoaLopTinChi";
+            public const string GetAccountList = "sp_LayDanhSachTaiKhoan";
+            public const string CreateAccount = "sp_TaoTaiKhoan";
+            public const string UpdateAccount = "sp_SuaTaiKhoan";
+            public const string DeleteAccount = "sp_XoaTaiKhoan";
 
             public const string DynamicPagination = "sp_PhanTrangDong";
         }

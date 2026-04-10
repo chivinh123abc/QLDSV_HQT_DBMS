@@ -78,6 +78,19 @@ namespace QLDSV_HTC.Domain.Constants
             public const string LecturerId = "@MAGV";
         }
 
+        public static class AccountCrud
+        {
+            public const string LoginName = "@LGNAME";
+            public const string Password = "@PASS";
+            public const string UserName = "@USERNAME";
+            public const string Role = "@ROLE";
+            public const string OldLoginName = "@OLD_LGNAME";
+            public const string NewLoginName = "@NEW_LGNAME";
+            public const string NewPassword = "@NEW_PASS";
+            public const string NewUserName = "@NEW_USERNAME";
+            public const string NewRole = "@NEW_ROLE";
+        }
+
         public static class Pagination
         {
             public const string SelectCols = "@SelectCols";

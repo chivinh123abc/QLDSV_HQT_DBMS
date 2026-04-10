@@ -62,6 +62,16 @@ namespace QLDSV_HTC.Domain.Constants
                 public const string ClassName = "TENLOP";
                 public const string OnLeave = "DANGHIHOC";
             }
+
+            public static class Account
+            {
+                public const string LoginName = "LoginName";
+                public const string UserName = "UserName";
+                public const string GroupName = "GroupName";
+                public const string LecturerId = "LecturerId";
+                public const string LecturerFullName = "LecturerFullName";
+                public const string IsDisabled = "IsDisabled";
+            }
         }
     }
 }

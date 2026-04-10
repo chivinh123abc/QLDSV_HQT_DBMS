@@ -118,11 +118,11 @@ namespace QLDSV_HTC.Web.Controllers
                     StudentId = model.StudentId,
                     FirstName = model.FirstName,
                     LastName = model.LastName,
-                    Gender = model.Gender.GetValueOrDefault(),
+                    Gender = model.Gender ?? false,
                     Address = model.Address,
                     Dob = string.IsNullOrEmpty(model.Dob) ? null : DateTime.Parse(model.Dob, System.Globalization.CultureInfo.InvariantCulture),
                     ClassId = model.ClassId,
-                    OnLeave = model.OnLeave.GetValueOrDefault(),
+                    OnLeave = model.OnLeave ?? false,
                     Password = model.Password
                 };
 
@@ -154,11 +154,11 @@ namespace QLDSV_HTC.Web.Controllers
                     StudentId = model.StudentId,
                     FirstName = model.FirstName,
                     LastName = model.LastName,
-                    Gender = model.Gender.GetValueOrDefault(),
+                    Gender = model.Gender ?? false,
                     Address = model.Address,
                     Dob = string.IsNullOrEmpty(model.Dob) ? null : DateTime.Parse(model.Dob, System.Globalization.CultureInfo.InvariantCulture),
                     ClassId = model.ClassId,
-                    OnLeave = model.OnLeave.GetValueOrDefault(),
+                    OnLeave = model.OnLeave ?? false,
                     Password = string.IsNullOrEmpty(model.Password) ? null : model.Password
                 };
 

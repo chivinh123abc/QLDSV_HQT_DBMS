@@ -50,7 +50,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                 new SqlParameter("@SOSVTOITHIEU", dto.MinStudents),
                 new SqlParameter("@HUYLOP", dto.IsCancelled)
             );
-            
+
             return result != null && result != DBNull.Value ? Convert.ToInt32(result) : 0;
         }
 
