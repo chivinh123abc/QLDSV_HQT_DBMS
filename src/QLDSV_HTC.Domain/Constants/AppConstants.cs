@@ -18,6 +18,11 @@ namespace QLDSV_HTC.Domain.Constants
             public const string UpdateStudent = "sp_SuaSinhVien";
             public const string DeleteStudent = "sp_XoaSinhVien";
 
+            public const string GetLecturerList = "sp_LayDanhSachGiangVien";
+            public const string AddLecturer = "sp_ThemGiangVien";
+            public const string UpdateLecturer = "sp_SuaGiangVien";
+            public const string DeleteLecturer = "sp_XoaGiangVien";
+
             public const string DynamicPagination = "sp_PhanTrangDong";
         }
 
