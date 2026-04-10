@@ -24,6 +24,7 @@ GRANT EXECUTE ON OBJECT::dbo.sp_DangNhap TO [KHOA];
 GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachLop TO [KHOA];
 GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachSinhVien TO [KHOA];
 GRANT EXECUTE ON OBJECT::dbo.sp_PhanTrangDong TO [KHOA];
+GRANT VIEW DEFINITION TO [KHOA]; 
 
 -- (D) Đảm bảo KHOA không có quyền CUD (Xóa/Sửa/Thêm) Lớp và Sinh viên
 -- Mặc dù REVOKE ở trên đã làm việc này, nhưng DENY sẽ chặn tuyệt đối kể cả khi có GRANT rời rạc.

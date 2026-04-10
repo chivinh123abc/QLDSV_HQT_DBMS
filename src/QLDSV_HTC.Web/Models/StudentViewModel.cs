@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace QLDSV_HTC.Web.Models
 {
     public class StudentViewModel
@@ -24,14 +26,20 @@ namespace QLDSV_HTC.Web.Models
     public class StudentInputModel
     {
         public string? OldStudentId { get; set; }
+        [Required]
         public string StudentId { get; set; } = string.Empty;
+        [Required]
         public string FirstName { get; set; } = string.Empty;
+        [Required]
         public string LastName { get; set; } = string.Empty;
-        public bool Gender { get; set; }
+        [Required]
+        public bool? Gender { get; set; }
         public string? Address { get; set; }
         public string? Dob { get; set; }
+        [Required]
         public string ClassId { get; set; } = string.Empty;
-        public bool OnLeave { get; set; }
+        [Required]
+        public bool? OnLeave { get; set; }
         public string? Password { get; set; }
     }
 

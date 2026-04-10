@@ -1,0 +1,149 @@
+@model QLDSV_HTC.Web.Models.AccountManagementViewModel
+@using QLDSV_HTC.Web.Models
+@using QLDSV_HTC.Domain.Constants
+
+@{
+    var isPGV = Model.CurrentUserGroup == AppConstants.Groups.PGV;
+    
+    var modalModel = new GenericFormModalViewModel
+    {
+        ModeBadgeSection = @<text>
+            <span class="badge bg-white text-primary ms-2 animate__animated animate__fadeIn" id="accFormModeLabel" style="font-size:.7rem">Chế độ: Xem</span>
+        </text>,
+        
+        ToolbarSection = @<text>
+            <button type="button" class="btn btn-success btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
+                    id="btnAccThem" title="Thêm tài khoản mới">
+                <i class="bi bi-plus-circle"></i> Thêm
+            </button>
+            <button type="button" class="btn btn-danger btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
+                    id="btnAccXoa" title="Xóa tài khoản đang chọn" disabled>
+                <i class="bi bi-trash"></i> Xóa
+            </button>
+            <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
+                    id="btnAccGhi" title="Lưu dữ liệu vào CSDL" disabled>
+                <i class="bi bi-floppy"></i> Ghi
+            </button>
+            <button type="button" class="btn btn-warning btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
+                    id="btnAccPhucHoi" title="Phục hồi dữ liệu gốc" disabled>
+                <i class="bi bi-arrow-counterclockwise"></i> Phục hồi
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
+                    id="btnAccHuy" title="Hủy thao tác hiện tại" disabled>
+                <i class="bi bi-x-octagon"></i> Hủy
+            </button>
+            <button type="button"
+                    class="btn btn-secondary btn-sm ms-auto d-flex align-items-center gap-1 shadow-sm hover-elevate"
+                    id="btnAccThoat" data-bs-dismiss="modal" title="Đóng form">
+                <i class="bi bi-x-circle"></i> Thoát
+            </button>
+        </text>,
+        
+        BodySection = @<text>
+            <div class="row g-3">
+                @* ── Giảng viên (combo box) ── *@
+                <div class="col-md-8">
+                    <label for="fldLecturer" class="form-label fw-semibold">
+                        Giảng viên
+                    </label>
+                    <select class="form-select" id="fldLecturer" disabled>
+                        <option value="">— Chọn giảng viên —</option>
+                        @foreach (var l in Model.Lecturers)
+                        {
+                            <option value="@l.Id?.Trim()">@l.FirstName @l.LastName (@l.Id?.Trim())</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="fldAccLecturerId" class="form-label fw-semibold">
+                        Mã Giảng Viên
+                    </label>
+                    <input type="text" class="form-control font-monospace bg-light" id="fldAccLecturerId"
+                           readonly placeholder="Tự động điền">
+                </div>
+
+                @* ── Tên đăng nhập (Login Name) ── *@
+                <div class="col-md-6">
+                    <label for="fldLoginName" class="form-label fw-semibold">
+                        Tên đăng nhập <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control font-monospace border-primary-subtle" id="fldLoginName"
+                           maxlength="50" placeholder="VD: gv01" disabled>
+                    <div class="invalid-feedback">Vui lòng nhập tên đăng nhập.</div>
+                </div>
+
+                @* ── Mật khẩu ── *@
+                <div class="col-md-6">
+                    <label for="fldPassword" class="form-label fw-semibold">
+                        Mật khẩu <span class="text-danger" id="reqPasswordStar">*</span>
+                    </label>
+                    <input type="password" class="form-control" id="fldPassword"
+                           maxlength="50" placeholder="Nhập mật khẩu" disabled>
+                    <div class="invalid-feedback">Vui lòng nhập mật khẩu.</div>
+                </div>
+
+                @* ── Nhóm quyền ── *@
+                <div class="col-md-6">
+                    <label for="fldRole" class="form-label fw-semibold">
+                        Nhóm quyền <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" id="fldRole" disabled>
+                        <option value="">— Chọn nhóm —</option>
+                        @if (isPGV)
+                        {
+                            <option value="PGV">PGV — Phòng Giáo vụ</option>
+                        }
+                        <option value="KHOA">KHOA — Khoa</option>
+                    </select>
+                    <div class="invalid-feedback">Vui lòng chọn nhóm quyền.</div>
+                </div>
+            </div>
+        </text>,
+        
+        ExtraBodySection = @<text>
+            <h6 class="fw-bold mb-3 text-primary d-flex align-items-center gap-2">
+                <i class="bi bi-list-ul"></i>
+                <span>Danh sách tài khoản hiện có</span>
+            </h6>
+            <div class="table-responsive rounded-3 border border-light-subtle shadow-sm" style="max-height:240px; overflow-y:auto">
+                <table class="table table-sm table-hover align-middle mb-0" id="miniAccountTable">
+                    <thead class="table-light sticky-top">
+                        <tr class="small text-muted">
+                            <th>Tên đăng nhập</th>
+                            <th>Tên User</th>
+                            <th>Nhóm</th>
+                        </tr>
+                    </thead>
+                    <tbody id="miniAccountBody" class="small">
+                        @foreach (var a in Model.Accounts)
+                        {
+                            var miniBadge = a.GroupName switch
+                            {
+                                "PGV" => "bg-info-subtle text-info border-info-subtle",
+                                "KHOA" => "bg-primary-subtle text-primary border-primary-subtle",
+                                _ => "bg-secondary-subtle text-secondary border-secondary-subtle"
+                            };
+                            <tr class="mini-row transition-base" role="button"
+                                data-login="@a.LoginName" data-user="@a.UserName" data-group="@a.GroupName"
+                                data-gv-id="@(a.LecturerId ?? "")" data-gv-name="@(a.LecturerFullName ?? "")">
+                                <td class="fw-bold font-monospace text-primary small">@a.LoginName</td>
+                                <td class="small fw-medium">@a.UserName</td>
+                                <td><span class="badge @miniBadge border small px-2">@a.GroupName</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </text>
+    };
+
+    ViewData["ModalId"] = "accountFormModal";
+    ViewData["ModalLabelId"] = "accountFormModalLabel";
+    ViewData["ModalTitle"] = "Nhập danh mục Tài khoản";
+    ViewData["ModalIcon"] = "bi-gear";
+    ViewData["FormId"] = "accountForm";
+    ViewData["AlertId"] = "accFormAlert";
+    ViewData["ModalSize"] = "modal-lg";
+}
+
+@await Html.PartialAsync("_FormModalWrapper", modalModel, ViewData)
