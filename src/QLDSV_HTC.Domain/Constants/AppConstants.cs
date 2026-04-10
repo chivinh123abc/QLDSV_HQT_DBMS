@@ -13,6 +13,11 @@ namespace QLDSV_HTC.Domain.Constants
             public const string UpdateClass = "sp_SuaLop";
             public const string DeleteClass = "sp_XoaLop";
 
+            public const string GetFacultyList = "sp_LayDanhSachKhoa";
+            public const string AddFaculty = "sp_ThemKhoa";
+            public const string UpdateFaculty = "sp_SuaKhoa";
+            public const string DeleteFaculty = "sp_XoaKhoa";
+
             public const string GetStudentList = "sp_LayDanhSachSinhVien";
             public const string AddStudent = "sp_ThemSinhVien";
             public const string UpdateStudent = "sp_SuaSinhVien";

@@ -4,19 +4,49 @@
 @{
     ViewData["Title"] = "Quản lý Sinh viên - Theo Lớp";
 
+
+
+
+
+
+
+
+
+
+
     bool isPGV = string.IsNullOrEmpty(Model.CurrentFacultyId);
+
+
+
+
+
+
+
+
+
+
 
     var requestToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }
 
 <div class="dashboard-container">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h3 mb-0 text-gray-800">Quản lý Sinh viên</h1>
+        <h1 class="h3 mb-1 fw-bold text-gray-800">Quản lý Sinh viên</h1>
     </div>
 
     <!-- Master: Lớp -->
     @{
         ViewData["isPGV"] = isPGV;
+
+
+
+
+
+
+
+
+
+
 
         ViewData["Faculties"] = Model.Faculties;
     }
@@ -35,35 +65,41 @@
                 </button>
             }
         </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="studentTable">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Mã SV</th>
-                            <th>Họ và Tên</th>
-                            <th>Phái</th>
-                            <th>Ngày sinh</th>
-                            <th>Địa chỉ</th>
-                            <th>Trạng thái</th>
-                            @if (User.IsInRole(AppConstants.Groups.PGV))
-                            {
-                                <th class="text-end">Hành động</th>
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan="7" class="text-center text-muted">Vui lòng chọn 1 lớp ở bảng trên.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="mt-3 d-flex justify-content-between align-items-center" id="studentPaginationContainer" style="display: none !important;">
-                <span class="text-muted small" id="studentDisplayCount"></span>
-                <div id="studentPaginationControls"></div>
-            </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="studentTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã SV</th>
+                        <th>Họ và Tên</th>
+                        <th>Phái</th>
+                        <th>Ngày sinh</th>
+                        <th>Địa chỉ</th>
+                        <th>Trạng thái</th>
+                        @if (User.IsInRole(AppConstants.Groups.PGV))
+
+
+
+
+
+                        {
+                            <th class="text-end">Hành động</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">Vui lòng chọn 1 lớp ở bảng trên.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-3 d-flex justify-content-between align-items-center" id="studentPaginationContainer"
+            style="display: none !important;">
+            <span class="text-muted small" id="studentDisplayCount"></span>
+            <div id="studentPaginationControls"></div>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Modal Thêm/Sửa Sinh Viên -->
@@ -170,7 +206,7 @@
                 });
         };
 
-        window.goToStudentPage = function(page, pageSize) {
+        window.goToStudentPage = function (page, pageSize) {
             if (!currentSelectedClassId) return;
             const className = document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', '').split(' (')[0];
             window.loadStudentsForClass(currentSelectedClassId, className, page);
@@ -180,14 +216,14 @@
             const container = document.getElementById('studentPaginationContainer');
             const controls = document.getElementById('studentPaginationControls');
             const displayCount = document.getElementById('studentDisplayCount');
-            
+
             if (pagination.totalCount === 0) {
                 container.style.setProperty('display', 'none', 'important');
                 return;
             }
-            
+
             container.style.setProperty('display', 'flex', 'important');
-            
+
             const startItem = (pagination.pageNumber - 1) * pagination.pageSize + 1;
             const endItem = Math.min(pagination.pageNumber * pagination.pageSize, pagination.totalCount);
             displayCount.innerHTML = `Hiển thị <strong>${endItem - startItem + 1}</strong> / ${pagination.totalCount} sinh viên`;
@@ -200,13 +236,13 @@
             const maxPagesToShow = 5;
             let startPage = Math.max(1, pagination.pageNumber - Math.floor(maxPagesToShow / 2));
             let endPage = Math.min(pagination.totalPages, startPage + maxPagesToShow - 1);
-            
+
             if (endPage - startPage + 1 < maxPagesToShow) {
                 startPage = Math.max(1, endPage - maxPagesToShow + 1);
             }
 
             let html = '<nav aria-label="Pagination"><ul class="pagination pagination-sm mb-0">';
-            
+
             // Prev
             if (pagination.hasPreviousPage) {
                 html += `<li class="page-item"><button class="page-link" onclick="goToStudentPage(${pagination.pageNumber - 1}, ${pagination.pageSize})"><i class="bi bi-chevron-left"></i></button></li>`;
@@ -262,18 +298,18 @@
             data.forEach(s => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                        <td class="fw-medium text-primary">${s.studentId}</td>
-                        <td>${s.firstName} ${s.lastName}</td>
-                        <td>${s.gender ? 'Nữ' : 'Nam'}</td>
-                        <td>${s.dob ? formatDateDisplay(s.dob) : ''}</td>
-                        <td>${s.address || ''}</td>
-                        <td>${s.onLeave ? '<span class="badge bg-danger">Nghỉ học</span>' : '<span class="badge bg-success">Đang học</span>'}</td>
-                        ${isPGV ? `
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent('${s.studentId}')"><i class="bi bi-trash"></i></button>
-                        </td>` : ''}
-                    `;
+                                            <td class="fw-medium text-primary">${s.studentId}</td>
+                                            <td>${s.firstName} ${s.lastName}</td>
+                                            <td>${s.gender ? 'Nữ' : 'Nam'}</td>
+                                            <td>${s.dob ? formatDateDisplay(s.dob) : ''}</td>
+                                            <td>${s.address || ''}</td>
+                                            <td>${s.onLeave ? '<span class="badge bg-danger">Nghỉ học</span>' : '<span class="badge bg-success">Đang học</span>'}</td>
+                                            ${isPGV ? `
+                                            <td class="text-end">
+                                                <button class="btn btn-sm btn-outline-primary me-1" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent('${s.studentId}')"><i class="bi bi-trash"></i></button>
+                                            </td>` : ''}
+                                        `;
                 tbody.appendChild(tr);
             });
         }
@@ -340,16 +376,16 @@
             const url = helpers.getMode() === 'add' ? '@RouteConstants.Student.AddPath' : '@RouteConstants.Student.EditPath';
 
             const dataObj = {
-                OldStudentId: originalStudentId,
-                StudentId: fldStudentId.value.trim(),
-                FirstName: fldFirstName.value.trim(),
-                LastName: fldLastName.value.trim(),
-                Gender: fldGender.value === 'true',
-                Dob: fldDob.value,
-                Address: fldAddress.value.trim(),
-                ClassId: fldClassId.value,
-                OnLeave: fldOnLeave.checked,
-                Password: fldPassword.value
+                oldStudentId: originalStudentId,
+                studentId: fldStudentId.value.trim(),
+                firstName: fldFirstName.value.trim(),
+                lastName: fldLastName.value.trim(),
+                gender: fldGender.value === 'true',
+                dob: fldDob.value,
+                address: fldAddress.value.trim(),
+                classId: fldClassId.value,
+                onLeave: fldOnLeave.checked,
+                password: fldPassword.value
             };
 
             fetch(url, {

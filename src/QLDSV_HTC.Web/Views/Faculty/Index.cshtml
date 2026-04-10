@@ -1,12 +1,10 @@
-@model QLDSV_HTC.Web.Models.ClassManagementViewModel
+@model QLDSV_HTC.Web.Models.FacultyManagementViewModel
 @using QLDSV_HTC.Domain.Constants
 @{
-    ViewData["Title"] = "Quản lý Lớp";
+    ViewData["Title"] = "Quản lý Khoa";
     var isPGV = User.IsInRole("PGV");
-    var hasFaculty = !string.IsNullOrEmpty(Model.CurrentFacultyId);
-    var pageTitle = hasFaculty
-    ? $"Danh sách Lớp — Khoa {Model.CurrentFacultyId}"
-    : "Danh sách Lớp toàn trường";
+    var hasFaculty = User.IsInRole("KHOA");
+    var pageTitle = "Danh sách Khoa";
 
     ViewData["isPGV"] = isPGV;
     ViewData["hasFaculty"] = hasFaculty;
@@ -14,39 +12,33 @@
 
 <div class="dashboard-container fade-in-up">
 
-    @* ── Thanh tiêu đề + nút Thêm Lớp Mới ── *@
+    @* ── Thanh tiêu đề + nút Thêm Khoa ── *@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 mb-1 fw-bold text-gray-800">@pageTitle</h1>
             <p class="text-muted mb-0 small">
-                <i class="bi bi-mortarboard me-1"></i>
-                Tổng: <strong>@Model.Classes.Count()</strong> lớp
-                @if (hasFaculty)
-                {
-                    <span class="ms-2 badge bg-primary-subtle text-primary border border-primary-subtle">
-                        <i class="bi bi-building me-1"></i>@Model.CurrentFacultyId
-                    </span>
-                }
+                <i class="bi bi-building me-1"></i>
+                Tổng: <strong>@Model.Faculties.Count()</strong> khoa
             </p>
         </div>
         @if (isPGV)
         {
-            <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2" id="btnOpenClassForm" type="button"
-                data-bs-toggle="modal" data-bs-target="#classFormModal">
+            <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2" id="btnOpenFacultyForm" type="button"
+                data-bs-toggle="modal" data-bs-target="#facultyFormModal">
                 <i class="bi bi-pencil-square"></i>
-                <span>Cập nhật danh mục Lớp</span>
+                <span>Cập nhật danh mục Khoa</span>
             </button>
         }
     </div>
 
-    @* ── Bảng danh sách lớp ── *@
-    @await Html.PartialAsync("_ClassTable", Model, ViewData)
+    @* ── Bảng danh sách khoa ── *@
+    @await Html.PartialAsync("_FacultyTable", Model, ViewData)
 </div>
 
 @* ══════════════════════════════════════════════════════════
-MODAL: Nhập danh mục lớp / Xác nhận xóa
+MODAL: Nhập danh mục khoa / Xác nhận xóa
 ══════════════════════════════════════════════════════════ *@
-@await Html.PartialAsync("_ClassFormModal", Model, ViewData)
+@await Html.PartialAsync("_FacultyFormModal", Model, ViewData)
 <partial name="_DeleteConfirmModal" />
 
 @section Scripts {
@@ -55,20 +47,18 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
         (function () {
             'use strict';
 
-            const URL_ADD = '@RouteConstants.Class.AddPath';
-            const URL_EDIT = '@RouteConstants.Class.EditPath';
-            const URL_DELETE = '@RouteConstants.Class.DeletePath';
+            const URL_ADD = '@RouteConstants.Faculty.AddPath';
+            const URL_EDIT = '@RouteConstants.Faculty.EditPath';
+            const URL_DELETE = '@RouteConstants.Faculty.DeletePath';
 
             let snapshotData = null;
             let selectedId = null;
             let originalId = null;
 
-            const modal = document.getElementById('classFormModal');
+            const modal = document.getElementById('facultyFormModal');
             const deleteModal = document.getElementById('deleteConfirmModal');
-            const fldClassId = document.getElementById('fldClassId');
-            const fldClassName = document.getElementById('fldClassName');
-            const fldSchoolYear = document.getElementById('fldSchoolYear');
             const fldFacultyId = document.getElementById('fldFacultyId');
+            const fldFacultyName = document.getElementById('fldFacultyName');
 
             const btnThem = document.getElementById('btnFormThem');
             const btnXoa = document.getElementById('btnFormXoa');
@@ -81,14 +71,13 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 alertEl: document.getElementById('formAlert'),
                 modeLabelEl: document.getElementById('formModeLabel'),
                 buttons: { them: btnThem, xoa: btnXoa, ghi: btnGhi, phucHoi: btnPhucHoi, huy: btnHuy },
-                allFields: [fldClassId, fldClassName, fldSchoolYear, fldFacultyId],
-                requiredFields: [fldClassId, fldClassName, fldSchoolYear, fldFacultyId],
+                allFields: [fldFacultyId, fldFacultyName],
+                requiredFields: [fldFacultyId, fldFacultyName],
                 getSelectedId: () => selectedId,
             });
 
             // ── Xử lý modal xác nhận xóa ────────────────────────────
             let pendingDeleteId = null;
-            let pendingDeleteName = null;
 
             if (deleteModal) {
                 document.getElementById('btnConfirmDelete').addEventListener('click', async () => {
@@ -99,7 +88,6 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
 
             function showDeleteModal(id, name) {
                 pendingDeleteId = id;
-                pendingDeleteName = name;
                 document.getElementById('deleteTargetId').textContent = id;
                 document.getElementById('deleteTargetName').textContent = name;
                 bootstrap.Modal.getOrCreateInstance(deleteModal).show();
@@ -107,15 +95,13 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
 
             if (!modal) return;
 
-            // Mở modal qua nút Thêm Lớp Mới → reset về view
-            document.getElementById('btnOpenClassForm')?.addEventListener('click', resetToView);
-
-            // Reset khi đóng modal
+            // Mở modal
+            document.getElementById('btnOpenFacultyForm')?.addEventListener('click', resetToView);
             modal.addEventListener('hidden.bs.modal', resetToView);
 
-            // Chọn hàng trong mini-table → chỉ block khi đang ở chế độ Thêm
-            document.getElementById('miniClassBody').addEventListener('click', e => {
-                if (helpers.getMode() === 'add') return; // Đang Thêm → không cho chuyển sang Sửa
+            // Chọn hàng trong mini-table (bên trong form modal)
+            document.getElementById('miniFacultyBody').addEventListener('click', e => {
+                if (helpers.getMode() === 'add') return;
                 const row = e.target.closest('tr.mini-row');
                 if (!row) return;
                 selectMiniRow(row);
@@ -129,15 +115,15 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 clearFields();
                 helpers.clearValidation();
                 helpers.setMode('add');
-                fldClassId.disabled = false;
-                fldClassId.focus();
-                helpers.showAlert('Nhập thông tin lớp mới rồi nhấn <b>Ghi</b> để lưu.', 'info');
+                fldFacultyId.disabled = false;
+                fldFacultyId.focus();
+                helpers.showAlert('Nhập thông tin khoa mới rồi nhấn <b>Ghi</b> để lưu.', 'info');
             });
 
             // ── Nút Xóa ──────────────────────────────────────────────
             btnXoa.addEventListener('click', () => {
                 if (!selectedId) return;
-                showDeleteModal(selectedId, fldClassName.value);
+                showDeleteModal(selectedId, fldFacultyName.value);
             });
 
             // ── Nút Ghi ──────────────────────────────────────────────
@@ -145,11 +131,9 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 if (!helpers.validateForm()) return;
 
                 const payload = {
-                    oldClassId: originalId,
-                    classId: fldClassId.value.trim(),
-                    className: fldClassName.value.trim(),
-                    schoolYear: fldSchoolYear.value.trim(),
+                    oldFacultyId: originalId,
                     facultyId: fldFacultyId.value.trim(),
+                    facultyName: fldFacultyName.value.trim(),
                 };
 
                 try {
@@ -159,8 +143,8 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                         if (helpers.getMode() === 'add') addRowToTables(payload);
                         else updateRowInTables(payload, originalId);
                         snapshotData = { ...payload };
-                        selectedId = payload.classId;
-                        originalId = payload.classId;
+                        selectedId = payload.facultyId;
+                        originalId = payload.facultyId;
                         helpers.setMode('edit');
                         highlightMiniRow(selectedId);
                     } else {
@@ -174,30 +158,26 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
             // ── Nút Phục hồi ─────────────────────────────────────────
             btnPhucHoi.addEventListener('click', () => {
                 if (!snapshotData) { resetToView(); return; }
-                fldClassId.value = snapshotData.classId;
-                fldClassName.value = snapshotData.className;
-                fldSchoolYear.value = snapshotData.schoolYear;
                 fldFacultyId.value = snapshotData.facultyId;
+                fldFacultyName.value = snapshotData.facultyName;
                 helpers.clearValidation();
-                helpers.showAlert('Dữ liệu đã được phục hồi về trạng thái ban đầu.', 'warning');
+                helpers.showAlert('Dữ liệu đã được phục hồi.', 'warning');
             });
 
             // ── Nút Hủy ──────────────────────────────────────────────
             btnHuy?.addEventListener('click', resetToView);
 
             // ── Sửa / Xóa nhanh từ bảng chính ───────────────────────
-            document.getElementById('classTableBody').addEventListener('click', e => {
+            document.getElementById('facultyTableBody').addEventListener('click', e => {
                 const editBtn = e.target.closest('.btn-edit-row');
                 const delBtn = e.target.closest('.btn-delete-row');
 
                 if (editBtn) {
                     const id = editBtn.dataset.id;
                     const name = editBtn.dataset.name;
-                    const year = editBtn.dataset.year;
-                    const facultyId = editBtn.dataset.faculty;
                     bootstrap.Modal.getOrCreateInstance(modal).show();
                     setTimeout(() => {
-                        populateFields(id, name, year, facultyId);
+                        populateFields(id, name);
                         helpers.setMode('edit');
                         highlightMiniRow(id);
                         helpers.hideAlert();
@@ -205,9 +185,7 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 }
 
                 if (delBtn) {
-                    const id = delBtn.dataset.id;
-                    const name = delBtn.dataset.name;
-                    showDeleteModal(id, name);
+                    showDeleteModal(delBtn.dataset.id, delBtn.dataset.name);
                 }
             });
 
@@ -219,48 +197,43 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 helpers.setMode('view');
             }
 
-            function populateFields(id, name, year, facultyId) {
-                fldClassId.value = id;
-                fldClassName.value = name;
-                fldSchoolYear.value = year;
-                fldFacultyId.value = facultyId;
+            function populateFields(id, name) {
+                fldFacultyId.value = id;
+                fldFacultyName.value = name;
                 selectedId = id;
                 originalId = id;
                 snapshotData = { 
-                    classId: id, 
-                    className: name, 
-                    schoolYear: year, 
-                    facultyId: facultyId 
+                    facultyId: id, 
+                    facultyName: name 
                 };
             }
 
             function clearFields() {
-                fldClassId.value = fldClassName.value = fldSchoolYear.value = '';
-                fldFacultyId.value = '';
+                fldFacultyId.value = fldFacultyName.value = '';
             }
 
             function selectMiniRow(row) {
                 deselectMiniRow();
                 row.classList.add('table-active', 'fw-semibold');
-                populateFields(row.dataset.id, row.dataset.name, row.dataset.year, row.dataset.faculty);
+                populateFields(row.dataset.id, row.dataset.name);
                 helpers.setMode('edit');
                 helpers.hideAlert();
             }
 
             function highlightMiniRow(id) {
                 deselectMiniRow();
-                const row = document.querySelector(`#miniClassBody tr[data-id="${CSS.escape(id)}"]`);
+                const row = document.querySelector(`#miniFacultyBody tr[data-id="${CSS.escape(id)}"]`);
                 if (row) row.classList.add('table-active', 'fw-semibold');
             }
 
             function deselectMiniRow() {
-                document.querySelectorAll('#miniClassBody tr.table-active')
+                document.querySelectorAll('#miniFacultyBody tr.table-active')
                     .forEach(r => r.classList.remove('table-active', 'fw-semibold'));
             }
 
             async function doDelete(id) {
                 try {
-                    const res = await fetchJson(URL_DELETE, { classId: id });
+                    const res = await fetchJson(URL_DELETE, { facultyId: id });
                     if (res.success) {
                         removeRowFromTables(id);
                         resetToView();
@@ -273,31 +246,25 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 }
             }
 
-            // ── DOM table helpers ─────────────────────────────────────
-
             function addRowToTables(p) {
-                const opt = fldFacultyId.querySelector(`option[value="${p.facultyId}"]`);
-                const facultyName = opt ? opt.textContent : p.facultyId;
-                const tbody = document.getElementById('classTableBody');
+                const tbody = document.getElementById('facultyTableBody');
                 const empty = tbody.querySelector('td[colspan]');
                 if (empty) empty.closest('tr').remove();
-                tbody.insertAdjacentHTML('beforeend', mainRowHtml(p, facultyName));
-                document.getElementById('miniClassBody').insertAdjacentHTML('beforeend', miniRowHtml(p));
+                tbody.insertAdjacentHTML('beforeend', mainRowHtml(p));
+                document.getElementById('miniFacultyBody').insertAdjacentHTML('beforeend', miniRowHtml(p));
                 updateCount(1);
             }
 
             function updateRowInTables(p, oldId) {
-                const opt = fldFacultyId.querySelector(`option[value="${p.facultyId}"]`);
-                const facultyName = opt ? opt.textContent : p.facultyId;
-                const main = document.querySelector(`#classTableBody tr[data-id="${CSS.escape(oldId)}"]`);
-                if (main) main.outerHTML = mainRowHtml(p, facultyName);
-                const mini = document.querySelector(`#miniClassBody  tr[data-id="${CSS.escape(oldId)}"]`);
+                const main = document.querySelector(`#facultyTableBody tr[data-id="${CSS.escape(oldId)}"]`);
+                if (main) main.outerHTML = mainRowHtml(p);
+                const mini = document.querySelector(`#miniFacultyBody  tr[data-id="${CSS.escape(oldId)}"]`);
                 if (mini) mini.outerHTML = miniRowHtml(p);
             }
 
             function removeRowFromTables(id) {
-                document.querySelector(`#classTableBody tr[data-id="${CSS.escape(id)}"]`)?.remove();
-                document.querySelector(`#miniClassBody  tr[data-id="${CSS.escape(id)}"]`)?.remove();
+                document.querySelector(`#facultyTableBody tr[data-id="${CSS.escape(id)}"]`)?.remove();
+                document.querySelector(`#miniFacultyBody  tr[data-id="${CSS.escape(id)}"]`)?.remove();
                 updateCount(-1);
             }
 
@@ -306,24 +273,17 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 if (el) el.textContent = String(parseInt(el.textContent || '0', 10) + delta);
             }
 
-            function mainRowHtml(p, facultyName) {
-                return `<tr data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
-                                data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}"
-                                data-faculty-filter="${escapeHtml(p.facultyId)}">
-                        <td class="fw-semibold font-monospace text-primary">${escapeHtml(p.classId)}</td>
-                        <td>${escapeHtml(p.className)}</td>
-                        <td>${escapeHtml(p.schoolYear)}</td>
-                        <td>
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">${escapeHtml(p.facultyId)}</span>
-                        </td>
+            function mainRowHtml(p) {
+                return `<tr data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}">
+                        <td class="fw-semibold font-monospace text-primary">${escapeHtml(p.facultyId)}</td>
+                        <td>${escapeHtml(p.facultyName)}</td>
                         <td class="text-end">
                             <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row" title="Sửa"
-                                    data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
-                                    data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}">
+                                    data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <button class="btn btn-sm btn-outline-danger btn-delete-row" title="Xóa"
-                                    data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}">
+                                    data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>
@@ -332,12 +292,9 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
 
             function miniRowHtml(p) {
                 return `<tr class="mini-row" role="button"
-                                data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
-                                data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}">
-                        <td class="fw-semibold font-monospace text-primary small">${escapeHtml(p.classId)}</td>
-                        <td class="small">${escapeHtml(p.className)}</td>
-                        <td class="small">${escapeHtml(p.schoolYear)}</td>
-                        <td><span class="badge bg-secondary-subtle text-secondary border small">${escapeHtml(p.facultyId)}</span></td>
+                                data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}">
+                        <td class="fw-semibold font-monospace text-primary small">${escapeHtml(p.facultyId)}</td>
+                        <td class="small">${escapeHtml(p.facultyName)}</td>
                     </tr>`;
             }
 
@@ -353,26 +310,18 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 return json;
             }
 
-            // ── Client-side search + faculty filter ─────────────────────
-            ['classSearch', 'facultyFilter'].forEach(id => {
-                document.getElementById(id)?.addEventListener('input', applyFilters);
-                document.getElementById(id)?.addEventListener('change', applyFilters);
-            });
-
-            function applyFilters() {
-                const q = (document.getElementById('classSearch')?.value ?? '').toLowerCase();
-                const faculty = document.getElementById('facultyFilter')?.value ?? '';
+            // Client-side search
+            document.getElementById('facultySearch')?.addEventListener('input', () => {
+                const q = (document.getElementById('facultySearch')?.value ?? '').toLowerCase();
                 let vis = 0;
-                document.querySelectorAll('#classTableBody tr[data-id]').forEach(row => {
-                    const match =
-                        (!q || row.dataset.id.toLowerCase().includes(q) || (row.dataset.name ?? '').toLowerCase().includes(q)) &&
-                        (!faculty || row.dataset.facultyFilter === faculty);
+                document.querySelectorAll('#facultyTableBody tr[data-id]').forEach(row => {
+                    const match = !q || row.dataset.id.toLowerCase().includes(q) || (row.dataset.name ?? '').toLowerCase().includes(q);
                     row.style.display = match ? '' : 'none';
                     if (match) vis++;
                 });
                 const vc = document.getElementById('visibleCount');
                 if (vc) vc.textContent = String(vis);
-            }
+            });
 
         })();
     </script>

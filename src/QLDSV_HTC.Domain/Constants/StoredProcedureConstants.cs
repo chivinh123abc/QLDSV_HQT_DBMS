@@ -70,6 +70,13 @@ namespace QLDSV_HTC.Domain.Constants
             public const string LecturerId = "@MAGV";
         }
 
+        public static class FacultyCrud
+        {
+            public const string OldFacultyId = "@MAKHOA_OLD";
+            public const string FacultyId = "@MAKHOA";
+            public const string FacultyName = "@TENKHOA";
+        }
+
         public static class AccountCrud
         {
             public const string LoginName = "@LGNAME";

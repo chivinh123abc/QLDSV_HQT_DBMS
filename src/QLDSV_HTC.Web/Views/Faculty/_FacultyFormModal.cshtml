@@ -1,0 +1,73 @@
+@model QLDSV_HTC.Web.Models.FacultyManagementViewModel
+@using QLDSV_HTC.Web.Models
+
+@{
+    var modalModel = new GenericFormModalViewModel
+    {
+        ModeBadgeSection = @<text>
+            <span class="badge bg-white text-primary ms-2 animate__animated animate__fadeIn" id="formModeLabel" style="font-size:.7rem">Chế độ: Xem</span>
+        </text>,
+        
+        ToolbarSection = @<text>
+            @{ ViewData["IdPrefix"] = "Form"; }
+            @await Html.PartialAsync("_CrudToolbar", null, ViewData)
+        </text>,
+        
+        BodySection = @<text>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="fldFacultyId" class="form-label fw-semibold">
+                        Mã Khoa <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control font-monospace border-primary-subtle" id="fldFacultyId"
+                           maxlength="10" placeholder="VD: CNTT">
+                    <div class="invalid-feedback">Vui lòng nhập mã khoa.</div>
+                </div>
+                <div class="col-md-8">
+                    <label for="fldFacultyName" class="form-label fw-semibold">
+                        Tên Khoa <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="fldFacultyName"
+                           maxlength="50" placeholder="VD: Công nghệ thông tin" disabled>
+                    <div class="invalid-feedback">Vui lòng nhập tên khoa.</div>
+                </div>
+            </div>
+        </text>,
+        
+        ExtraBodySection = @<text>
+            <h6 class="fw-bold mb-3 text-primary d-flex align-items-center gap-2">
+                <i class="bi bi-list-ul"></i>
+                <span>Danh sách khoa hiện có</span>
+            </h6>
+            <div class="table-responsive rounded-3 border border-light-subtle shadow-sm" style="max-height:240px; overflow-y:auto">
+                <table class="table table-sm table-hover align-middle mb-0" id="miniFacultyTable">
+                    <thead class="table-light sticky-top">
+                        <tr class="small text-muted">
+                            <th>Mã Khoa</th>
+                            <th>Tên Khoa</th>
+                        </tr>
+                    </thead>
+                    <tbody id="miniFacultyBody" class="small">
+                        @foreach (var f in Model.Faculties)
+                        {
+                            <tr class="mini-row transition-base" role="button"
+                                data-id="@f.Id?.Trim()" data-name="@f.Name">
+                                <td class="fw-bold font-monospace text-primary">@f.Id?.Trim()</td>
+                                <td>@f.Name</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </text>
+    };
+
+    ViewData["ModalId"] = "facultyFormModal";
+    ViewData["ModalLabelId"] = "facultyFormModalLabel";
+    ViewData["ModalTitle"] = "Nhập danh mục Khoa";
+    ViewData["ModalIcon"] = "bi-building-fill-add";
+    ViewData["FormId"] = "facultyForm";
+    ViewData["AlertId"] = "formAlert";
+}
+
+@await Html.PartialAsync("_FormModalWrapper", modalModel, ViewData)

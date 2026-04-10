@@ -139,9 +139,9 @@
         (function () {
             'use strict';
 
-            const URL_ADD = '@Url.Action("Add", "Account")';
-            const URL_EDIT = '@Url.Action("Edit", "Account")';
-            const URL_DELETE = '@Url.Action("Delete", "Account")';
+            const URL_ADD = '@RouteConstants.Account.AddPath';
+            const URL_EDIT = '@RouteConstants.Account.EditPath';
+            const URL_DELETE = '@RouteConstants.Account.DeletePath';
             const CURRENT_GROUP = '@Model.CurrentUserGroup';
             const CURRENT_LOGIN_NAME = '@Html.Raw(User.FindFirst(AppConstants.SessionKeys.Username)?.Value)';
 
