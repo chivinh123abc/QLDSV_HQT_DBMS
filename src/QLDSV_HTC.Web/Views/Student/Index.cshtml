@@ -3,21 +3,18 @@
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     ViewData["Title"] = "Quản lý Sinh viên - Theo Lớp";
-
     bool isPGV = string.IsNullOrEmpty(Model.CurrentFacultyId);
-
     var requestToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }
 
 <div class="dashboard-container">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h3 mb-0 text-gray-800">Quản lý Sinh viên</h1>
+        <h1 class="h3 mb-1 fw-bold text-gray-800">Quản lý Sinh viên</h1>
     </div>
 
     <!-- Master: Lớp -->
     @{
         ViewData["isPGV"] = isPGV;
-
         ViewData["Faculties"] = Model.Faculties;
     }
     @await Html.PartialAsync("_StudentClassTable", Model.Classes, ViewData)
@@ -92,7 +89,7 @@
         // -- UNDO STACK STATE --
         let undoStack = [];
         let forceClose = false;
-        
+
         let allStudentsForClass = []; // Store full students of current class for modal list sync
 
         const fldStudentId = document.getElementById('fldStudentId');
@@ -158,7 +155,7 @@
                     }
 
                     const message = "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?";
-                    
+
                     const isConfirmed = await window.showConfirmDialog(
                         "Xác nhận Thoát", message,
                         { confirmText: "Xác nhận", cancelText: "Trở lại" }
@@ -179,7 +176,7 @@
                     }
 
                     const message = "Hành động này sẽ <b>Hoàn Tác toàn bộ</b> các thay đổi bạn vừa thực hiện trong phiên này.<br>Bạn có chắc chắn muốn xóa bỏ công sức vừa làm?";
-                    
+
                     const isConfirmed = await window.showConfirmDialog(
                         "Hoàn Tác & Đóng", message,
                         { confirmText: "Xác nhận Hoàn tác", cancelText: "Giữ lại", isDanger: true }
@@ -199,10 +196,10 @@
 
                 // Modal Quick Search
                 const modalSearchInput = document.getElementById('modalStudentSearch');
-                modalSearchInput?.addEventListener('input', function() {
+                modalSearchInput?.addEventListener('input', function () {
                     const q = this.value.toLowerCase();
-                    const filtered = allStudentsForClass.filter(s => 
-                        s.studentId.toLowerCase().includes(q) || 
+                    const filtered = allStudentsForClass.filter(s =>
+                        s.studentId.toLowerCase().includes(q) ||
                         `${s.firstName} ${s.lastName}`.toLowerCase().includes(q)
                     );
                     renderModalStudentList(filtered);
@@ -380,23 +377,23 @@
             data.forEach(s => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                            <td class="fw-semibold font-monospace text-primary">${s.studentId}</td>
-                            <td class="fw-medium">${s.firstName} ${s.lastName}</td>
-                            <td>${s.gender ? 'Nữ' : 'Nam'}</td>
-                            <td>${s.dob ? formatDateDisplay(s.dob) : ''}</td>
-                            <td>${s.address || ''}</td>
-                            <td>${s.onLeave ? '<span class="badge bg-danger">Nghỉ học</span>' : '<span class="badge bg-success">Đang học</span>'}</td>
-                            ${isPGV ? `
-                            <td class="text-end">
-                                <button class="btn btn-sm btn-outline-primary me-1 hover-scale shadow-sm" title="Sửa sinh viên" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
-                                <button class="btn btn-sm btn-outline-danger ${s.hasDependencies ? '' : 'hover-scale'} shadow-sm" 
-                                        title="${s.hasDependencies ? 'Không thể xóa sinh viên đã có dữ liệu liên quan' : 'Xóa sinh viên'}" 
-                                        ${s.hasDependencies ? 'disabled' : `onclick="deleteStudent('${s.studentId}')"`}>
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </td>` : ''}
-                        `;
-            tbody.appendChild(tr);
+                                        <td class="fw-semibold font-monospace text-primary">${s.studentId}</td>
+                                        <td class="fw-medium">${s.firstName} ${s.lastName}</td>
+                                        <td>${s.gender ? 'Nữ' : 'Nam'}</td>
+                                        <td>${s.dob ? formatDateDisplay(s.dob) : ''}</td>
+                                        <td>${s.address || ''}</td>
+                                        <td>${s.onLeave ? '<span class="badge bg-danger">Nghỉ học</span>' : '<span class="badge bg-success">Đang học</span>'}</td>
+                                        ${isPGV ? `
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-primary me-1 hover-scale shadow-sm" title="Sửa sinh viên" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
+                                            <button class="btn btn-sm btn-outline-danger ${s.hasDependencies ? '' : 'hover-scale'} shadow-sm" 
+                                                    title="${s.hasDependencies ? 'Không thể xóa sinh viên đã có dữ liệu liên quan' : 'Xóa sinh viên'}" 
+                                                    ${s.hasDependencies ? 'disabled' : `onclick="deleteStudent('${s.studentId}')"`}>
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>` : ''}
+                                    `;
+                tbody.appendChild(tr);
             });
         }
 
@@ -416,15 +413,15 @@
                 if (selectedStudentId === s.studentId) tr.classList.add('selected');
 
                 tr.innerHTML = `
-                    <td class="ps-3"><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none font-monospace">${s.studentId}</a></td>
-                    <td class="fw-medium text-dark">${s.firstName} ${s.lastName}</td>
-                    <td class="text-center text-muted small">${s.gender ? 'Nữ' : 'Nam'}</td>
-                    <td class="pe-3 text-end">
-                        ${s.onLeave 
-                            ? '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-2 py-1" style="font-size: 0.7rem; font-weight: 500;">NGHỈ</span>' 
-                            : '<span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1" style="font-size: 0.7rem; font-weight: 500;">HỌC</span>'}
-                    </td>
-                `;
+                                <td class="ps-3"><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none font-monospace">${s.studentId}</a></td>
+                                <td class="fw-medium text-dark">${s.firstName} ${s.lastName}</td>
+                                <td class="text-center text-muted small">${s.gender ? 'Nữ' : 'Nam'}</td>
+                                <td class="pe-3 text-end">
+                                    ${s.onLeave
+                        ? '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-2 py-1" style="font-size: 0.7rem; font-weight: 500;">NGHỈ</span>'
+                        : '<span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1" style="font-size: 0.7rem; font-weight: 500;">HỌC</span>'}
+                                </td>
+                            `;
 
                 tr.addEventListener('click', () => {
                     document.querySelectorAll('.modal-selectable-row').forEach(r => r.classList.remove('selected'));
@@ -510,16 +507,16 @@
             const url = helpers.getMode() === 'add' ? '@RouteConstants.Student.AddPath' : '@RouteConstants.Student.EditPath';
 
             const dataObj = {
-                OldStudentId: originalStudentId,
-                StudentId: fldStudentId.value.trim(),
-                FirstName: fldFirstName.value.trim(),
-                LastName: fldLastName.value.trim(),
-                Gender: fldGender.value === 'true',
-                Dob: fldDob.value,
-                Address: fldAddress.value.trim(),
-                ClassId: fldClassId.value,
-                OnLeave: fldOnLeave.checked,
-                Password: fldPassword.value
+                oldStudentId: originalStudentId,
+                studentId: fldStudentId.value.trim(),
+                firstName: fldFirstName.value.trim(),
+                lastName: fldLastName.value.trim(),
+                gender: fldGender.value === 'true',
+                dob: fldDob.value,
+                address: fldAddress.value.trim(),
+                classId: fldClassId.value,
+                onLeave: fldOnLeave.checked,
+                password: fldPassword.value
             };
 
             fetch(url, {

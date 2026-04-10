@@ -1,0 +1,328 @@
+@model QLDSV_HTC.Web.Models.FacultyManagementViewModel
+@using QLDSV_HTC.Domain.Constants
+@{
+    ViewData["Title"] = "Quản lý Khoa";
+    var isPGV = User.IsInRole("PGV");
+    var hasFaculty = User.IsInRole("KHOA");
+    var pageTitle = "Danh sách Khoa";
+
+    ViewData["isPGV"] = isPGV;
+    ViewData["hasFaculty"] = hasFaculty;
+}
+
+<div class="dashboard-container fade-in-up">
+
+    @* ── Thanh tiêu đề + nút Thêm Khoa ── *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-gray-800">@pageTitle</h1>
+            <p class="text-muted mb-0 small">
+                <i class="bi bi-building me-1"></i>
+                Tổng: <strong>@Model.Faculties.Count()</strong> khoa
+            </p>
+        </div>
+        @if (isPGV)
+        {
+            <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2" id="btnOpenFacultyForm" type="button"
+                data-bs-toggle="modal" data-bs-target="#facultyFormModal">
+                <i class="bi bi-pencil-square"></i>
+                <span>Cập nhật danh mục Khoa</span>
+            </button>
+        }
+    </div>
+
+    @* ── Bảng danh sách khoa ── *@
+    @await Html.PartialAsync("_FacultyTable", Model, ViewData)
+</div>
+
+@* ══════════════════════════════════════════════════════════
+MODAL: Nhập danh mục khoa / Xác nhận xóa
+══════════════════════════════════════════════════════════ *@
+@await Html.PartialAsync("_FacultyFormModal", Model, ViewData)
+<partial name="_DeleteConfirmModal" />
+
+@section Scripts {
+    <script src="~/js/form-helpers.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            'use strict';
+
+            const URL_ADD = '@RouteConstants.Faculty.AddPath';
+            const URL_EDIT = '@RouteConstants.Faculty.EditPath';
+            const URL_DELETE = '@RouteConstants.Faculty.DeletePath';
+
+            let snapshotData = null;
+            let selectedId = null;
+            let originalId = null;
+
+            const modal = document.getElementById('facultyFormModal');
+            const deleteModal = document.getElementById('deleteConfirmModal');
+            const fldFacultyId = document.getElementById('fldFacultyId');
+            const fldFacultyName = document.getElementById('fldFacultyName');
+
+            const btnThem = document.getElementById('btnFormThem');
+            const btnXoa = document.getElementById('btnFormXoa');
+            const btnGhi = document.getElementById('btnFormGhi');
+            const btnPhucHoi = document.getElementById('btnFormPhucHoi');
+            const btnHuy = document.getElementById('btnFormHuy');
+
+            // ── Shared form helpers ──────────────────────────────────
+            const helpers = createFormHelpers({
+                alertEl: document.getElementById('formAlert'),
+                modeLabelEl: document.getElementById('formModeLabel'),
+                buttons: { them: btnThem, xoa: btnXoa, ghi: btnGhi, phucHoi: btnPhucHoi, huy: btnHuy },
+                allFields: [fldFacultyId, fldFacultyName],
+                requiredFields: [fldFacultyId, fldFacultyName],
+                getSelectedId: () => selectedId,
+            });
+
+            // ── Xử lý modal xác nhận xóa ────────────────────────────
+            let pendingDeleteId = null;
+
+            if (deleteModal) {
+                document.getElementById('btnConfirmDelete').addEventListener('click', async () => {
+                    bootstrap.Modal.getInstance(deleteModal)?.hide();
+                    if (pendingDeleteId) await doDelete(pendingDeleteId);
+                });
+            }
+
+            function showDeleteModal(id, name) {
+                pendingDeleteId = id;
+                document.getElementById('deleteTargetId').textContent = id;
+                document.getElementById('deleteTargetName').textContent = name;
+                bootstrap.Modal.getOrCreateInstance(deleteModal).show();
+            }
+
+            if (!modal) return;
+
+            // Mở modal
+            document.getElementById('btnOpenFacultyForm')?.addEventListener('click', resetToView);
+            modal.addEventListener('hidden.bs.modal', resetToView);
+
+            // Chọn hàng trong mini-table (bên trong form modal)
+            document.getElementById('miniFacultyBody').addEventListener('click', e => {
+                if (helpers.getMode() === 'add') return;
+                const row = e.target.closest('tr.mini-row');
+                if (!row) return;
+                selectMiniRow(row);
+            });
+
+            // ── Nút Thêm ─────────────────────────────────────────────
+            btnThem.addEventListener('click', () => {
+                deselectMiniRow();
+                selectedId = null;
+                snapshotData = null;
+                clearFields();
+                helpers.clearValidation();
+                helpers.setMode('add');
+                fldFacultyId.disabled = false;
+                fldFacultyId.focus();
+                helpers.showAlert('Nhập thông tin khoa mới rồi nhấn <b>Ghi</b> để lưu.', 'info');
+            });
+
+            // ── Nút Xóa ──────────────────────────────────────────────
+            btnXoa.addEventListener('click', () => {
+                if (!selectedId) return;
+                showDeleteModal(selectedId, fldFacultyName.value);
+            });
+
+            // ── Nút Ghi ──────────────────────────────────────────────
+            btnGhi.addEventListener('click', async () => {
+                if (!helpers.validateForm()) return;
+
+                const payload = {
+                    oldFacultyId: originalId,
+                    facultyId: fldFacultyId.value.trim(),
+                    facultyName: fldFacultyName.value.trim(),
+                };
+
+                try {
+                    const res = await fetchJson(helpers.getMode() === 'add' ? URL_ADD : URL_EDIT, payload);
+                    if (res.success) {
+                        window.showToast(res.message, 'success');
+                        if (helpers.getMode() === 'add') addRowToTables(payload);
+                        else updateRowInTables(payload, originalId);
+                        snapshotData = { ...payload };
+                        selectedId = payload.facultyId;
+                        originalId = payload.facultyId;
+                        helpers.setMode('edit');
+                        highlightMiniRow(selectedId);
+                    } else {
+                        helpers.showAlert(res.message, 'danger');
+                    }
+                } catch (err) {
+                    helpers.showAlert('Lỗi: ' + err.message, 'danger');
+                }
+            });
+
+            // ── Nút Phục hồi ─────────────────────────────────────────
+            btnPhucHoi.addEventListener('click', () => {
+                if (!snapshotData) { resetToView(); return; }
+                fldFacultyId.value = snapshotData.facultyId;
+                fldFacultyName.value = snapshotData.facultyName;
+                helpers.clearValidation();
+                helpers.showAlert('Dữ liệu đã được phục hồi.', 'warning');
+            });
+
+            // ── Nút Hủy ──────────────────────────────────────────────
+            btnHuy?.addEventListener('click', resetToView);
+
+            // ── Sửa / Xóa nhanh từ bảng chính ───────────────────────
+            document.getElementById('facultyTableBody').addEventListener('click', e => {
+                const editBtn = e.target.closest('.btn-edit-row');
+                const delBtn = e.target.closest('.btn-delete-row');
+
+                if (editBtn) {
+                    const id = editBtn.dataset.id;
+                    const name = editBtn.dataset.name;
+                    bootstrap.Modal.getOrCreateInstance(modal).show();
+                    setTimeout(() => {
+                        populateFields(id, name);
+                        helpers.setMode('edit');
+                        highlightMiniRow(id);
+                        helpers.hideAlert();
+                    }, 200);
+                }
+
+                if (delBtn) {
+                    showDeleteModal(delBtn.dataset.id, delBtn.dataset.name);
+                }
+            });
+
+            // ── Helpers ──────────────────────────────────────────────
+
+            function resetToView() {
+                selectedId = null; snapshotData = null; originalId = null;
+                clearFields(); helpers.clearValidation(); helpers.hideAlert(); deselectMiniRow();
+                helpers.setMode('view');
+            }
+
+            function populateFields(id, name) {
+                fldFacultyId.value = id;
+                fldFacultyName.value = name;
+                selectedId = id;
+                originalId = id;
+                snapshotData = { 
+                    facultyId: id, 
+                    facultyName: name 
+                };
+            }
+
+            function clearFields() {
+                fldFacultyId.value = fldFacultyName.value = '';
+            }
+
+            function selectMiniRow(row) {
+                deselectMiniRow();
+                row.classList.add('table-active', 'fw-semibold');
+                populateFields(row.dataset.id, row.dataset.name);
+                helpers.setMode('edit');
+                helpers.hideAlert();
+            }
+
+            function highlightMiniRow(id) {
+                deselectMiniRow();
+                const row = document.querySelector(`#miniFacultyBody tr[data-id="${CSS.escape(id)}"]`);
+                if (row) row.classList.add('table-active', 'fw-semibold');
+            }
+
+            function deselectMiniRow() {
+                document.querySelectorAll('#miniFacultyBody tr.table-active')
+                    .forEach(r => r.classList.remove('table-active', 'fw-semibold'));
+            }
+
+            async function doDelete(id) {
+                try {
+                    const res = await fetchJson(URL_DELETE, { facultyId: id });
+                    if (res.success) {
+                        removeRowFromTables(id);
+                        resetToView();
+                        window.showToast(res.message, 'success');
+                    } else {
+                        window.showToast(res.message, 'danger');
+                    }
+                } catch (err) { 
+                    window.showToast('Lỗi: ' + err.message, 'danger'); 
+                }
+            }
+
+            function addRowToTables(p) {
+                const tbody = document.getElementById('facultyTableBody');
+                const empty = tbody.querySelector('td[colspan]');
+                if (empty) empty.closest('tr').remove();
+                tbody.insertAdjacentHTML('beforeend', mainRowHtml(p));
+                document.getElementById('miniFacultyBody').insertAdjacentHTML('beforeend', miniRowHtml(p));
+                updateCount(1);
+            }
+
+            function updateRowInTables(p, oldId) {
+                const main = document.querySelector(`#facultyTableBody tr[data-id="${CSS.escape(oldId)}"]`);
+                if (main) main.outerHTML = mainRowHtml(p);
+                const mini = document.querySelector(`#miniFacultyBody  tr[data-id="${CSS.escape(oldId)}"]`);
+                if (mini) mini.outerHTML = miniRowHtml(p);
+            }
+
+            function removeRowFromTables(id) {
+                document.querySelector(`#facultyTableBody tr[data-id="${CSS.escape(id)}"]`)?.remove();
+                document.querySelector(`#miniFacultyBody  tr[data-id="${CSS.escape(id)}"]`)?.remove();
+                updateCount(-1);
+            }
+
+            function updateCount(delta) {
+                const el = document.getElementById('visibleCount');
+                if (el) el.textContent = String(parseInt(el.textContent || '0', 10) + delta);
+            }
+
+            function mainRowHtml(p) {
+                return `<tr data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}">
+                        <td class="fw-semibold font-monospace text-primary">${escapeHtml(p.facultyId)}</td>
+                        <td>${escapeHtml(p.facultyName)}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row" title="Sửa"
+                                    data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger btn-delete-row" title="Xóa"
+                                    data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            }
+
+            function miniRowHtml(p) {
+                return `<tr class="mini-row" role="button"
+                                data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}">
+                        <td class="fw-semibold font-monospace text-primary small">${escapeHtml(p.facultyId)}</td>
+                        <td class="small">${escapeHtml(p.facultyName)}</td>
+                    </tr>`;
+            }
+
+            async function fetchJson(url, body) {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const json = await res.json();
+                if (!res.ok && json.success !== false)
+                    throw new Error(json.message ?? 'Lỗi máy chủ');
+                return json;
+            }
+
+            // Client-side search
+            document.getElementById('facultySearch')?.addEventListener('input', () => {
+                const q = (document.getElementById('facultySearch')?.value ?? '').toLowerCase();
+                let vis = 0;
+                document.querySelectorAll('#facultyTableBody tr[data-id]').forEach(row => {
+                    const match = !q || row.dataset.id.toLowerCase().includes(q) || (row.dataset.name ?? '').toLowerCase().includes(q);
+                    row.style.display = match ? '' : 'none';
+                    if (match) vis++;
+                });
+                const vc = document.getElementById('visibleCount');
+                if (vc) vc.textContent = String(vis);
+            });
+
+        })();
+    </script>
+}

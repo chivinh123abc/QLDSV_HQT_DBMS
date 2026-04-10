@@ -55,9 +55,9 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
         (function () {
             'use strict';
 
-            const URL_ADD = '@Url.Action("Add",    "Class")';
-            const URL_EDIT = '@Url.Action("Edit",   "Class")';
-            const URL_DELETE = '@Url.Action("Delete", "Class")';
+            const URL_ADD = '@RouteConstants.Class.AddPath';
+            const URL_EDIT = '@RouteConstants.Class.EditPath';
+            const URL_DELETE = '@RouteConstants.Class.DeletePath';
 
             let snapshotData = null;
             let selectedId = null;
@@ -328,7 +328,12 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 fldFacultyId.value = facultyId;
                 selectedId = id;
                 originalId = id;
-                snapshotData = { classId: id, className: name, schoolYear: year, facultyId: facultyId };
+                snapshotData = { 
+                    classId: id, 
+                    className: name, 
+                    schoolYear: year, 
+                    facultyId: facultyId 
+                };
             }
 
             function clearFields() {

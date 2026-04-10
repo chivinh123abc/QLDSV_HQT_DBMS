@@ -1,0 +1,89 @@
+@model QLDSV_HTC.Web.Models.FacultyManagementViewModel
+@using QLDSV_HTC.Web.Models
+
+@{
+    var isPGV = (bool)(ViewData["isPGV"] ?? false);
+    
+    var tableModel = new GenericTableViewModel
+    {
+        FiltersSection = @<text>
+            <div class="input-group" style="max-width:340px">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" id="facultySearch" class="form-control border-start-0"
+                       placeholder="Tìm mã khoa hoặc tên khoa…">
+            </div>
+        </text>,
+        
+        HeadSection = @<text>
+            <tr>
+                <th scope="col" style="width:160px">Mã Khoa</th>
+                <th scope="col">Tên Khoa</th>
+                <th scope="col" style="width:120px">Số Giảng Viên</th>
+                @if (isPGV)
+                {
+                    <th scope="col" class="text-end" style="width:150px">Hành động</th>
+                }
+            </tr>
+        </text>,
+        
+        BodySection = @<text>
+            @if (!Model.Faculties.Any())
+            {
+                <tr>
+                    <td colspan="@(isPGV ? 4 : 3)" class="text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                        Chưa có khoa nào.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var faculty in Model.Faculties)
+                {
+                    <tr data-id="@faculty.Id?.Trim()" data-name="@faculty.Name" data-lecturer-count="@faculty.LecturerCount">
+                        <td class="fw-semibold font-monospace text-primary">@faculty.Id?.Trim()</td>
+                        <td>@faculty.Name</td>
+                        <td>
+                            <span class="badge text-primary bg-secondary-subtle border-primary border px-2">
+                                @faculty.LecturerCount
+                            </span>
+                        </td>
+                        @if (isPGV)
+                        {
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row shadow-sm hover-scale"
+                                        title="Sửa khoa này"
+                                        data-id="@faculty.Id?.Trim()" data-name="@faculty.Name">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-sm hover-scale"
+                                        title="Xóa khoa này"
+                                        data-id="@faculty.Id?.Trim()" data-name="@faculty.Name">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        }
+                    </tr>
+                }
+            }
+        </text>,
+        
+        FooterSection = @<text>
+            <div class="d-flex align-items-center w-100">
+                <span class="text-muted small me-auto">
+                    Hiển thị <strong id="visibleCount">@Model.Faculties.Count()</strong>
+                    / @Model.Pagination.TotalCount khoa
+                </span>
+                
+                @await Html.PartialAsync("_PaginationControls", Model.Pagination)
+            </div>
+        </text>
+    };
+
+    ViewData["TableId"] = "facultyTable";
+    ViewData["TableBodyId"] = "facultyTableBody";
+}
+
+@await Html.PartialAsync("_CardTableWrapper", tableModel, ViewData)
