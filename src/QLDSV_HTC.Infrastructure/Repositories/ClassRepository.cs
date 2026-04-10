@@ -47,7 +47,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                 new SqlParameter(StoredProcedureConstants.Pagination.PageSize, paging.PageSize)
             );
 
-            return new QLDSV_HTC.Domain.Models.PagedResult<ClassDto>
+            return new PagedResult<ClassDto>
             {
                 Items = dt.AsEnumerable().Select(row => new ClassDto
                 {
