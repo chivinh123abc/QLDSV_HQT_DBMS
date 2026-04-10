@@ -1,5 +1,4 @@
 USE [QLDSV_HTC]
-GO
 
 -- =============================================
 -- Description: Tạo tài khoản mới (Login + User + Role)
@@ -65,8 +64,6 @@ BEGIN
         RAISERROR (@ErrorMessage, 16, 1);
     END CATCH
 END
-GO
-
 
 -- =============================================
 -- Description: Lấy danh sách tài khoản (login) trong hệ thống
@@ -110,8 +107,6 @@ BEGIN
     WHERE ur.LoginName IS NOT NULL
     ORDER BY ur.GroupName, ur.LoginName;
 END
-GO
-
 
 -- =============================================
 -- Description: Cập nhật thông tin tài khoản (Tên đăng nhập, Mật khẩu, Mã GV, Quyền)
@@ -232,8 +227,6 @@ BEGIN
         RAISERROR (@ErrorMessage, 16, 1);
     END CATCH
 END
-GO
-
 
 -- =============================================
 -- Description: Xóa tài khoản (User + Login)

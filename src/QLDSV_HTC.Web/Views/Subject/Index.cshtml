@@ -52,6 +52,7 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
             // -- UNDO STACK STATE --
             let undoStack = [];
             let forceClose = false;
+            let isSubmitting = false;
 
             const modalEl = document.getElementById('subjectFormModal');
             let subjectModalInstance = null;
@@ -176,13 +177,16 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
 
             // ── Nút Xóa ──────────────────────────────────────────────
             btnXoa?.addEventListener('click', () => {
-                if (!selectedId) return;
+                if (!selectedId || isSubmitting) return;
                 deleteSubject(selectedId, fldSubjectName.value);
             });
 
             // ── Nút Ghi ──────────────────────────────────────────────
             btnGhi?.addEventListener('click', async () => {
-                if (!helpers.validateForm()) return;
+                if (!helpers.validateForm() || isSubmitting) return;
+
+                isSubmitting = true;
+                btnGhi.disabled = true;
 
                 const safeHours = (el, fallback) => {
                     const v = parseInt(el.value, 10);
@@ -231,12 +235,15 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
                     }
                 } catch (err) {
                     helpers.showAlert('Lỗi: ' + err.message, 'danger');
+                } finally {
+                    isSubmitting = false;
+                    btnGhi.disabled = false;
                 }
             });
 
             // ── Nút Phục hồi ─────────────────────────────────────────
             btnPhucHoi?.addEventListener('click', async () => {
-                if (undoStack.length === 0) {
+                if (undoStack.length === 0 || isSubmitting) {
                     helpers.showAlert('Không có hành động nào để phục hồi.', 'info');
                     return;
                 }
@@ -325,6 +332,7 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
                 
                 if (!isConfirmed) return;
 
+                isSubmitting = true;
                 try {
                     const row = document.querySelector(`#subjectTableBody tr[data-id="${CSS.escape(id)}"]`);
                     const delPayload = row ? {
@@ -349,11 +357,14 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
                     }
                 } catch (err) { 
                     window.showToast('Lỗi: ' + err.message, 'danger'); 
+                } finally {
+                    isSubmitting = false;
                 }
             }
 
             async function executeUndo() {
                 if (undoStack.length === 0) return;
+                isSubmitting = true;
                 const actionObj = undoStack.pop();
                 try {
                     if (actionObj.action === 'add') {
@@ -368,6 +379,8 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
                     }
                 } catch(err) {
                     window.showToast("Lỗi hoàn tác: " + err.message, "danger");
+                } finally {
+                    isSubmitting = false;
                 }
             }
 
