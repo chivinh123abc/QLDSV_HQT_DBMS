@@ -1,0 +1,123 @@
+@model QLDSV_HTC.Web.Models.LecturerManagementViewModel
+@using QLDSV_HTC.Web.Models
+
+@{
+    var hasFaculty = (bool)(ViewData["hasFaculty"] ?? false);
+    
+    var modalModel = new GenericFormModalViewModel
+    {
+        ModeBadgeSection = @<text>
+            <span class="badge bg-white text-primary ms-2 animate__animated animate__fadeIn" id="formModeLabel" style="font-size:.7rem">Chế độ: Xem</span>
+        </text>,
+        
+        ToolbarSection = @<text>
+            @{ ViewData["IdPrefix"] = "Form"; }
+            @await Html.PartialAsync("_CrudToolbar", null, ViewData)
+        </text>,
+        
+        BodySection = @<text>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="fldLecturerId" class="form-label fw-semibold">
+                        Mã Giảng Viên <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control font-monospace border-primary-subtle" id="fldLecturerId"
+                           maxlength="20" placeholder="VD: GV01">
+                    <div class="invalid-feedback">Vui lòng nhập mã giảng viên.</div>
+                </div>
+                <div class="col-md-8">
+                    <label for="fldFacultyId" class="form-label fw-semibold">
+                        Khoa <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" id="fldFacultyId" disabled>
+                        <option value="">— Chọn khoa —</option>
+                        @foreach (var f in Model.Faculties)
+                        {
+                            <option value="@f.Id?.Trim()">@f.Name (@f.Id?.Trim())</option>
+                        }
+                    </select>
+                    <div class="invalid-feedback">Vui lòng chọn khoa.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="fldLastName" class="form-label fw-semibold">
+                        Họ, Tên Đệm <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="fldFirstName"
+                           maxlength="50" placeholder="VD: Nguyễn Văn" disabled>
+                    <div class="invalid-feedback">Vui lòng nhập họ.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="fldFirstName" class="form-label fw-semibold">
+                        Tên <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control" id="fldLastName"
+                           maxlength="10" placeholder="VD: A" disabled>
+                    <div class="invalid-feedback">Vui lòng nhập tên.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="fldDegree" class="form-label fw-semibold">
+                        Học Vị
+                    </label>
+                    <input type="text" class="form-control" id="fldDegree"
+                           maxlength="20" placeholder="VD: Thạc sĩ" disabled>
+                </div>
+                <div class="col-md-4">
+                    <label for="fldAcademicRank" class="form-label fw-semibold">
+                        Học Hàm
+                    </label>
+                    <input type="text" class="form-control" id="fldAcademicRank"
+                           maxlength="20" placeholder="VD: Phó Giáo Sư" disabled>
+                </div>
+                <div class="col-md-4">
+                    <label for="fldSpecialty" class="form-label fw-semibold">
+                        Chuyên Môn
+                    </label>
+                    <input type="text" class="form-control" id="fldSpecialty"
+                           maxlength="50" placeholder="VD: Hệ Thống Thông Tin" disabled>
+                </div>
+            </div>
+        </text>,
+        
+        ExtraBodySection = @<text>
+            <h6 class="fw-bold mb-3 text-primary d-flex align-items-center gap-2">
+                <i class="bi bi-list-ul"></i>
+                <span>Danh sách giảng viên hiện có</span>
+                @if (hasFaculty) { <span class="badge bg-primary px-2 fw-normal" style="font-size:0.7rem">Khoa @Model.CurrentFacultyId?.Trim()</span> }
+            </h6>
+            <div class="table-responsive rounded-3 border border-light-subtle shadow-sm" style="max-height:240px; overflow-y:auto">
+                <table class="table table-sm table-hover align-middle mb-0" id="miniLecturerTable">
+                    <thead class="table-light sticky-top">
+                        <tr class="small text-muted">
+                            <th>Mã GV</th>
+                            <th>Họ và Tên</th>
+                            <th>Khoa</th>
+                        </tr>
+                    </thead>
+                    <tbody id="miniLecturerBody" class="small">
+                        @foreach (var l in Model.Lecturers)
+                        {
+                            <tr class="mini-row transition-base" role="button"
+                                data-id="@l.Id?.Trim()" data-first="@l.FirstName" data-last="@l.LastName"
+                                data-degree="@l.Degree" data-rank="@l.Rank" data-spec="@l.Specialty"
+                                data-faculty="@l.FacultyId?.Trim()">
+                                <td class="fw-bold font-monospace text-primary">@l.Id?.Trim()</td>
+                                <td>@l.FirstName @l.LastName</td>
+                                <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle small px-2">@l.FacultyId?.Trim()</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </text>
+    };
+
+    ViewData["ModalId"] = "lecturerFormModal";
+    ViewData["ModalLabelId"] = "lecturerFormModalLabel";
+    ViewData["ModalTitle"] = "Nhập danh mục Giảng viên";
+    ViewData["ModalIcon"] = "bi-person-badge";
+    ViewData["FormId"] = "lecturerForm";
+    ViewData["AlertId"] = "formAlert";
+    ViewData["ModalSize"] = "modal-lg";
+}
+
+@await Html.PartialAsync("_FormModalWrapper", modalModel, ViewData)

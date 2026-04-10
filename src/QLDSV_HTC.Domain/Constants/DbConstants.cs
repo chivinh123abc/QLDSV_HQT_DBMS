@@ -34,6 +34,12 @@ namespace QLDSV_HTC.Domain.Constants
             {
                 public const string Id = "MAGV";
                 public const string FacultyId = "MAKHOA";
+                public const string FirstName = "HO";
+                public const string LastName = "TEN";
+                public const string Degree = "HOCVI";
+                public const string AcademicRank = "HOCHAM";
+                public const string Specialty = "CHUYENMON";
+                public const string FacultyName = "TENKHOA";
             }
 
             public static class Student
