@@ -186,6 +186,7 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
 
                 const safeHours = (el, fallback) => {
                     const v = parseInt(el.value, 10);
+                    // Use fallback if current value is NaN (empty)
                     return isNaN(v) ? (parseInt(fallback, 10) || 0) : v;
                 };
 
@@ -422,11 +423,12 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
             }
 
             function miniRowHtml(p) {
-                return `<tr class="mini-row" role="button"
-                            data-id="${escapeHtml(p.subjectId)}" data-name="${escapeHtml(p.subjectName)}"
-                            data-theory="${escapeHtml(p.theoryHours)}" data-practice="${escapeHtml(p.practiceHours)}">
-                        <td class="fw-semibold font-monospace text-primary small">${escapeHtml(p.subjectId)}</td>
-                        <td class="small text-truncate" style="max-width: 150px;" title="${escapeHtml(p.subjectName)}">${escapeHtml(p.subjectName)}</td>
+                return `<tr class="mini-row transition-base" role="button"
+                            data-id="${escapeHtml(p.subjectId)}" data-name="${escapeHtml(p.subjectName)}" data-theory="${escapeHtml(p.theoryHours)}" data-practice="${escapeHtml(p.practiceHours)}">
+                        <td class="fw-bold font-monospace text-primary">${escapeHtml(p.subjectId)}</td>
+                        <td>${escapeHtml(p.subjectName)}</td>
+                        <td class="text-center">${escapeHtml(p.theoryHours)}</td>
+                        <td class="text-center">${escapeHtml(p.practiceHours)}</td>
                     </tr>`;
             }
 

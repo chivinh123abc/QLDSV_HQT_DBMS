@@ -332,16 +332,16 @@
             data.forEach(s => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                        <td class="fw-medium text-primary">${s.studentId}</td>
-                        <td>${s.firstName} ${s.lastName}</td>
+                        <td class="fw-semibold font-monospace text-primary">${s.studentId}</td>
+                        <td class="fw-medium">${s.firstName} ${s.lastName}</td>
                         <td>${s.gender ? 'Nữ' : 'Nam'}</td>
                         <td>${s.dob ? formatDateDisplay(s.dob) : ''}</td>
                         <td>${s.address || ''}</td>
                         <td>${s.onLeave ? '<span class="badge bg-danger">Nghỉ học</span>' : '<span class="badge bg-success">Đang học</span>'}</td>
                         ${isPGV ? `
                         <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent('${s.studentId}')"><i class="bi bi-trash"></i></button>
+                            <button class="btn btn-sm btn-outline-primary me-1 hover-scale shadow-sm" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger hover-scale shadow-sm" onclick="deleteStudent('${s.studentId}')"><i class="bi bi-trash"></i></button>
                         </td>` : ''}
                     `;
                 tbody.appendChild(tr);

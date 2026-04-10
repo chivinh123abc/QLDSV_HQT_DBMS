@@ -445,13 +445,13 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
             }
 
             function miniRowHtml(p) {
-                return `<tr class="mini-row" role="button"
+                return `<tr class="mini-row transition-base" role="button"
                                 data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
                                 data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}">
-                        <td class="fw-semibold font-monospace text-primary small">${escapeHtml(p.classId)}</td>
-                        <td class="small">${escapeHtml(p.className)}</td>
-                        <td class="small">${escapeHtml(p.schoolYear)}</td>
-                        <td><span class="badge bg-secondary-subtle text-secondary border small">${escapeHtml(p.facultyId)}</span></td>
+                        <td class="fw-bold font-monospace text-primary">${escapeHtml(p.classId)}</td>
+                        <td>${escapeHtml(p.className)}</td>
+                        <td>${escapeHtml(p.schoolYear)}</td>
+                        <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle small px-2">${escapeHtml(p.facultyId)}</span></td>
                     </tr>`;
             }
 

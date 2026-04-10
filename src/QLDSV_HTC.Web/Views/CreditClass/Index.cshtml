@@ -1,92 +1,648 @@
+@model QLDSV_HTC.Web.Models.CreditClassManagementViewModel
+@using QLDSV_HTC.Domain.Constants
+
 @{
     ViewData["Title"] = "Quản lý Lớp tín chỉ";
+    var isPGV = User.IsInRole("PGV");
+    var hasFaculty = !string.IsNullOrEmpty(Model.CurrentFacultyId);
+    var pageTitle = hasFaculty
+        ? $"Quản lý Lớp tín chỉ — Khoa {Model.CurrentFacultyId}"
+        : "Quản lý Lớp tín chỉ toàn trường";
+
+    ViewData["isPGV"] = isPGV;
+    ViewData["hasFaculty"] = hasFaculty;
 }
 
-<div class="dashboard-container">
+<div class="dashboard-container fade-in-up">
+
+    @* ── Thanh tiêu đề + nút Thêm Mới ── *@
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Quản lý Lớp tín chỉ</h1>
-        <button class="btn btn-primary shadow-sm">
-            <i class="bi bi-calendar-plus me-2"></i> Mở Lớp tín chỉ
-        </button>
-    </div>
-
-    <!-- Filter/Search -->
-    <div class="qldsv-card border-0 shadow-sm mb-4 p-3">
-        <form class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label text-sm fw-medium">Niên khóa</label>
-                <select class="form-select form-select-sm">
-                    <option selected>2021-2022</option>
-                    <option>2022-2023</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label text-sm fw-medium">Học kỳ</label>
-                <select class="form-select form-select-sm">
-                    <option selected>1</option>
-                    <option>2</option>
-                    <option>3</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label text-sm fw-medium">Khoa (Bộ môn)</label>
-                <select class="form-select form-select-sm">
-                    <option selected>Công nghệ thông tin</option>
-                    <option>Viễn thông</option>
-                </select>
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="button" class="btn btn-sm btn-secondary w-100"><i class="bi bi-filter"></i> Lọc</button>
-            </div>
-        </form>
-    </div>
-
-    <div class="qldsv-card border-0 shadow-sm">
-        <div class="table-responsive p-3">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">Mã LTC</th>
-                        <th scope="col">Môn học</th>
-                        <th scope="col">Nhóm</th>
-                        <th scope="col">Giảng viên</th>
-                        <th scope="col">SV Tối thiểu</th>
-                        <th scope="col">SV Đã ĐK</th>
-                        <th scope="col">Trạng thái</th>
-                        <th scope="col" class="text-end">Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="fw-medium text-purple">1001</td>
-                        <td>Cấu trúc dữ liệu và giải thuật</td>
-                        <td>1</td>
-                        <td>Nguyễn Thanh Tuấn</td>
-                        <td>30</td>
-                        <td><span class="fw-bold">45</span></td>
-                        <td><span class="badge text-bg-success">Chưa hủy</span></td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-info me-1" title="Xem DSSV"><i class="bi bi-people"></i></button>
-                            <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i></button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="fw-medium text-purple">1002</td>
-                        <td>Cơ sở dữ liệu</td>
-                        <td>2</td>
-                        <td>Lê Thị Ái</td>
-                        <td>30</td>
-                        <td><span class="fw-bold text-danger">15</span></td>
-                        <td><span class="badge text-bg-warning">Nguy cơ hủy</span></td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-info me-1" title="Xem DSSV"><i class="bi bi-people"></i></button>
-                            <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle"></i></button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-gray-800">@pageTitle</h1>
+            <p class="text-muted mb-0 small">
+                <i class="bi bi-calendar2-range me-1"></i>
+                Tổng: <strong>@Model.CreditClasses.Count()</strong> lớp tín chỉ
+                @if (hasFaculty)
+                {
+                    <span class="ms-2 badge bg-primary-subtle text-primary border border-primary-subtle">
+                        <i class="bi bi-building me-1"></i>@Model.CurrentFacultyId
+                    </span>
+                }
+            </p>
         </div>
+        @if (isPGV)
+        {
+            <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2 hover-scale" id="btnOpenCreditClassForm" type="button"
+                    data-bs-toggle="modal" data-bs-target="#creditClassFormModal">
+                <i class="bi bi-plus-circle"></i>
+                <span>Tạo / Cập nhật Lớp tín chỉ</span>
+            </button>
+        }
     </div>
+
+    @* ── Bảng danh sách LTC ── *@
+    @await Html.PartialAsync("_CreditClassTable", Model, ViewData)
 </div>
+
+@* ══════════════════════════════════════════════════════════
+MODAL: Nhập danh mục LTC / Xác nhận xóa
+══════════════════════════════════════════════════════════ *@
+@await Html.PartialAsync("_CreditClassFormModal", Model, ViewData)
+<partial name="_DeleteConfirmModal" />
+
+@section Scripts {
+    <script src="~/js/form-helpers.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            'use strict';
+
+            const URL_ADD = '@Url.Action("Add", "CreditClass")';
+            const URL_EDIT = '@Url.Action("Edit", "CreditClass")';
+            const URL_DELETE = '@Url.Action("Delete", "CreditClass")';
+
+            let snapshotData = null;
+            let selectedId = null;
+            let originalId = null;
+            
+            // -- UNDO STACK STATE --
+            let undoStack = [];
+            let forceClose = false;
+
+            const modal = document.getElementById('creditClassFormModal');
+            const deleteModal = document.getElementById('deleteConfirmModal');
+            
+            // Fields
+            const fldId = document.getElementById('fldCreditClassId');
+            const fldYear = document.getElementById('fldYear');
+            const fldSemester = document.getElementById('fldSemester');
+            const fldSubjectId = document.getElementById('fldSubjectId');
+            const fldGroup = document.getElementById('fldGroup');
+            const fldLecturerId = document.getElementById('fldLecturerId');
+            const fldFacultyId = document.getElementById('fldFacultyId');
+            const fldMinStudents = document.getElementById('fldMinStudents');
+            const fldIsCancelled = document.getElementById('fldIsCancelled');
+
+            // Buttons
+            const btnThem = document.getElementById('btnFormThem');
+            const btnXoa = document.getElementById('btnFormXoa');
+            const btnGhi = document.getElementById('btnFormGhi');
+            const btnPhucHoi = document.getElementById('btnFormPhucHoi');
+            const btnHuy = document.getElementById('btnFormHuy');
+
+            // ── Shared form helpers
+            const helpers = createFormHelpers({
+                alertEl: document.getElementById('formAlert'),
+                modeLabelEl: document.getElementById('formModeLabel'),
+                buttons: { them: btnThem, xoa: btnXoa, ghi: btnGhi, phucHoi: btnPhucHoi, huy: btnHuy },
+                allFields: [fldYear, fldSemester, fldSubjectId, fldGroup, fldLecturerId, fldFacultyId, fldMinStudents, fldIsCancelled],
+                requiredFields: [fldYear, fldSemester, fldSubjectId, fldGroup, fldFacultyId, fldMinStudents],
+                getSelectedId: () => selectedId,
+            });
+
+            // Delete Modal Logic
+            let pendingDeleteId = null;
+            if (deleteModal) {
+                document.getElementById('btnConfirmDelete').addEventListener('click', async () => {
+                    bootstrap.Modal.getInstance(deleteModal)?.hide();
+                    if (pendingDeleteId) await doDelete(pendingDeleteId);
+                });
+            }
+
+            function showDeleteModal(id, title) {
+                pendingDeleteId = id;
+                document.getElementById('deleteTargetId').textContent = "LTC " + id;
+                document.getElementById('deleteTargetName').textContent = title;
+                bootstrap.Modal.getOrCreateInstance(deleteModal).show();
+            }
+
+            if (!modal) return;
+
+            const btnCancelModal = modal.querySelector('.btn-cancel-modal');
+            const btnSaveModal = modal.querySelector('.btn-save-modal');
+
+            // Mở modal qua nút Thêm Mới → reset về view
+            document.getElementById('btnOpenCreditClassForm')?.addEventListener('click', resetToView);
+
+            // Mở modal → clear stack
+            modal.addEventListener('show.bs.modal', () => {
+                undoStack = [];
+                forceClose = false;
+            });
+
+            // Chặn đóng modal nếu còn stack
+            modal.addEventListener('hide.bs.modal', async (e) => {
+                if (undoStack.length > 0 && !forceClose) {
+                    e.preventDefault();
+                    const isConfirmed = await window.showConfirmDialog(
+                        "Dữ liệu chưa đóng",
+                        "Ghi nhận có thay đổi chưa lưu (bạn sẽ mất các trạng thái có thể Phục hồi).<br><br>Nhấn <b>Tiếp tục đóng</b> nếu bạn không cần Phục hồi nữa.<br>Nhấn <b>Hủy bỏ</b> để ở lại form và chọn nút dưới cùng.",
+                        { confirmText: "Tiếp tục đóng", cancelText: "Hủy bỏ", isDanger: true }
+                    );
+                    if (isConfirmed) {
+                        forceClose = true;
+                        bootstrap.Modal.getInstance(modal).hide();
+                    }
+                }
+            });
+
+            btnSaveModal?.addEventListener('click', async () => {
+                const message = undoStack.length > 0 
+                  ? "Thay đổi sẽ được lưu lại vĩnh viễn và không thể phục hồi bằng chức năng này nữa.<br>Bạn có chắc chắn muốn đóng Modal?"
+                  : "Chưa có thay đổi nào được thực hiện so với ban đầu.<br>Bạn có chắc chắn muốn đóng lại không?";
+                
+                const isConfirmed = await window.showConfirmDialog(
+                    "Xác nhận đóng", message,
+                    { confirmText: "Lưu và Đóng", cancelText: "Trở lại" }
+                );
+                
+                if (isConfirmed) {
+                    undoStack = [];
+                    forceClose = true;
+                    bootstrap.Modal.getInstance(modal).hide();
+                }
+            });
+
+            btnCancelModal?.addEventListener('click', async () => {
+                const isDanger = undoStack.length > 0;
+                const message = isDanger
+                    ? "Hành động này sẽ <b>Hoàn Tác toàn bộ</b> các thay đổi bạn vừa thực hiện trong bảng vừa rồi.<br>Bạn có chắc chắn muốn xóa bỏ công sức vừa làm?"
+                    : "Bạn chưa thực hiện thay đổi nào cần hoàn tác.<br>Đóng cửa sổ ngay bây giờ?";
+                
+                const isConfirmed = await window.showConfirmDialog(
+                    "Hoàn Tác & Đóng", message,
+                    { confirmText: isDanger ? "Xác nhận Hoàn tác" : "Đóng cửa sổ", cancelText: "Giữ lại", isDanger: isDanger }
+                );
+
+                if (isConfirmed) {
+                    btnCancelModal.disabled = true;
+                    while(undoStack.length > 0) {
+                        await executeUndo();
+                    }
+                    undoStack = [];
+                    forceClose = true;
+                    btnCancelModal.disabled = false;
+                    bootstrap.Modal.getInstance(modal).hide();
+                }
+            });
+
+            // Reset khi đóng modal toàn phần
+            modal.addEventListener('hidden.bs.modal', resetToView);
+
+            // Mini table row selection
+            document.getElementById('miniCreditClassBody')?.addEventListener('click', e => {
+                if (helpers.getMode() === 'add') return;
+                const row = e.target.closest('tr.mini-row');
+                if (!row) return;
+                selectMiniRow(row);
+            });
+
+            // ── Nút Thêm
+            btnThem.addEventListener('click', () => {
+                deselectMiniRow();
+                selectedId = null;
+                snapshotData = null;
+                clearFields();
+                helpers.clearValidation();
+                helpers.setMode('add');
+                fldYear.disabled = false;
+                fldYear.focus();
+                
+                // Trạng thái huỷ luôn tắt khi tạo mới
+                fldIsCancelled.checked = false;
+                
+                helpers.showAlert('Nhập thông tin Lớp Tín Chỉ mới rồi nhấn <b>Ghi</b> để lưu.', 'info');
+            });
+
+            // ── Nút Xóa
+            btnXoa.addEventListener('click', () => {
+                if (!selectedId) return;
+                showDeleteModal(selectedId, `Môn ${fldSubjectId.options[fldSubjectId.selectedIndex]?.text} - Nhóm ${fldGroup.value}`);
+            });
+
+            // ── Nút Ghi
+            btnGhi.addEventListener('click', async () => {
+                if (!helpers.validateForm()) return;
+
+                const payload = {
+                    oldCreditClassId: originalId,
+                    creditClassId: parseInt(fldId.value) || 0,
+                    year: fldYear.value.trim(),
+                    semester: parseInt(fldSemester.value),
+                    subjectId: fldSubjectId.value.trim(),
+                    group: parseInt(fldGroup.value),
+                    lecturerId: fldLecturerId.value.trim(),
+                    facultyId: fldFacultyId.value.trim(),
+                    minStudents: parseInt(fldMinStudents.value),
+                    isCancelled: fldIsCancelled.checked
+                };
+
+                try {
+                    const res = await fetchJson(helpers.getMode() === 'add' ? URL_ADD : URL_EDIT, payload);
+                    if (res.success) {
+                        window.showToast(res.message, 'success');
+                        
+                        // Lưu vào stack trước khi cập nhật
+                        if (helpers.getMode() === 'add') {
+                            const newId = res.newId || 0; 
+                            payload.id = newId;
+                            payload.creditClassId = newId;
+                            fldId.value = newId;
+                            addRowToTables(payload, newId);
+                            undoStack.push({ action: 'delete', payload: { creditClassId: newId } });
+                        } else {
+                            updateRowInTables(payload, originalId);
+                            if (snapshotData) {
+                                undoStack.push({
+                                    action: 'edit',
+                                    payload: {
+                                        oldCreditClassId: payload.creditClassId,
+                                        creditClassId: snapshotData.id,
+                                        year: snapshotData.year,
+                                        semester: snapshotData.semester,
+                                        subjectId: snapshotData.subId,
+                                        group: snapshotData.group,
+                                        lecturerId: snapshotData.lecId,
+                                        facultyId: snapshotData.facId,
+                                        minStudents: snapshotData.min,
+                                        isCancelled: snapshotData.cancelled === 'true' || snapshotData.cancelled === true
+                                    }
+                                });
+                            }
+                        }
+                        
+                        originalId = parseInt(fldId.value);
+                        selectedId = parseInt(fldId.value);
+                        snapshotData = { ...payload, id: selectedId, 
+                            subId: payload.subjectId, lecId: payload.lecturerId, facId: payload.facultyId, min: payload.minStudents, cancelled: payload.isCancelled === true  };
+                        
+                        highlightMiniRow(selectedId);
+                        helpers.setMode('edit');
+                    } else {
+                        window.showToast(res.message, 'danger');
+                    }
+                } catch (err) {
+                    window.showToast('Lỗi: ' + err.message, 'danger');
+                }
+            });
+
+            // ── Nút Phục hồi
+            btnPhucHoi.addEventListener('click', async () => {
+                if (undoStack.length === 0) {
+                    helpers.showAlert('Không có hành động nào để phục hồi.', 'info');
+                    return;
+                }
+                await executeUndo();
+                resetToView();
+                helpers.showAlert('Đã hoàn tác 1 hành động trên hệ thống.', 'warning');
+            });
+
+            // ── Nút Hủy
+            btnHuy?.addEventListener('click', resetToView);
+
+            // ── Edit/Delete on Main Table
+            document.getElementById('creditClassTableBody')?.addEventListener('click', e => {
+                const editBtn = e.target.closest('.btn-edit-row');
+                const delBtn = e.target.closest('.btn-delete-row');
+
+                if (editBtn) {
+                    const ds = editBtn.dataset;
+                    bootstrap.Modal.getOrCreateInstance(modal).show();
+                    setTimeout(() => {
+                        const data = {
+                            id: ds.id, year: ds.year, semester: ds.semester,
+                            subId: ds.subId, group: ds.group, lecId: ds.lecId,
+                            facId: ds.facId, min: ds.min, cancelled: ds.cancelled === 'true'
+                        };
+                        populateFields(data);
+                        originalId = data.id;
+                        selectedId = data.id;
+                        snapshotData = { ...data };
+                        undoStack = []; // Reset stack khi mở mới
+                        helpers.setMode('edit');
+                        highlightMiniRow(ds.id);
+                        helpers.hideAlert();
+                    }, 200);
+                }
+
+                if (delBtn) {
+                    const tr = delBtn.closest('tr');
+                    const subName = tr.querySelector('td:nth-child(3)').textContent;
+                    showDeleteModal(delBtn.dataset.id, subName);
+                }
+            });
+
+            // ── Filter (Client-side)
+            document.getElementById('creditClassSearch')?.addEventListener('input', e => {
+                const q = e.target.value.toLowerCase();
+                let vis = 0;
+                document.querySelectorAll('#creditClassTableBody table tr[data-id]').forEach(row => {
+                    const txt = (row.dataset.id + ' ' + row.dataset.search).toLowerCase();
+                    const match = txt.includes(q);
+                    row.style.display = match ? '' : 'none';
+                    if (match) vis++;
+                });
+                const vc = document.getElementById('visibleCount');
+                if (vc) vc.textContent = String(vis);
+            });
+
+            // ── Helpers
+            function resetToView() {
+                selectedId = null; snapshotData = null; originalId = null; undoStack = [];
+                clearFields(); helpers.clearValidation(); helpers.hideAlert(); deselectMiniRow();
+                helpers.setMode('view');
+            }
+
+            function clearFields() {
+                fldId.value = '';
+                fldYear.value = '';
+                fldSemester.value = '';
+                fldSubjectId.value = '';
+                fldGroup.value = '1';
+                fldLecturerId.value = '';
+                fldFacultyId.value = '';
+                fldMinStudents.value = '30';
+                fldIsCancelled.checked = false;
+            }
+
+            function populateFields(d) {
+                fldId.value = d.id || '';
+                fldYear.value = d.year || '';
+                fldSemester.value = d.semester || '';
+                fldSubjectId.value = d.subId || '';
+                fldGroup.value = d.group || '1';
+                fldLecturerId.value = d.lecId || '';
+                fldFacultyId.value = d.facId || '';
+                fldMinStudents.value = d.min || '30';
+                fldIsCancelled.checked = d.cancelled === true || d.cancelled === 'true';
+            }
+
+            function selectMiniRow(row) {
+                deselectMiniRow();
+                row.classList.add('table-active', 'fw-semibold');
+                const ds = row.dataset;
+                const data = {
+                    id: ds.id, year: ds.year, semester: ds.semester,
+                    subId: ds.subId, group: ds.group, lecId: ds.lecId,
+                    facId: ds.facId, min: ds.min, cancelled: ds.cancelled === 'true'
+                };
+                populateFields(data);
+                originalId = data.id;
+                selectedId = data.id;
+                snapshotData = { ...data };
+                undoStack = [];
+                helpers.setMode('edit');
+                helpers.hideAlert();
+            }
+
+            function highlightMiniRow(id) {
+                deselectMiniRow();
+                const row = document.querySelector(`#miniCreditClassBody tr[data-id="${CSS.escape(id)}"]`);
+                if (row) row.classList.add('table-active', 'fw-semibold');
+            }
+
+            function deselectMiniRow() {
+                document.querySelectorAll('#miniCreditClassBody tr.table-active')
+                    .forEach(r => r.classList.remove('table-active', 'fw-semibold'));
+            }
+
+            function mainRowHtml(p) {
+                const isPGV = @(isPGV.ToString().ToLower());
+                const subName = fldSubjectId.options[fldSubjectId.selectedIndex]?.text.split(' (')[0] || p.subjectId;
+                const lecName = fldLecturerId.options[fldLecturerId.selectedIndex]?.text.split(' (')[0] || '';
+                const registeredCount = snapshotData ? (snapshotData.registeredCount || 0) : 0;
+                
+                let statusHtml = '';
+                if (p.isCancelled) {
+                    statusHtml = '<span class="badge bg-danger">Hủy</span>';
+                } else if (registeredCount < p.minStudents) {
+                    statusHtml = '<span class="badge bg-warning text-dark">Chưa đủ</span>';
+                } else {
+                    statusHtml = '<span class="badge bg-success">Đã đạt</span>';
+                }
+                
+                let registeredHtml = registeredCount > 0 
+                    ? `<span class="fw-bold ${registeredCount < p.minStudents ? 'text-warning' : 'text-success'}">${registeredCount}</span>`
+                    : '<span class="text-muted">0</span>';
+
+                let actions = isPGV ? `
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-info me-1 shadow-sm hover-scale"
+                                title="Xem DSSV" onclick="window.location.href='@Url.Action("Index", "Registration")?filterCreditClassId=${p.id}'">
+                            <i class="bi bi-people"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row shadow-sm hover-scale"
+                                title="Sửa lớp tín chỉ"
+                                data-id="${p.id}" data-year="${p.year}" data-semester="${p.semester}"
+                                data-sub-id="${p.subjectId}" data-group="${p.group}"
+                                data-lec-id="${p.lecturerId}" data-fac-id="${p.facultyId}"
+                                data-min="${p.minStudents}" data-cancelled="${p.isCancelled}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-sm hover-scale"
+                                title="Xóa lớp tín chỉ" data-id="${p.id}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>` : '';
+
+                return `
+                    <td class="fw-semibold font-monospace text-primary">${p.id}</td>
+                    <td class="small">${p.year} (HK ${p.semester})</td>
+                    <td>${subName}</td>
+                    <td class="text-center">
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">${p.group}</span>
+                    </td>
+                    <td class="text-truncate" style="max-width:200px;">${lecName}</td>
+                    <td class="text-center">${p.minStudents}</td>
+                    <td class="text-center">${registeredHtml}</td>
+                    <td class="text-center">${statusHtml}</td>
+                    ${actions}
+                `;
+            }
+
+            function miniRowHtml(p) {
+                const subName = fldSubjectId.options[fldSubjectId.selectedIndex]?.text.split(' (')[0] || p.subjectId;
+                const statusHtml = p.isCancelled
+                    ? '<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Hủy</span>'
+                    : '<span class="badge bg-success-subtle text-success border border-success-subtle">Mở</span>';
+
+                return `
+                    <td class="fw-bold font-monospace text-primary">${p.id}</td>
+                    <td class="text-truncate" style="max-width: 150px;" title="${subName}">${subName}</td>
+                    <td class="text-center">
+                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2">${p.group}</span>
+                    </td>
+                    <td class="text-center">${p.minStudents}</td>
+                    <td class="text-center">${statusHtml}</td>
+                `;
+            }
+
+            function addRowToTables(payload, newId) {
+                payload.id = newId;
+
+                // Thêm vào bảng mini
+                const trMini = document.createElement('tr');
+                trMini.className = 'mini-row transition-base table-active fw-semibold';
+                trMini.setAttribute('role', 'button');
+                trMini.dataset.id = newId;
+                trMini.dataset.year = payload.year;
+                trMini.dataset.semester = payload.semester;
+                trMini.dataset.subId = payload.subjectId;
+                trMini.dataset.group = payload.group;
+                trMini.dataset.lecId = payload.lecturerId;
+                trMini.dataset.facId = payload.facultyId;
+                trMini.dataset.min = payload.minStudents;
+                trMini.dataset.cancelled = payload.isCancelled;
+                trMini.innerHTML = miniRowHtml(payload);
+                document.getElementById('miniCreditClassBody')?.prepend(trMini);
+
+                // Thêm vào bảng main
+                const trMain = document.createElement('tr');
+                trMain.dataset.id = newId;
+                trMain.dataset.year = payload.year;
+                trMain.dataset.semester = payload.semester;
+                trMain.dataset.subId = payload.subjectId;
+                trMain.dataset.group = payload.group;
+                trMain.dataset.lecId = payload.lecturerId;
+                trMain.dataset.facId = payload.facultyId;
+                trMain.dataset.min = payload.minStudents;
+                trMain.dataset.cancelled = payload.isCancelled;
+                
+                const subName = fldSubjectId.options[fldSubjectId.selectedIndex]?.text.split(' (')[0] || '';
+                const lecName = fldLecturerId.options[fldLecturerId.selectedIndex]?.text.split(' (')[0] || '';
+                trMain.dataset.search = subName + ' ' + lecName;
+                
+                trMain.innerHTML = mainRowHtml(payload);
+                const tBody = document.getElementById('creditClassTableBody')?.querySelector('tbody');
+                
+                // Nếu đang hiển thị no-data
+                const noDataRow = tBody?.querySelector('td[colspan]');
+                if (noDataRow) {
+                    tBody.innerHTML = '';
+                    tBody.appendChild(trMain);
+                } else {
+                    tBody?.prepend(trMain);
+                }
+            }
+
+            function updateRowInTables(payload, id) {
+                payload.id = id;
+                
+                // Cập nhật bảng mini
+                const trMini = document.querySelector(`#miniCreditClassBody tr[data-id="${id}"]`);
+                if (trMini) {
+                    trMini.dataset.year = payload.year;
+                    trMini.dataset.semester = payload.semester;
+                    trMini.dataset.subId = payload.subjectId;
+                    trMini.dataset.group = payload.group;
+                    trMini.dataset.lecId = payload.lecturerId;
+                    trMini.dataset.facId = payload.facultyId;
+                    trMini.dataset.min = payload.minStudents;
+                    trMini.dataset.cancelled = payload.isCancelled;
+                    trMini.innerHTML = miniRowHtml(payload);
+                    trMini.classList.add('table-active', 'fw-semibold');
+                }
+
+                // Cập nhật bảng main
+                const trMain = document.querySelector(`#creditClassTableBody tr[data-id="${id}"]`);
+                if (trMain) {
+                    trMain.dataset.year = payload.year;
+                    trMain.dataset.semester = payload.semester;
+                    trMain.dataset.subId = payload.subjectId;
+                    trMain.dataset.group = payload.group;
+                    trMain.dataset.lecId = payload.lecturerId;
+                    trMain.dataset.facId = payload.facultyId;
+                    trMain.dataset.min = payload.minStudents;
+                    trMain.dataset.cancelled = payload.isCancelled;
+                    
+                    const subName = fldSubjectId.options[fldSubjectId.selectedIndex]?.text.split(' (')[0] || '';
+                    const lecName = fldLecturerId.options[fldLecturerId.selectedIndex]?.text.split(' (')[0] || '';
+                    trMain.dataset.search = subName + ' ' + lecName;
+                    
+                    trMain.innerHTML = mainRowHtml(payload);
+                }
+            }
+
+            function removeRowFromTables(id) {
+                const trLine = document.querySelector(`#creditClassTableBody tr[data-id="${id}"]`);
+                if (trLine) trLine.remove();
+                
+                const trMini = document.querySelector(`#miniCreditClassBody tr[data-id="${id}"]`);
+                if (trMini) trMini.remove();
+                
+                const tBody = document.getElementById('creditClassTableBody')?.querySelector('tbody');
+                if (tBody && tBody.children.length === 0) {
+                    const isPGV = @(isPGV.ToString().ToLower());
+                    tBody.innerHTML = `<tr><td colspan="${isPGV ? 9 : 8}" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>Không có dữ liệu lớp tín chỉ.</td></tr>`;
+                }
+                
+                if (selectedId == id) {
+                    resetToView();
+                }
+            }
+
+            async function executeUndo() {
+                if (undoStack.length === 0) return;
+                const actionObj = undoStack.pop();
+                try {
+                    if (actionObj.action === 'add') {
+                        // Resurrect deleted item
+                        const res = await fetchJson(URL_ADD, actionObj.payload);
+                        addRowToTables(actionObj.payload, res.newId);
+                    } else if (actionObj.action === 'edit') {
+                        await fetchJson(URL_EDIT, actionObj.payload);
+                        // The UI should reflect the payload after edit
+                        updateRowInTables(actionObj.payload, actionObj.payload.oldCreditClassId);
+                    } else if (actionObj.action === 'delete') {
+                        await fetchJson(URL_DELETE, actionObj.payload);
+                        removeRowFromTables(actionObj.payload.creditClassId);
+                    }
+                } catch(err) {
+                    window.showToast("Lỗi hoàn tác: " + err.message, "danger");
+                }
+            }
+
+            async function doDelete(id) {
+                try {
+                    const row = document.querySelector(`#creditClassTableBody tr[data-id="${id}"]`);
+                    const delPayload = row ? {
+                        year: row.dataset.year,
+                        semester: parseInt(row.dataset.semester),
+                        subjectId: row.dataset.subId,
+                        group: parseInt(row.dataset.group),
+                        lecturerId: row.dataset.lecId,
+                        facultyId: row.dataset.facId,
+                        minStudents: parseInt(row.dataset.min),
+                        isCancelled: row.dataset.cancelled === 'true' || row.dataset.cancelled === true
+                    } : null;
+
+                    const res = await fetchJson(URL_DELETE, { creditClassId: parseInt(id) });
+                    if (res.success) {
+                        window.showToast(res.message, 'success');
+                        removeRowFromTables(id);
+                        
+                        if (delPayload && modal.classList.contains('show')) {
+                            undoStack.push({ action: 'add', payload: delPayload });
+                        }
+                    } else {
+                        window.showToast(res.message, 'danger');
+                    }
+                } catch (err) {
+                    window.showToast('Lỗi: ' + err.message, 'danger');
+                }
+            }
+
+            async function fetchJson(url, body) {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const json = await res.json();
+                if (!res.ok && json.success !== false)
+                    throw new Error(json.message ?? 'Lỗi máy chủ');
+                return json;
+            }
+
+        })();
+    </script>
+}
