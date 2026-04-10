@@ -42,6 +42,7 @@ namespace QLDSV_HTC.Web.Extensions
             services.AddScoped<IClassRepository, ClassRepository>();
             services.AddScoped<IStudentRepository, StudentRepository>();
             services.AddScoped<ILecturerRepository, LecturerRepository>();
+            services.AddScoped<IAccountRepository, AccountRepository>();
             services.AddScoped<IFacultyRepository, FacultyRepository>();
             services.AddSingleton<ISidebarService, SidebarService>();
 

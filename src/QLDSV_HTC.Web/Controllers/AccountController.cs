@@ -3,14 +3,20 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using QLDSV_HTC.Models;
+using Microsoft.Data.SqlClient;
+using QLDSV_HTC.Application.DTOs;
 using QLDSV_HTC.Application.Interfaces;
 using QLDSV_HTC.Domain.Constants;
+using QLDSV_HTC.Models;
+using QLDSV_HTC.Web.Models;
 
-namespace QLDSV_HTC.Controllers
+namespace QLDSV_HTC.Web.Controllers
 {
     [Route(RouteConstants.Account.Prefix)]
-    public class AccountController(IAuthRepository authRepository) : Controller
+    public class AccountController(
+        IAuthRepository authRepository,
+        IAccountRepository accountRepository,
+        ILecturerRepository lecturerRepository) : Controller
     {
         [HttpGet]
         [AllowAnonymous]
@@ -18,7 +24,7 @@ namespace QLDSV_HTC.Controllers
         public IActionResult Login()
         {
             // If already logged in, redirect to Home
-            if (User.Identity != null && User.Identity.IsAuthenticated)
+            if (User.Identity?.IsAuthenticated == true)
             {
                 return Redirect(RouteConstants.Home.HomePath);
             }
@@ -37,7 +43,7 @@ namespace QLDSV_HTC.Controllers
 
             var session = await authRepository.ValidateUserAsync(model.LoginName, model.Password ?? string.Empty, model.IsStudent);
 
-            if (session != null && session.IsValid)
+            if (session?.IsValid == true)
             {
                 // Create Claims based on retrieved session info
                 List<Claim> claims =
@@ -86,12 +92,155 @@ namespace QLDSV_HTC.Controllers
             return Redirect(RouteConstants.Account.LoginPath);
         }
 
+        // ────────────────────────────────────────────────
+        // GET /account/management — Trang quản lý tài khoản
+        // ────────────────────────────────────────────────
         [HttpGet]
         [Route(RouteConstants.Account.Management)]
-        [Authorize(Roles = AppConstants.Groups.PGV)]
-        public IActionResult Management()
+        [Authorize(Roles = AppConstants.Groups.Faculty)]
+        public async Task<IActionResult> Management()
         {
-            return View();
+            var accounts = (await accountRepository.GetAccountListAsync()).ToList();
+            var lecturers = (await lecturerRepository.GetLecturerListAsync(null)).ToList();
+
+            var currentGroup = User.FindFirst(AppConstants.SessionKeys.Group)?.Value ?? string.Empty;
+
+            var vm = new AccountManagementViewModel
+            {
+                Accounts = accounts.Select(a => new AccountViewModel
+                {
+                    LoginName = a.LoginName,
+                    UserName = a.UserName,
+                    GroupName = a.GroupName,
+                    LecturerId = a.LecturerId,
+                    LecturerFullName = a.LecturerFullName,
+                    IsDisabled = a.IsDisabled,
+                }),
+                Lecturers = lecturers.Select(l => new LecturerViewModel
+                {
+                    Id = l.LecturerId,
+                    FirstName = l.FirstName,
+                    LastName = l.LastName,
+                    FacultyId = l.FacultyId,
+                    FacultyName = l.FacultyName,
+                }),
+                CurrentUserGroup = currentGroup,
+            };
+
+            return View("_AccountTable", vm);
+        }
+
+        // ────────────────────────────────────────────────
+        // POST /account/management/add — Tạo tài khoản mới
+        // ────────────────────────────────────────────────
+        [HttpPost]
+        [Route(RouteConstants.Account.Add)]
+        [Authorize(Roles = AppConstants.Groups.Faculty)]
+        public async Task<IActionResult> Add([FromBody] AccountInputModel input)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ." });
+
+            // Phân quyền: KHOA chỉ được tạo tài khoản nhóm KHOA
+            var currentGroup = User.FindFirst(AppConstants.SessionKeys.Group)?.Value ?? string.Empty;
+            if (currentGroup.Equals(AppConstants.Groups.KHOA, StringComparison.OrdinalIgnoreCase) &&
+                !input.Role.Equals(AppConstants.Groups.KHOA, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { success = false, message = "Bạn không có quyền tạo tài khoản nhóm này." });
+            }
+
+            try
+            {
+                await accountRepository.CreateAccountAsync(new CreateAccountDto
+                {
+                    LoginName = input.LoginName.Trim(),
+                    Password = input.Password,
+                    UserName = input.UserName.Trim(),
+                    Role = input.Role.Trim(),
+                });
+                return Ok(new { success = true, message = "Tạo tài khoản thành công." });
+            }
+            catch (SqlException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        // ────────────────────────────────────────────────
+        // POST /account/management/edit — Đổi mật khẩu
+        // ────────────────────────────────────────────────
+        [HttpPost]
+        [Route(RouteConstants.Account.Edit)]
+        [Authorize(Roles = AppConstants.Groups.Faculty)]
+        public async Task<IActionResult> Edit([FromBody] AccountUpdateInputModel input)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ." });
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(input.NewLoginName) &&
+                    string.IsNullOrWhiteSpace(input.NewPassword) &&
+                    string.IsNullOrWhiteSpace(input.NewUserName) &&
+                    string.IsNullOrWhiteSpace(input.NewRole))
+                {
+                    return Ok(new { success = true, message = "Không có thay đổi nào được thực hiện." });
+                }
+
+                var currentLoginName = User.FindFirst(AppConstants.SessionKeys.Username)?.Value;
+                if (!string.IsNullOrEmpty(currentLoginName) &&
+                    input.OldLoginName.Equals(currentLoginName, StringComparison.OrdinalIgnoreCase) &&
+                    (!string.IsNullOrWhiteSpace(input.NewLoginName) || !string.IsNullOrWhiteSpace(input.NewRole)))
+                {
+                    return BadRequest(new { success = false, message = "Bạn không thể tự đổi tên đăng nhập hoặc quyền của chính mình khi đang thao tác!" });
+                }
+
+                await accountRepository.UpdateAccountAsync(new UpdateAccountDto
+                {
+                    OldLoginName = input.OldLoginName.Trim(),
+                    NewLoginName = string.IsNullOrWhiteSpace(input.NewLoginName) ? null : input.NewLoginName.Trim(),
+                    NewPassword = input.NewPassword,
+                    NewUserName = string.IsNullOrWhiteSpace(input.NewUserName) ? null : input.NewUserName.Trim(),
+                    NewRole = string.IsNullOrWhiteSpace(input.NewRole) ? null : input.NewRole.Trim(),
+                });
+                return Ok(new { success = true, message = "Cập nhật tài khoản thành công." });
+            }
+            catch (SqlException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+
+        // ────────────────────────────────────────────────
+        // POST /account/management/delete — Xóa tài khoản
+        // ────────────────────────────────────────────────
+        [HttpPost]
+        [Route(RouteConstants.Account.Delete)]
+        [Authorize(Roles = AppConstants.Groups.PGV)]
+        public async Task<IActionResult> Delete([FromBody] AccountDeleteModel input)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ." });
+
+            if (string.IsNullOrWhiteSpace(input?.LoginName))
+                return BadRequest(new { success = false, message = "Tên đăng nhập không hợp lệ." });
+
+            var currentLoginName = User.FindFirst(AppConstants.SessionKeys.Username)?.Value;
+            if (!string.IsNullOrEmpty(currentLoginName) &&
+                input.LoginName.Trim().Equals(currentLoginName, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { success = false, message = "Bạn không thể tự xóa tài khoản của chính mình!" });
+            }
+
+            try
+            {
+                await accountRepository.DeleteAccountAsync(input.LoginName.Trim());
+                return Ok(new { success = true, message = "Xóa tài khoản thành công." });
+            }
+            catch (SqlException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
     }
 }
