@@ -6,9 +6,8 @@
     var labelId = ViewData["ModalLabelId"] ?? "formModalLabel";
 }
 
-<div class="modal fade" id="@modalId" tabindex="-1"
-     aria-labelledby="@labelId" aria-hidden="true"
-     data-bs-backdrop="static" data-bs-keyboard="false">
+<div class="modal fade" id="@modalId" tabindex="-1" aria-labelledby="@labelId" aria-hidden="true"
+    data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable animate__animated animate__zoomIn">
         <div class="modal-content border-0 shadow-lg overflow-hidden glass-morphism">
 
@@ -24,7 +23,8 @@
                         @Model.ModeBadgeSection(null)
                     }
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
             </div>
 
             @* Modal Body *@
@@ -32,13 +32,15 @@
                 @* CRUD Toolbar area *@
                 @if (Model.ToolbarSection != null)
                 {
-                    <div class="d-flex flex-wrap gap-2 mb-4 p-3 bg-white bg-opacity-50 rounded-3 border border-light-subtle shadow-sm hover-elevate">
+                    <div
+                        class="d-flex flex-wrap gap-2 mb-4 p-3 bg-white bg-opacity-50 rounded-3 border border-light-subtle shadow-sm hover-elevate">
                         @Model.ToolbarSection(null)
                     </div>
                 }
 
                 @* Alert Banner area *@
-                <div id="@(ViewData["AlertId"] ?? "formAlert")" class="alert d-none align-items-center gap-2 animate__animated animate__fadeIn" role="alert"></div>
+                <div id="@(ViewData["AlertId"] ?? "formAlert")"
+                    class="alert d-none align-items-center gap-2 animate__animated animate__fadeIn" role="alert"></div>
 
                 @* The actual Form fields *@
                 <form id="@(ViewData["FormId"] ?? "form")" novalidate autocomplete="off">
@@ -56,6 +58,17 @@
                         @Model.ExtraBodySection(null)
                     </div>
                 }
+            </div>
+
+            @* Modal Footer for Save/Cancel all actions *@
+            <div class="modal-footer bg-light py-3 border-top-0 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-danger px-4 btn-cancel-modal"
+                    title="Hoàn tác mọi quyền thay đổi và đóng">
+                    Hoàn tác tất cả
+                </button>
+                <button type="button" class="btn btn-primary px-4 btn-save-modal" title="Xác nhận lưu thành quả và đóng cửa sổ">
+                    Đóng cửa sổ
+                </button>
             </div>
 
         </div>

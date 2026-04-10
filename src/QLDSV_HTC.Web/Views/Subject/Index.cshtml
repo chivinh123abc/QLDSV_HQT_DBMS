@@ -1,50 +1,470 @@
+@model QLDSV_HTC.Web.Models.SubjectManagementViewModel
+@using QLDSV_HTC.Domain.Constants
 @{
-    ViewData["Title"] = "Quản lý Môn học";
+    ViewData["Title"] = "Quản lý Môn Học";
+    var isPGV = (bool)(ViewData["isPGV"] ?? false);
 }
 
-<div class="dashboard-container">
+<div class="dashboard-container fade-in-up">
+
+    @* ── Thanh tiêu đề + nút Thêm Môn học Mới ── *@
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Danh mục Môn học</h1>
-        <button class="btn btn-primary shadow-sm">
-            <i class="bi bi-journal-plus me-2"></i> Thêm Môn học
-        </button>
+        <div>
+            <h1 class="h3 mb-1 fw-bold text-gray-800">Danh sách Môn Học toàn trường</h1>
+            <p class="text-muted mb-0 small">
+                <i class="bi bi-book-half me-1"></i>
+                Tổng: <strong>@Model.Subjects.Count()</strong> môn học
+            </p>
+        </div>
+        @if (isPGV)
+        {
+            <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2" id="btnOpenSubjectForm" type="button"
+                data-bs-toggle="modal" data-bs-target="#subjectFormModal">
+                <i class="bi bi-pencil-square"></i>
+                <span>Cập nhật danh mục Môn học</span>
+            </button>
+        }
     </div>
 
-    <div class="qldsv-card border-0 shadow-sm">
-        <div class="table-responsive p-3">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th scope="col">Mã MH</th>
-                        <th scope="col">Tên Môn học</th>
-                        <th scope="col">Số Tín chỉ Lý thuyết</th>
-                        <th scope="col">Số Tín chỉ Thực hành</th>
-                        <th scope="col" class="text-end">Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="fw-medium text-primary">CTDL</td>
-                        <td>Cấu trúc dữ liệu và giải thuật</td>
-                        <td>2</td>
-                        <td>1</td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="fw-medium text-primary">CSDL</td>
-                        <td>Cơ sở dữ liệu</td>
-                        <td>3</td>
-                        <td>1</td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+    @* ── Bảng danh sách môn học ── *@
+    @await Html.PartialAsync("_SubjectTable", Model, ViewData)
 </div>
+
+@* ══════════════════════════════════════════════════════════
+MODAL: Nhập danh mục môn học / Xác nhận xóa
+══════════════════════════════════════════════════════════ *@
+@await Html.PartialAsync("_SubjectFormModal", Model, ViewData)
+
+@section Scripts {
+    <script src="~/js/form-helpers.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            'use strict';
+
+            const URL_ADD = '@Url.Action("Add", "Subject")';
+            const URL_EDIT = '@Url.Action("Edit", "Subject")';
+            const URL_DELETE = '@Url.Action("Delete", "Subject")';
+
+            let snapshotData = null;
+            let selectedId = null;
+            let originalId = null;
+
+            // -- UNDO STACK STATE --
+            let undoStack = [];
+            let forceClose = false;
+
+            const modalEl = document.getElementById('subjectFormModal');
+            let subjectModalInstance = null;
+            if (modalEl) {
+                subjectModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+            }
+
+            const fldSubjectId = document.getElementById('fldSubjectId');
+            const fldSubjectName = document.getElementById('fldSubjectName');
+            const fldTheoryHours = document.getElementById('fldTheoryHours');
+            const fldPracticeHours = document.getElementById('fldPracticeHours');
+
+            const btnThem = document.getElementById('btnSubjectFormThem');
+            const btnXoa = document.getElementById('btnSubjectFormXoa');
+            const btnGhi = document.getElementById('btnSubjectFormGhi');
+            const btnPhucHoi = document.getElementById('btnSubjectFormPhucHoi');
+            const btnHuy = document.getElementById('btnSubjectFormHuy');
+
+            // ── Shared form helpers ──────────────────────────────────
+            const helpers = createFormHelpers({
+                alertEl: document.getElementById('formAlert'),
+                modeLabelEl: document.getElementById('formModeLabel'),
+                buttons: { them: btnThem, xoa: btnXoa, ghi: btnGhi, phucHoi: btnPhucHoi, huy: btnHuy },
+                allFields: [fldSubjectId, fldSubjectName, fldTheoryHours, fldPracticeHours],
+                requiredFields: [fldSubjectId, fldSubjectName, fldTheoryHours, fldPracticeHours],
+                getSelectedId: () => selectedId,
+            });
+
+            if (!modalEl) return;
+
+            const btnCancelModal = modalEl.querySelector('.btn-cancel-modal');
+            const btnSaveModal = modalEl.querySelector('.btn-save-modal');
+
+            // Mở modal qua nút -> reset về view
+            document.getElementById('btnOpenSubjectForm')?.addEventListener('click', resetToView);
+
+            // Mở modal → clear stack
+            modalEl.addEventListener('show.bs.modal', () => {
+                undoStack = [];
+                forceClose = false;
+            });
+
+            // Chặn đóng modal nếu còn stack
+            modalEl.addEventListener('hide.bs.modal', async (e) => {
+                if (undoStack.length > 0 && !forceClose) {
+                    e.preventDefault();
+                    const isConfirmed = await window.showConfirmDialog(
+                        "Dữ liệu chưa đóng",
+                        "Ghi nhận có thay đổi chưa lưu (bạn sẽ mất các trạng thái có thể Phục hồi).<br><br>Nhấn <b>Tiếp tục đóng</b> nếu bạn không cần Phục hồi nữa.<br>Nhấn <b>Hủy bỏ</b> để ở lại form.",
+                        { confirmText: "Tiếp tục đóng", cancelText: "Hủy bỏ", isDanger: true }
+                    );
+                    if (isConfirmed) {
+                        forceClose = true;
+                        subjectModalInstance.hide();
+                    }
+                }
+            });
+
+            btnSaveModal?.addEventListener('click', async () => {
+                const message = undoStack.length > 0 
+                    ? "Thay đổi sẽ được lưu lại vĩnh viễn và không thể phục hồi bằng chức năng này nữa.<br>Bạn có chắc chắn muốn đóng Modal?"
+                    : "Chưa có thay đổi nào được thực hiện so với ban đầu.<br>Bạn có chắc chắn muốn đóng lại không?";
+                
+                const isConfirmed = await window.showConfirmDialog(
+                    "Xác nhận đóng", message,
+                    { confirmText: "Lưu và Đóng", cancelText: "Trở lại" }
+                );
+                
+                if (isConfirmed) {
+                    undoStack = [];
+                    forceClose = true;
+                    subjectModalInstance.hide();
+                }
+            });
+
+            btnCancelModal?.addEventListener('click', async () => {
+                const isDanger = undoStack.length > 0;
+                const message = isDanger
+                    ? "Hành động này sẽ <b>Hoàn Tác toàn bộ</b> các thay đổi bạn vừa thực hiện trong phiên này.<br>Bạn có chắc chắn muốn xóa bỏ công sức vừa làm?"
+                    : "Bạn chưa thực hiện thay đổi nào cần hoàn tác.<br>Đóng cửa sổ ngay bây giờ?";
+                
+                const isConfirmed = await window.showConfirmDialog(
+                    "Hoàn Tác & Đóng", message,
+                    { confirmText: isDanger ? "Xác nhận Hoàn tác" : "Đóng cửa sổ", cancelText: "Giữ lại", isDanger: isDanger }
+                );
+
+                if (isConfirmed) {
+                    btnCancelModal.disabled = true;
+                    while(undoStack.length > 0) {
+                        await executeUndo();
+                    }
+                    undoStack = [];
+                    forceClose = true;
+                    btnCancelModal.disabled = false;
+                    subjectModalInstance.hide();
+                }
+            });
+
+            // Reset khi đóng modal
+            modalEl.addEventListener('hidden.bs.modal', resetToView);
+
+            // Chọn hàng trong mini-table
+            document.getElementById('miniSubjectBody').addEventListener('click', e => {
+                if (helpers.getMode() === 'add') return; // Đang Thêm → không cho chuyển
+                const row = e.target.closest('tr.mini-row');
+                if (!row) return;
+                selectMiniRow(row);
+            });
+
+            // ── Nút Thêm ─────────────────────────────────────────────
+            btnThem?.addEventListener('click', () => {
+                deselectMiniRow();
+                selectedId = null;
+                snapshotData = null;
+                clearFields();
+                helpers.clearValidation();
+                helpers.setMode('add');
+                fldSubjectId.disabled = false;
+                fldSubjectId.focus();
+                helpers.showAlert('Nhập thông tin môn học mới rồi nhấn <b>Lưu data</b> để ghi.', 'info');
+            });
+
+            // ── Nút Xóa ──────────────────────────────────────────────
+            btnXoa?.addEventListener('click', () => {
+                if (!selectedId) return;
+                deleteSubject(selectedId, fldSubjectName.value);
+            });
+
+            // ── Nút Ghi ──────────────────────────────────────────────
+            btnGhi?.addEventListener('click', async () => {
+                if (!helpers.validateForm()) return;
+
+                const safeHours = (el, fallback) => {
+                    const v = parseInt(el.value, 10);
+                    return isNaN(v) ? (parseInt(fallback, 10) || 0) : v;
+                };
+
+                const payload = {
+                    oldSubjectId: originalId,
+                    subjectId: fldSubjectId.value.trim(),
+                    subjectName: fldSubjectName.value.trim(),
+                    theoryHours: safeHours(fldTheoryHours, snapshotData?.theoryHours),
+                    practiceHours: safeHours(fldPracticeHours, snapshotData?.practiceHours),
+                };
+
+                try {
+                    const res = await fetchJson(helpers.getMode() === 'add' ? URL_ADD : URL_EDIT, payload);
+                    if (res.success) {
+                        window.showToast(res.message, 'success');
+                        if (helpers.getMode() === 'add') {
+                            addRowToTables(payload);
+                            undoStack.push({ action: 'delete', payload: { subjectId: payload.subjectId } });
+                        } else {
+                            updateRowInTables(payload, originalId);
+                            if (snapshotData) {
+                                undoStack.push({ 
+                                    action: 'edit', 
+                                    payload: { 
+                                        oldSubjectId: payload.subjectId, 
+                                        subjectId: snapshotData.subjectId, 
+                                        subjectName: snapshotData.subjectName,
+                                        theoryHours: snapshotData.theoryHours,
+                                        practiceHours: snapshotData.practiceHours
+                                    } 
+                                });
+                            }
+                        }
+
+                        snapshotData = { ...payload };
+                        selectedId = payload.subjectId;
+                        originalId = payload.subjectId;
+                        helpers.setMode('edit');
+                        highlightMiniRow(selectedId);
+                    } else {
+                        helpers.showAlert(res.message, 'danger');
+                    }
+                } catch (err) {
+                    helpers.showAlert('Lỗi: ' + err.message, 'danger');
+                }
+            });
+
+            // ── Nút Phục hồi ─────────────────────────────────────────
+            btnPhucHoi?.addEventListener('click', async () => {
+                if (undoStack.length === 0) {
+                    helpers.showAlert('Không có hành động nào để phục hồi.', 'info');
+                    return;
+                }
+                await executeUndo();
+                resetToView();
+                helpers.showAlert('Đã hoàn tác hành động vừa rồi.', 'warning');
+            });
+
+            // ── Nút Hủy ──────────────────────────────────────────────
+            btnHuy?.addEventListener('click', resetToView);
+
+            // ── Sửa / Xóa nhanh từ bảng chính ───────────────────────
+            document.getElementById('subjectTableBody').addEventListener('click', e => {
+                const editBtn = e.target.closest('.btn-edit-row');
+                const delBtn = e.target.closest('.btn-delete-row');
+
+                if (editBtn) {
+                    const id = editBtn.dataset.id;
+                    const name = editBtn.dataset.name;
+                    const theo = editBtn.dataset.theory;
+                    const prac = editBtn.dataset.practice;
+                    subjectModalInstance?.show();
+                    setTimeout(() => {
+                        helpers.setMode('edit');
+                        populateFields(id, name, theo, prac);
+                        highlightMiniRow(id);
+                        helpers.hideAlert();
+                    }, 200);
+                }
+
+                if (delBtn) {
+                    const id = delBtn.dataset.id;
+                    const name = delBtn.dataset.name;
+                    deleteSubject(id, name);
+                }
+            });
+
+            // ── Helpers ──────────────────────────────────────────────
+
+            function resetToView() {
+                selectedId = null; snapshotData = null; originalId = null;
+                clearFields(); helpers.clearValidation(); helpers.hideAlert(); deselectMiniRow();
+                helpers.setMode('view');
+            }
+
+            function populateFields(id, name, theory, practice) {
+                fldSubjectId.value = id;
+                fldSubjectName.value = name;
+                fldTheoryHours.value = theory;
+                fldPracticeHours.value = practice;
+                selectedId = id;
+                originalId = id;
+                snapshotData = { subjectId: id, subjectName: name, theoryHours: theory, practiceHours: practice };
+            }
+
+            function clearFields() {
+                fldSubjectId.value = fldSubjectName.value = '';
+                fldTheoryHours.value = fldPracticeHours.value = '';
+            }
+
+            function selectMiniRow(row) {
+                deselectMiniRow();
+                row.classList.add('table-active', 'fw-semibold');
+                helpers.setMode('edit');
+                populateFields(row.dataset.id, row.dataset.name, row.dataset.theory, row.dataset.practice);
+                helpers.hideAlert();
+            }
+
+            function highlightMiniRow(id) {
+                deselectMiniRow();
+                const row = document.querySelector(`#miniSubjectBody tr[data-id="${CSS.escape(id)}"]`);
+                if (row) row.classList.add('table-active', 'fw-semibold');
+            }
+
+            function deselectMiniRow() {
+                document.querySelectorAll('#miniSubjectBody tr.table-active')
+                    .forEach(r => r.classList.remove('table-active', 'fw-semibold'));
+            }
+
+            async function deleteSubject(id, name) {
+                const isConfirmed = await window.showConfirmDialog(
+                    "Xác nhận xóa môn học",
+                    `Bạn có chắc chắn muốn xóa môn học <b>${name} (${id})</b>?<br>Thuộc tính này không thể khôi phục tự động theo Stack.`,
+                    { confirmText: "Xóa", cancelText: "Hủy", isDanger: true }
+                );
+                
+                if (!isConfirmed) return;
+
+                try {
+                    const row = document.querySelector(`#subjectTableBody tr[data-id="${CSS.escape(id)}"]`);
+                    const delPayload = row ? {
+                        subjectId: row.dataset.id,
+                        subjectName: row.dataset.name,
+                        theoryHours: row.dataset.theory,
+                        practiceHours: row.dataset.practice
+                    } : null;
+
+                    const res = await fetchJson(URL_DELETE, { subjectId: id });
+                    if (res.success) {
+                        removeRowFromTables(id);
+                        if (delPayload && modalEl.classList.contains('show')) {
+                            // Cẩn thận: Nếu môn học này xoá thành công thì bỏ vô stack để Undo
+                            undoStack.push({ action: 'add', payload: delPayload });
+                        }
+                        
+                        resetToView();
+                        window.showToast(res.message, 'success');
+                    } else {
+                        window.showToast(res.message, 'danger');
+                    }
+                } catch (err) { 
+                    window.showToast('Lỗi: ' + err.message, 'danger'); 
+                }
+            }
+
+            async function executeUndo() {
+                if (undoStack.length === 0) return;
+                const actionObj = undoStack.pop();
+                try {
+                    if (actionObj.action === 'add') {
+                        await fetchJson(URL_ADD, actionObj.payload);
+                        addRowToTables(actionObj.payload);
+                    } else if (actionObj.action === 'edit') {
+                        await fetchJson(URL_EDIT, actionObj.payload);
+                        updateRowInTables(actionObj.payload, actionObj.payload.oldSubjectId);
+                    } else if (actionObj.action === 'delete') {
+                        await fetchJson(URL_DELETE, actionObj.payload);
+                        removeRowFromTables(actionObj.payload.subjectId);
+                    }
+                } catch(err) {
+                    window.showToast("Lỗi hoàn tác: " + err.message, "danger");
+                }
+            }
+
+            // ── DOM table helpers ─────────────────────────────────────
+
+            function addRowToTables(p) {
+                const tbody = document.getElementById('subjectTableBody');
+                const empty = tbody.querySelector('td[colspan]');
+                if (empty) empty.closest('tr').remove();
+                
+                tbody.insertAdjacentHTML('beforeend', mainRowHtml(p));
+                document.getElementById('miniSubjectBody').insertAdjacentHTML('beforeend', miniRowHtml(p));
+                updateCount(1);
+            }
+
+            function updateRowInTables(p, oldId) {
+                const main = document.querySelector(`#subjectTableBody tr[data-id="${CSS.escape(oldId)}"]`);
+                if (main) main.outerHTML = mainRowHtml(p);
+                const mini = document.querySelector(`#miniSubjectBody tr[data-id="${CSS.escape(oldId)}"]`);
+                if (mini) mini.outerHTML = miniRowHtml(p);
+            }
+
+            function removeRowFromTables(id) {
+                document.querySelector(`#subjectTableBody tr[data-id="${CSS.escape(id)}"]`)?.remove();
+                document.querySelector(`#miniSubjectBody tr[data-id="${CSS.escape(id)}"]`)?.remove();
+                updateCount(-1);
+            }
+
+            function updateCount(delta) {
+                const el = document.getElementById('visibleCount');
+                if (el) el.textContent = String(parseInt(el.textContent || '0', 10) + delta);
+            }
+
+            function mainRowHtml(p) {
+                return `<tr data-id="${escapeHtml(p.subjectId)}" data-name="${escapeHtml(p.subjectName)}"
+                            data-theory="${escapeHtml(p.theoryHours)}" data-practice="${escapeHtml(p.practiceHours)}">
+                        <td class="ps-4 fw-semibold font-monospace text-primary">${escapeHtml(p.subjectId)}</td>
+                        <td>${escapeHtml(p.subjectName)}</td>
+                        <td class="text-center">${escapeHtml(p.theoryHours)}</td>
+                        <td class="text-center">${escapeHtml(p.practiceHours)}</td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row" title="Sửa"
+                                    data-id="${escapeHtml(p.subjectId)}" data-name="${escapeHtml(p.subjectName)}"
+                                    data-theory="${escapeHtml(p.theoryHours)}" data-practice="${escapeHtml(p.practiceHours)}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger btn-delete-row" title="Xóa"
+                                    data-id="${escapeHtml(p.subjectId)}" data-name="${escapeHtml(p.subjectName)}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            }
+
+            function miniRowHtml(p) {
+                return `<tr class="mini-row" role="button"
+                            data-id="${escapeHtml(p.subjectId)}" data-name="${escapeHtml(p.subjectName)}"
+                            data-theory="${escapeHtml(p.theoryHours)}" data-practice="${escapeHtml(p.practiceHours)}">
+                        <td class="fw-semibold font-monospace text-primary small">${escapeHtml(p.subjectId)}</td>
+                        <td class="small text-truncate" style="max-width: 150px;" title="${escapeHtml(p.subjectName)}">${escapeHtml(p.subjectName)}</td>
+                    </tr>`;
+            }
+
+            async function fetchJson(url, body) {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const json = await res.json();
+                if (!res.ok && json.success !== false)
+                    throw new Error(json.message ?? 'Lỗi máy chủ');
+                return json;
+            }
+
+            // Client side search
+            document.getElementById('subjectSearch')?.addEventListener('input', () => {
+                const q = document.getElementById('subjectSearch').value.toLowerCase();
+                let vis = 0;
+                document.querySelectorAll('#subjectTableBody tr[data-id]').forEach(row => {
+                    const match = !q || row.dataset.id.toLowerCase().includes(q) || (row.dataset.name ?? '').toLowerCase().includes(q);
+                    row.style.display = match ? '' : 'none';
+                    if (match) vis++;
+                });
+                const vc = document.getElementById('visibleCount');
+                if (vc) vc.textContent = String(vis);
+            });
+
+            // Utils
+            function escapeHtml(unsafe) {
+                return (unsafe || '').toString()
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
+            }
+
+        })();
+    </script>
+}

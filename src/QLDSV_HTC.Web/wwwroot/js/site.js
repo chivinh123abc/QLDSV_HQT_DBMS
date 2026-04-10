@@ -42,3 +42,54 @@ window.showToast = function(message, type = 'success') {
         toastEl.remove();
     });
 };
+
+/**
+ * Hiển thị Hộp thoại Xác nhận (Custom Modal Promise)
+ * @param {string} title Tiêu đề
+ * @param {string} message Nội dung (chấp nhận HTML)
+ * @param {object} options Các cấu hình nút bấm
+ * @returns {Promise<boolean>} Resolves to true nếu bấm Xác nhận, false nếu Hủy
+ */
+window.showConfirmDialog = function(title, message, options = {}) {
+    return new Promise((resolve) => {
+        const confirmText = options.confirmText || "Xác nhận";
+        const cancelText = options.cancelText || "Hủy bỏ";
+        const isDanger = options.isDanger || false;
+        
+        document.getElementById('globalConfirmTitle').innerHTML = title;
+        document.getElementById('globalConfirmMessage').innerHTML = message;
+        
+        const btnOk = document.getElementById('globalConfirmBtnOk');
+        btnOk.innerHTML = `<i class="bi bi-check-lg me-1"></i>${confirmText}`;
+        btnOk.className = `btn flex-fill ${isDanger ? 'btn-danger' : 'btn-primary'}`;
+        
+        const btnCancel = document.getElementById('globalConfirmBtnCancel');
+        btnCancel.innerHTML = `<i class="bi bi-x-lg me-1"></i>${cancelText}`;
+
+        const iconContainer = document.getElementById('globalConfirmIconContainer');
+        const icon = document.getElementById('globalConfirmIcon');
+        if (isDanger) {
+            iconContainer.className = 'rounded-circle bg-danger bg-opacity-10 p-2 d-flex align-items-center justify-content-center';
+            icon.className = 'bi bi-exclamation-triangle-fill text-danger fs-5';
+        } else {
+            iconContainer.className = 'rounded-circle bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center';
+            icon.className = 'bi bi-question-circle-fill text-primary fs-5';
+        }
+
+        const modalEl = document.getElementById('globalConfirmModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+        const cleanup = () => {
+            btnOk.removeEventListener('click', onConfirm);
+            btnCancel.removeEventListener('click', onCancel);
+        };
+
+        const onConfirm = () => { cleanup(); resolve(true); modal.hide(); };
+        const onCancel = () => { cleanup(); resolve(false); modal.hide(); };
+        
+        btnOk.addEventListener('click', onConfirm);
+        btnCancel.addEventListener('click', onCancel);
+
+        modal.show();
+    });
+};

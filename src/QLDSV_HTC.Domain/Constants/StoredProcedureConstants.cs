@@ -53,6 +53,15 @@ namespace QLDSV_HTC.Domain.Constants
             public const string Password = "@PASSWORD";
         }
 
+        public static class SubjectCrud
+        {
+            public const string OldSubjectId = "@MAMH_OLD";
+            public const string SubjectId = "@MAMH";
+            public const string SubjectName = "@TENMH";
+            public const string TheoryHours = "@SOTIET_LT";
+            public const string PracticeHours = "@SOTIET_TH";
+        }
+
         public static class Faculty
         {
             public const string LecturerId = "@MAGV";

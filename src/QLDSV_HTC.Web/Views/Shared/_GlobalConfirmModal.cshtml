@@ -1,0 +1,27 @@
+<div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-labelledby="globalConfirmTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden animate__animated animate__zoomIn animate__faster">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle p-2 d-flex align-items-center justify-content-center" id="globalConfirmIconContainer" style="width:44px;height:44px">
+                        <i class="bi bi-question-circle-fill fs-5" id="globalConfirmIcon"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="globalConfirmTitle">Xác nhận</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body px-4 py-3">
+                <p class="mb-0 text-dark" id="globalConfirmMessage" style="white-space: pre-wrap;"></p>
+            </div>
+            <div class="modal-footer border-0 pt-0 px-4 pb-4 gap-2">
+                <button type="button" class="btn btn-secondary flex-fill" id="globalConfirmBtnCancel">
+                    <i class="bi bi-x-lg me-1"></i>Hủy
+                </button>
+                <button type="button" class="btn btn-primary flex-fill" id="globalConfirmBtnOk">
+                    <i class="bi bi-check-lg me-1"></i>Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

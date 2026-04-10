@@ -27,11 +27,11 @@ namespace QLDSV_HTC.Web.Models
         public string StudentId { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
-        public bool Gender { get; set; }
+        public bool? Gender { get; set; }
         public string? Address { get; set; }
         public string? Dob { get; set; }
         public string ClassId { get; set; } = string.Empty;
-        public bool OnLeave { get; set; }
+        public bool? OnLeave { get; set; }
         public string? Password { get; set; }
     }
 

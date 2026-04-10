@@ -24,6 +24,14 @@ namespace QLDSV_HTC.Domain.Constants
                 public const string FacultyName = "TENKHOA";
             }
 
+            public static class Subject
+            {
+                public const string Id = "MAMH";
+                public const string Name = "TENMH";
+                public const string TheoryHours = "SOTIET_LT";
+                public const string PracticeHours = "SOTIET_TH";
+            }
+
             public static class Faculty
             {
                 public const string Id = "MAKHOA";
