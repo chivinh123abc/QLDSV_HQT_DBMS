@@ -1,5 +1,4 @@
 USE [QLDSV_HTC]
-GO
 
 -- ========================================================
 -- 1. NHÓM PGV: TOÀN QUYỀN TRÊN DATABASE
@@ -21,19 +20,27 @@ GO
 
 -- (C) Cấp quyền thực thi các SP được phép
 GRANT EXECUTE ON OBJECT::dbo.sp_DangNhap TO [KHOA];
+
 GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachLop TO [KHOA];
+
 GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachSinhVien TO [KHOA];
+
 GRANT EXECUTE ON OBJECT::dbo.sp_PhanTrangDong TO [KHOA];
-GRANT VIEW DEFINITION TO [KHOA]; 
+
+GRANT VIEW DEFINITION TO [KHOA];
 
 -- (D) Đảm bảo KHOA không có quyền CUD (Xóa/Sửa/Thêm) Lớp và Sinh viên
 -- Mặc dù REVOKE ở trên đã làm việc này, nhưng DENY sẽ chặn tuyệt đối kể cả khi có GRANT rời rạc.
 DENY EXECUTE ON OBJECT::dbo.sp_ThemLop TO [KHOA];
+
 DENY EXECUTE ON OBJECT::dbo.sp_SuaLop TO [KHOA];
+
 DENY EXECUTE ON OBJECT::dbo.sp_XoaLop TO [KHOA];
 
 DENY EXECUTE ON OBJECT::dbo.sp_ThemSinhVien TO [KHOA];
+
 DENY EXECUTE ON OBJECT::dbo.sp_SuaSinhVien TO [KHOA];
+
 DENY EXECUTE ON OBJECT::dbo.sp_XoaSinhVien TO [KHOA];
 GO
 
@@ -44,5 +51,14 @@ REVOKE EXECUTE ON schema::dbo FROM [SV];
 GO
 
 GRANT EXECUTE ON OBJECT::dbo.sp_DangNhap_SinhVien TO [SV];
+
 GRANT EXECUTE ON OBJECT::dbo.sp_LayPhieuDiem TO [SV];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_LayThongTinSinhVien TO [SV];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachLopTinChi_SinhVien TO [SV];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_DangKyLopTinChi TO [SV];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_HuyDangKyLopTinChi TO [SV];
 GO

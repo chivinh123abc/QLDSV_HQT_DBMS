@@ -19,6 +19,18 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             return await cmd.ExecuteNonQueryAsync();
         }
 
+        protected async Task<object?> ExecuteScalarAsync(string commandText, CommandType commandType, params SqlParameter[] parameters)
+        {
+            await using var conn = new SqlConnection(connectionProvider.GetConnectionString());
+            await using var cmd = new SqlCommand(commandText, conn);
+
+            cmd.CommandType = commandType;
+            if (parameters != null) cmd.Parameters.AddRange(parameters);
+
+            await conn.OpenAsync();
+            return await cmd.ExecuteScalarAsync();
+        }
+
         // Tương đương ExecSqlDataTable
         protected async Task<DataTable> ExecuteQueryAsync(string commandText, CommandType commandType, params SqlParameter[] parameters)
         {

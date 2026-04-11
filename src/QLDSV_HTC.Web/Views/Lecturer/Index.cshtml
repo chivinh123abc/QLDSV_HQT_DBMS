@@ -345,8 +345,8 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                                 data-id="${escapeHtml(p.lecturerId)}" data-first="${escapeHtml(p.firstName)}" data-last="${escapeHtml(p.lastName)}"
                                 data-degree="${escapeHtml(p.degree ?? '')}" data-rank="${escapeHtml(p.academicRank ?? '')}"
                                 data-spec="${escapeHtml(p.specialty ?? '')}" data-faculty="${escapeHtml(p.facultyId)}">
-                        <td class="fw-semibold font-monospace text-primary small">${escapeHtml(p.lecturerId)}</td>
-                        <td class="small fw-medium">${escapeHtml(p.firstName)} ${escapeHtml(p.lastName)}</td>
+                        <td class="fw-bold font-monospace text-primary">${escapeHtml(p.lecturerId)}</td>
+                        <td>${escapeHtml(p.firstName)} ${escapeHtml(p.lastName)}</td>
                         <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle small px-2">${escapeHtml(p.facultyId)}</span></td>
                     </tr>`;
             }

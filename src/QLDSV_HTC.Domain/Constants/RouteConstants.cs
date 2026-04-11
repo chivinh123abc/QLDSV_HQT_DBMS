@@ -97,8 +97,14 @@ namespace QLDSV_HTC.Domain.Constants
         {
             public const string Prefix = "/subject";
             public const string Index = "";
+            public const string Add = "add";
+            public const string Edit = "edit";
+            public const string Delete = "delete";
 
             public const string SubjectPath = Prefix;
+            public const string AddPath = $"{Prefix}/{Add}";
+            public const string EditPath = $"{Prefix}/{Edit}";
+            public const string DeletePath = $"{Prefix}/{Delete}";
         }
 
         public static class Lecturer

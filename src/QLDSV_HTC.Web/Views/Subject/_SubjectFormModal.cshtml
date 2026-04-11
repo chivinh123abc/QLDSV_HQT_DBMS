@@ -1,0 +1,105 @@
+@model QLDSV_HTC.Web.Models.SubjectManagementViewModel
+@using QLDSV_HTC.Web.Models
+
+@{
+    var prefix = "SubjectForm";
+    
+    var modalModel = new GenericFormModalViewModel
+    {
+        ModeBadgeSection = @<text>
+            <span class="badge bg-white text-primary ms-2 animate__animated animate__fadeIn" id="formModeLabel" style="font-size:.7rem">Chế độ: Xem</span>
+        </text>,
+
+        ToolbarSection = @<text>
+            @{ ViewData["IdPrefix"] = prefix; }
+            @await Html.PartialAsync("_CrudToolbar", null, ViewData)
+        </text>,
+
+        BodySection = @<text>
+            <div class="row g-3">
+                <!-- Subject ID -->
+                <div class="col-md-4">
+                    <label for="fldSubjectId" class="form-label fw-medium required">
+                        Mã MH <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control font-monospace border-primary-subtle" id="fldSubjectId" name="subjectId" required maxlength="10" placeholder="VD: CTDL" disabled>
+                    <div class="invalid-feedback">Vui lòng nhập mã môn học (≤ 10 ký tự).</div>
+                </div>
+                
+                <!-- Subject Name -->
+                <div class="col-md-8">
+                    <label for="fldSubjectName" class="form-label fw-medium required">
+                        Tên môn học <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="form-control border-primary-subtle" id="fldSubjectName" name="subjectName" required maxlength="50" placeholder="VD: Cấu trúc dữ liệu" disabled>
+                    <div class="invalid-feedback">Vui lòng nhập tên môn học (≤ 50 ký tự).</div>
+                </div>
+
+                <!-- Theory Hours -->
+                <div class="col-md-6">
+                    <label for="fldTheoryHours" class="form-label fw-medium required">
+                        Số tiết Lý thuyết <span class="text-danger">*</span>
+                    </label>
+                    <input type="number" class="form-control border-primary-subtle" id="fldTheoryHours" name="theoryHours" required min="0" max="255" disabled>
+                    <div class="invalid-feedback">Số tiết LT phải ≥ 0.</div>
+                </div>
+
+                <!-- Practice Hours -->
+                <div class="col-md-6">
+                    <label for="fldPracticeHours" class="form-label fw-medium required">
+                        Số tiết Thực hành <span class="text-danger">*</span>
+                    </label>
+                    <input type="number" class="form-control border-primary-subtle" id="fldPracticeHours" name="practiceHours" required min="0" max="255" disabled>
+                    <div class="invalid-feedback">Số tiết TH phải ≥ 0.</div>
+                </div>
+            </div>
+            <div class="alert alert-light border shadow-sm p-3 rounded-3 mt-4 mb-0 d-flex align-items-start gap-3">
+                <i class="bi bi-info-circle-fill text-primary fs-4"></i>
+                <div class="small text-muted">
+                    <h6 class="text-dark fw-bold mb-1">Hướng dẫn</h6>
+                    Mọi thay đổi khi bấm <b class="text-dark">Lưu data</b> sẽ lấy hiệu lực ngay trên Hệ thống CSDL. Bạn có thể bấm <b class="text-warning">Phục hồi</b> để lui lại thao tác lỡ tay hoặc <b class="text-danger">Hoàn tác tất cả</b> ở dưới cùng để hủy toàn phiên.
+                </div>
+            </div>
+        </text>,
+
+        ExtraBodySection = @<text>
+            <h6 class="fw-bold mb-3 text-primary d-flex align-items-center gap-2">
+                <i class="bi bi-list-ul"></i>
+                <span>Danh sách Môn học hiện có</span>
+            </h6>
+            <div class="table-responsive rounded-3 border border-light-subtle shadow-sm" style="max-height:240px; overflow-y:auto">
+                <table class="table table-sm table-hover align-middle mb-0" id="miniSubjectTable">
+                    <thead class="table-light sticky-top">
+                        <tr class="small text-muted">
+                            <th>Mã MH</th>
+                            <th>Tên Môn Học</th>
+                            <th class="text-center">Số tiết LT</th>
+                            <th class="text-center">Số tiết TH</th>
+                        </tr>
+                    </thead>
+                    <tbody id="miniSubjectBody" class="small">
+                        @foreach (var s in Model.Subjects)
+                        {
+                            <tr class="mini-row transition-base" role="button"
+                                data-id="@s.Id" data-name="@s.Name" data-theory="@s.TheoryHours" data-practice="@s.PracticeHours">
+                                <td class="fw-bold font-monospace text-primary">@s.Id</td>
+                                <td>@s.Name</td>
+                                <td class="text-center">@s.TheoryHours</td>
+                                <td class="text-center">@s.PracticeHours</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </text>
+    };
+
+    ViewData["ModalId"] = "subjectFormModal";
+    ViewData["ModalLabelId"] = "subjectFormModalLabel";
+    ViewData["ModalTitle"] = "Cập nhật danh mục Môn học";
+    ViewData["ModalIcon"] = "bi-journal-check";
+    ViewData["FormId"] = "subjectForm";
+    ViewData["AlertId"] = "formAlert";
+}
+
+@await Html.PartialAsync("_FormModalWrapper", modalModel, ViewData)

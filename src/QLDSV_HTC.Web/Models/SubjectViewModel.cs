@@ -11,8 +11,21 @@ namespace QLDSV_HTC.Web.Models
     public class SubjectManagementViewModel
     {
         public IEnumerable<SubjectViewModel> Subjects { get; set; } = [];
-
+        public PaginationViewModel Pagination { get; set; } = new();
         public string SearchTerm { get; set; } = string.Empty;
-        public SubjectViewModel? SelectedSubject { get; set; }
+    }
+
+    public class SubjectInputModel
+    {
+        public string? OldSubjectId { get; set; }
+        public string SubjectId { get; set; } = string.Empty;
+        public string SubjectName { get; set; } = string.Empty;
+        public int? TheoryHours { get; set; }
+        public int? PracticeHours { get; set; }
+    }
+
+    public class SubjectDeleteModel
+    {
+        public string SubjectId { get; set; } = string.Empty;
     }
 }

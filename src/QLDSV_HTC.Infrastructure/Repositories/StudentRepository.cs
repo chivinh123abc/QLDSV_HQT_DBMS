@@ -77,6 +77,27 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             };
         }
 
+        public async Task<StudentDto?> GetStudentByIdAsync(string studentId)
+        {
+            var dt = await ExecuteQueryAsync(
+                AppConstants.SpNames.GetStudentById,
+                CommandType.StoredProcedure,
+                new SqlParameter("@MASV", studentId)
+            );
+
+            if (dt.Rows.Count == 0) return null;
+
+            var row = dt.Rows[0];
+            return new StudentDto
+            {
+                StudentId = row["MASV"]?.ToString()?.Trim() ?? string.Empty,
+                FirstName = row["HO"]?.ToString()?.Trim() ?? string.Empty,
+                LastName = row["TEN"]?.ToString()?.Trim() ?? string.Empty,
+                ClassId = row["MALOP"]?.ToString()?.Trim() ?? string.Empty,
+                ClassName = row["TENLOP"]?.ToString()?.Trim() ?? string.Empty,
+            };
+        }
+
         public async Task AddStudentAsync(StudentDto dto)
         {
             await ExecuteNonQueryAsync(

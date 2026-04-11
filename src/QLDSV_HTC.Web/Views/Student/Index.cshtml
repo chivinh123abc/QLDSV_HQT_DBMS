@@ -83,6 +83,10 @@
         let selectedStudentId = null;
         let originalStudentId = null;
 
+        // -- UNDO STACK STATE --
+        let undoStack = [];
+        let forceClose = false;
+
         const fldStudentId = document.getElementById('fldStudentId');
         const fldPassword = document.getElementById('fldPassword');
         const fldFirstName = document.getElementById('fldFirstName');
@@ -114,6 +118,69 @@
             if (modalEl) {
                 studentModalInstance = new bootstrap.Modal(modalEl);
                 modalEl.addEventListener('hidden.bs.modal', resetToView);
+
+                const btnCancelModal = modalEl.querySelector('.btn-cancel-modal');
+                const btnSaveModal = modalEl.querySelector('.btn-save-modal');
+
+                modalEl.addEventListener('show.bs.modal', () => {
+                    undoStack = [];
+                    forceClose = false;
+                });
+
+                modalEl.addEventListener('hide.bs.modal', async (e) => {
+                    if (undoStack.length > 0 && !forceClose) {
+                        e.preventDefault();
+                        const isConfirmed = await window.showConfirmDialog(
+                            "Dữ liệu chưa đóng",
+                            "Ghi nhận có thay đổi chưa lưu (bạn sẽ mất các trạng thái có thể Phục hồi).<br><br>Nhấn <b>Tiếp tục đóng</b> nếu bạn không cần Phục hồi nữa.<br>Nhấn <b>Hủy bỏ</b> để ở lại form.",
+                            { confirmText: "Tiếp tục đóng", cancelText: "Hủy bỏ", isDanger: true }
+                        );
+                        if (isConfirmed) {
+                            forceClose = true;
+                            studentModalInstance.hide();
+                        }
+                    }
+                });
+
+                btnSaveModal?.addEventListener('click', async () => {
+                    const message = undoStack.length > 0 
+                      ? "Thay đổi sẽ được lưu lại vĩnh viễn và không thể phục hồi bằng chức năng này nữa.<br>Bạn có chắc chắn muốn đóng Modal?"
+                      : "Chưa có thay đổi nào được thực hiện so với ban đầu.<br>Bạn có chắc chắn muốn đóng lại không?";
+                    
+                    const isConfirmed = await window.showConfirmDialog(
+                        "Xác nhận đóng", message,
+                        { confirmText: "Lưu và Đóng", cancelText: "Trở lại" }
+                    );
+                    
+                    if (isConfirmed) {
+                        undoStack = [];
+                        forceClose = true;
+                        studentModalInstance.hide();
+                    }
+                });
+
+                btnCancelModal?.addEventListener('click', async () => {
+                    const isDanger = undoStack.length > 0;
+                    const message = isDanger
+                        ? "Hành động này sẽ <b>Hoàn Tác toàn bộ</b> các thay đổi bạn vừa thực hiện trong phiên này.<br>Bạn có chắc chắn muốn xóa bỏ công sức vừa làm?"
+                        : "Bạn chưa thực hiện thay đổi nào cần hoàn tác.<br>Đóng cửa sổ ngay bây giờ?";
+                    
+                    const isConfirmed = await window.showConfirmDialog(
+                        "Hoàn Tác & Đóng", message,
+                        { confirmText: isDanger ? "Xác nhận Hoàn tác" : "Đóng cửa sổ", cancelText: "Giữ lại", isDanger: isDanger }
+                    );
+
+                    if (isConfirmed) {
+                        btnCancelModal.disabled = true;
+                        while(undoStack.length > 0) {
+                            await executeUndo();
+                        }
+                        undoStack = [];
+                        forceClose = true;
+                        btnCancelModal.disabled = false;
+                        studentModalInstance.hide();
+                    }
+                });
             }
 
             // Toolbar Events
@@ -134,11 +201,14 @@
 
             btnGhi?.addEventListener('click', submitStudentForm);
 
-            btnPhucHoi?.addEventListener('click', () => {
-                if (!snapshotData) { resetToView(); return; }
-                populateFieldsFromSnapshot(snapshotData);
-                helpers.clearValidation();
-                helpers.showAlert('Dữ liệu đã được phục hồi về trạng thái ban đầu.', 'warning');
+            btnPhucHoi?.addEventListener('click', async () => {
+                if (undoStack.length === 0) {
+                    helpers.showAlert('Không có hành động nào để phục hồi.', 'info');
+                    return;
+                }
+                await executeUndo();
+                resetToView();
+                helpers.showAlert('Đã hoàn tác 1 hành động.', 'warning');
             });
 
             btnHuy?.addEventListener('click', resetToView);
@@ -262,16 +332,16 @@
             data.forEach(s => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                        <td class="fw-medium text-primary">${s.studentId}</td>
-                        <td>${s.firstName} ${s.lastName}</td>
+                        <td class="fw-semibold font-monospace text-primary">${s.studentId}</td>
+                        <td class="fw-medium">${s.firstName} ${s.lastName}</td>
                         <td>${s.gender ? 'Nữ' : 'Nam'}</td>
                         <td>${s.dob ? formatDateDisplay(s.dob) : ''}</td>
                         <td>${s.address || ''}</td>
                         <td>${s.onLeave ? '<span class="badge bg-danger">Nghỉ học</span>' : '<span class="badge bg-success">Đang học</span>'}</td>
                         ${isPGV ? `
                         <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent('${s.studentId}')"><i class="bi bi-trash"></i></button>
+                            <button class="btn btn-sm btn-outline-primary me-1 hover-scale shadow-sm" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger hover-scale shadow-sm" onclick="deleteStudent('${s.studentId}')"><i class="bi bi-trash"></i></button>
                         </td>` : ''}
                     `;
                 tbody.appendChild(tr);
@@ -364,6 +434,27 @@
                 .then(res => {
                     if (res.success) {
                         window.showToast(res.message, 'success');
+                        
+                        // UNDO LOGIC
+                        if (helpers.getMode() === 'add') {
+                             undoStack.push({ action: 'delete', payload: { studentId: dataObj.StudentId } });
+                        } else {
+                             if (snapshotData) {
+                                 undoStack.push({ action: 'edit', payload: { 
+                                     OldStudentId: dataObj.StudentId,
+                                     StudentId: snapshotData.studentId || snapshotData.StudentId,
+                                     FirstName: snapshotData.firstName || snapshotData.FirstName,
+                                     LastName: snapshotData.lastName || snapshotData.LastName,
+                                     Gender: snapshotData.gender !== undefined ? snapshotData.gender : snapshotData.Gender,
+                                     Dob: snapshotData.dob || snapshotData.Dob || '',
+                                     Address: snapshotData.address || snapshotData.Address || '',
+                                     ClassId: snapshotData.classId || snapshotData.ClassId,
+                                     OnLeave: snapshotData.onLeave !== undefined ? snapshotData.onLeave : snapshotData.OnLeave,
+                                     Password: snapshotData.password || snapshotData.Password || ''
+                                 } });
+                             }
+                        }
+
                         // Reload table
                         const className = document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', '').split(' (')[0];
                         window.loadStudentsForClass(currentSelectedClassId, className);
@@ -385,8 +476,14 @@
         }
 
         // DELETE
-        function deleteStudent(studentId) {
-            if (!confirm(`Bạn có chắc chắn muốn xóa sinh viên ${studentId}? Hành động này sẽ không thể phục hồi.`)) return;
+        async function deleteStudent(studentId) {
+            const isConfirmed = await window.showConfirmDialog(
+                "Xác nhận xóa sinh viên",
+                `Bạn có chắc chắn muốn xóa sinh viên <b>${studentId}</b>?<br>Hành động này sẽ không thể phục hồi (kể cả khi Undo).`,
+                { confirmText: "Xóa", cancelText: "Hủy", isDanger: true }
+            );
+            
+            if (!isConfirmed) return;
 
             fetch('@RouteConstants.Student.DeletePath', {
                 method: 'POST',
@@ -400,6 +497,23 @@
                 .then(res => {
                     if (res.success) {
                         window.showToast(res.message, 'success');
+
+                        const modalEl = document.getElementById('studentFormModal');
+                        let currentStudentId = snapshotData ? (snapshotData.studentId || snapshotData.StudentId) : null;
+                        if (modalEl && modalEl.classList.contains('show') && snapshotData && currentStudentId === studentId) {
+                             undoStack.push({ action: 'add', payload: {
+                                    StudentId: currentStudentId,
+                                    FirstName: snapshotData.firstName || snapshotData.FirstName,
+                                    LastName: snapshotData.lastName || snapshotData.LastName,
+                                    Gender: snapshotData.gender !== undefined ? snapshotData.gender : snapshotData.Gender,
+                                    Dob: snapshotData.dob || snapshotData.Dob || '',
+                                    Address: snapshotData.address || snapshotData.Address || '',
+                                    ClassId: snapshotData.classId || snapshotData.ClassId,
+                                    OnLeave: snapshotData.onLeave !== undefined ? snapshotData.onLeave : snapshotData.OnLeave,
+                                    Password: ''
+                             } });
+                        }
+
                         const className = document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', '').split(' (')[0];
                         window.loadStudentsForClass(currentSelectedClassId, className);
 
@@ -415,6 +529,44 @@
                     console.error(err);
                     window.showToast("Lỗi kết nối.", 'danger');
                 });
+        }
+
+        async function executeUndo() {
+            if (undoStack.length === 0) return;
+            const actionObj = undoStack.pop();
+            try {
+                let url = '';
+                let bodyObj = {};
+                
+                if (actionObj.action === 'add') {
+                    url = '@RouteConstants.Student.AddPath';
+                    bodyObj = actionObj.payload; 
+                } else if (actionObj.action === 'edit') {
+                    url = '@RouteConstants.Student.EditPath';
+                    bodyObj = actionObj.payload;
+                } else if (actionObj.action === 'delete') {
+                    url = '@RouteConstants.Student.DeletePath';
+                    bodyObj = { studentId: actionObj.payload.studentId };
+                }
+
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(bodyObj)
+                }).then(r => r.json());
+
+                if (!res.success) {
+                    window.showToast("Lỗi hoàn tác: " + res.message, "danger");
+                } else {
+                    const className = document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', '').split(' (')[0];
+                    window.loadStudentsForClass(currentSelectedClassId, className);
+                }
+            } catch(err) {
+                window.showToast("Lỗi hoàn tác: " + err.message, "danger");
+            }
         }
     </script>
 }

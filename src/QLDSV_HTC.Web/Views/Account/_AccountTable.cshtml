@@ -131,7 +131,6 @@
    MODAL: Nhập danh mục tài khoản / Xác nhận xóa
 ═══════════════════════════════════════════════════════ *@
 @await Html.PartialAsync("_AccountFormModal", Model)
-<partial name="_DeleteConfirmModal" />
 
 @section Scripts {
     <script src="~/js/form-helpers.js" asp-append-version="true"></script>
@@ -147,20 +146,30 @@
 
             let snapshotData = null;
             let selectedLogin = null;
+            let originalLogin = null;
 
-            const modal = document.getElementById('accountFormModal');
-            const deleteModal = document.getElementById('deleteConfirmModal');
+            // -- UNDO STACK STATE --
+            let undoStack = [];
+            let forceClose = false;
+            let isSubmitting = false;
+
+            const modalEl = document.getElementById('accountFormModal');
+            let accountModalInstance = null;
+            if (modalEl) {
+                accountModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+            }
+
             const fldLecturer = document.getElementById('fldLecturer');
             const fldLecturerId = document.getElementById('fldAccLecturerId');
             const fldLoginName = document.getElementById('fldLoginName');
             const fldPassword = document.getElementById('fldPassword');
             const fldRole = document.getElementById('fldRole');
 
-            const btnThem = document.getElementById('btnAccThem');
-            const btnXoa = document.getElementById('btnAccXoa');
-            const btnGhi = document.getElementById('btnAccGhi');
-            const btnPhucHoi = document.getElementById('btnAccPhucHoi');
-            const btnHuy = document.getElementById('btnAccHuy');
+            const btnThem = document.getElementById('btnAccountFormThem');
+            const btnXoa = document.getElementById('btnAccountFormXoa');
+            const btnGhi = document.getElementById('btnAccountFormGhi');
+            const btnPhucHoi = document.getElementById('btnAccountFormPhucHoi');
+            const btnHuy = document.getElementById('btnAccountFormHuy');
 
             const helpers = createFormHelpers({
                 alertEl: document.getElementById('accFormAlert'),
@@ -171,30 +180,77 @@
                 getSelectedId: () => selectedLogin,
             });
 
-            // ── Modal xác nhận xóa ──
-            let pendingDeleteLogin = null;
-            let pendingDeleteUser = null;
+            if (!modalEl) return;
 
-            if (deleteModal) {
-                document.getElementById('btnConfirmDelete').addEventListener('click', async () => {
-                    bootstrap.Modal.getInstance(deleteModal)?.hide();
-                    if (pendingDeleteLogin) await doDelete(pendingDeleteLogin);
-                });
-            }
-
-            function showDeleteModal(login, user) {
-                pendingDeleteLogin = login;
-                pendingDeleteUser = user;
-                document.getElementById('deleteTargetId').textContent = login;
-                document.getElementById('deleteTargetName').textContent = user;
-                bootstrap.Modal.getOrCreateInstance(deleteModal).show();
-            }
-
-            if (!modal) return;
+            const btnCancelModal = modalEl.querySelector('.btn-cancel-modal');
+            const btnSaveModal = modalEl.querySelector('.btn-save-modal');
 
             // Mở modal → reset
             document.getElementById('btnOpenAccountForm')?.addEventListener('click', resetToView);
-            modal.addEventListener('hidden.bs.modal', resetToView);
+
+            // Mở modal → clear stack
+            modalEl.addEventListener('show.bs.modal', () => {
+                undoStack = [];
+                forceClose = false;
+            });
+
+            // Chặn đóng modal nếu còn stack
+            modalEl.addEventListener('hide.bs.modal', async (e) => {
+                if (undoStack.length > 0 && !forceClose) {
+                    e.preventDefault();
+                    const isConfirmed = await window.showConfirmDialog(
+                        "Dữ liệu chưa đóng",
+                        "Ghi nhận có thay đổi chưa lưu (bạn sẽ mất các trạng thái có thể Phục hồi).<br><br>Nhấn <b>Tiếp tục đóng</b> nếu bạn không cần Phục hồi nữa.<br>Nhấn <b>Hủy bỏ</b> để ở lại form.",
+                        { confirmText: "Tiếp tục đóng", cancelText: "Hủy bỏ", isDanger: true }
+                    );
+                    if (isConfirmed) {
+                        forceClose = true;
+                        accountModalInstance.hide();
+                    }
+                }
+            });
+
+            btnSaveModal?.addEventListener('click', async () => {
+                const message = undoStack.length > 0 
+                    ? "Thay đổi sẽ được lưu lại vĩnh viễn và không thể phục hồi bằng chức năng này nữa.<br>Bạn có chắc chắn muốn đóng Modal?"
+                    : "Chưa có thay đổi nào được thực hiện so với ban đầu.<br>Bạn có chắc chắn muốn đóng lại không?";
+                
+                const isConfirmed = await window.showConfirmDialog(
+                    "Xác nhận đóng", message,
+                    { confirmText: "Lưu và Đóng", cancelText: "Trở lại" }
+                );
+                
+                if (isConfirmed) {
+                    undoStack = [];
+                    forceClose = true;
+                    accountModalInstance.hide();
+                }
+            });
+
+            btnCancelModal?.addEventListener('click', async () => {
+                const isDanger = undoStack.length > 0;
+                const message = isDanger
+                    ? "Hành động này sẽ <b>Hoàn Tác toàn bộ</b> các thay đổi bạn vừa thực hiện trong phiên này.<br>Bạn có chắc chắn muốn xóa bỏ công sức vừa làm?"
+                    : "Bạn chưa thực hiện thay đổi nào cần hoàn tác.<br>Đóng cửa sổ ngay bây giờ?";
+                
+                const isConfirmed = await window.showConfirmDialog(
+                    "Hoàn Tác & Đóng", message,
+                    { confirmText: isDanger ? "Xác nhận Hoàn tác" : "Đóng cửa sổ", cancelText: "Giữ lại", isDanger: isDanger }
+                );
+
+                if (isConfirmed) {
+                    btnCancelModal.disabled = true;
+                    while(undoStack.length > 0) {
+                        await executeUndo();
+                    }
+                    undoStack = [];
+                    forceClose = true;
+                    btnCancelModal.disabled = false;
+                    accountModalInstance.hide();
+                }
+            });
+
+            modalEl.addEventListener('hidden.bs.modal', resetToView);
 
             // Chọn hàng mini-table
             document.getElementById('miniAccountBody')?.addEventListener('click', e => {
@@ -232,16 +288,16 @@
             });
 
             // ── Nút Xóa ──
-            btnXoa.addEventListener('click', () => {
-                if (!selectedLogin) return;
-                showDeleteModal(selectedLogin, fldLoginName.value);
+            btnXoa?.addEventListener('click', () => {
+                if (!selectedLogin || isSubmitting) return;
+                doDelete(selectedLogin);
             });
 
             // ── Nút Ghi ──
-            btnGhi.addEventListener('click', async () => {
+            btnGhi?.addEventListener('click', async () => {
+                if (isSubmitting) return;
                 const mode = helpers.getMode();
 
-                // Bỏ qua validate mật khẩu khi ở chế độ edit (vì có thể không muốn đổi)
                 let tempPassword = null;
                 if (mode === 'edit' && !fldPassword.value.trim()) {
                     tempPassword = 'bypass_validation';
@@ -250,7 +306,6 @@
 
                 let isValid = helpers.validateForm();
                 if (mode === 'edit') {
-                    // Bypass all validation in edit mode ("không require field nào hết")
                     isValid = true;
                     helpers.clearValidation();
                 }
@@ -261,6 +316,9 @@
 
                 if (!isValid) return;
 
+                isSubmitting = true;
+                btnGhi.disabled = true;
+                
                 let url, payload;
 
                 if (mode === 'add') {
@@ -272,9 +330,8 @@
                     };
                     url = URL_ADD;
                 } else {
-                    // Edit mode
                     payload = {
-                        oldLoginName: selectedLogin,
+                        oldLoginName: originalLogin,
                         newLoginName: fldLoginName.value.trim() !== snapshotData.loginName ? fldLoginName.value.trim() : null,
                         newPassword: fldPassword.value,
                         newUserName: fldLecturerId?.value.trim() !== snapshotData.userName ? fldLecturerId?.value.trim() : null,
@@ -289,29 +346,61 @@
                         window.showToast(res.message, 'success');
                         if (mode === 'add') {
                             addRowToTable(payload);
-                            resetToView();
+                            undoStack.push({ action: 'delete', payload: { loginName: payload.loginName } });
+                            
+                            snapshotData = { ...payload, group: payload.role };
+                            selectedLogin = payload.loginName;
+                            originalLogin = payload.loginName;
+                            helpers.setMode('edit');
+                            highlightMiniRow(selectedLogin);
                         } else {
                             if (res.message !== "Không có thay đổi nào được thực hiện.") {
-                                setTimeout(() => window.location.reload(), 500);
+                                const newPayload = { ...snapshotData };
+                                if (payload.newLoginName) newPayload.loginName = payload.newLoginName;
+                                if (payload.newUserName) newPayload.userName = payload.newUserName;
+                                if (payload.newRole) newPayload.group = payload.newRole;
+                                newPayload.role = newPayload.group;
+                                
+                                updateRowInTable(newPayload, originalLogin);
+                                
+                                undoStack.push({ 
+                                    action: 'edit', 
+                                    payload: {
+                                        oldLoginName: newPayload.loginName,
+                                        newLoginName: snapshotData.loginName,
+                                        newPassword: '', 
+                                        newUserName: snapshotData.userName,
+                                        newRole: snapshotData.group
+                                    } 
+                                });
+                                
+                                snapshotData = { ...newPayload, role: newPayload.group };
+                                selectedLogin = newPayload.loginName;
+                                originalLogin = newPayload.loginName;
                             }
-                            resetToView();
+                            helpers.setMode('edit');
+                            highlightMiniRow(selectedLogin);
                         }
                     } else {
                         helpers.showAlert(res.message, 'danger');
                     }
                 } catch (err) {
                     helpers.showAlert('Lỗi: ' + err.message, 'danger');
+                } finally {
+                    isSubmitting = false;
+                    btnGhi.disabled = false;
                 }
             });
 
             // ── Nút Phục hồi ──
-            btnPhucHoi.addEventListener('click', () => {
-                if (!snapshotData) { resetToView(); return; }
-                fldLoginName.value = snapshotData.loginName;
-                fldPassword.value = '';
-                if (fldRole) fldRole.value = snapshotData.group;
-                helpers.clearValidation();
-                helpers.showAlert('Dữ liệu đã được phục hồi về trạng thái ban đầu.', 'warning');
+            btnPhucHoi?.addEventListener('click', async () => {
+                if (undoStack.length === 0 || isSubmitting) {
+                    helpers.showAlert('Không có hành động nào để phục hồi.', 'info');
+                    return;
+                }
+                await executeUndo();
+                resetToView();
+                helpers.showAlert('Đã hoàn tác hành động vừa rồi.', 'warning');
             });
 
             // ── Nút Hủy ──
@@ -324,7 +413,7 @@
 
                 if (editBtn) {
                     const ds = editBtn.dataset;
-                    bootstrap.Modal.getOrCreateInstance(modal).show();
+                    accountModalInstance?.show();
                     setTimeout(() => {
                         populateForEdit(ds.login, ds.user, ds.group, ds.gvId, ds.gvName);
                         helpers.setMode('edit');
@@ -334,14 +423,14 @@
                 }
 
                 if (delBtn) {
-                    showDeleteModal(delBtn.dataset.login, delBtn.dataset.user);
+                    doDelete(delBtn.dataset.login);
                 }
             });
 
             // ── Helpers ──
 
             function resetToView() {
-                selectedLogin = null; snapshotData = null;
+                selectedLogin = null; snapshotData = null; originalLogin = null;
                 clearFields(); helpers.clearValidation(); helpers.hideAlert(); deselectMiniRow();
                 helpers.setMode('view');
                 toggleAddFields(false);
@@ -369,6 +458,7 @@
                 if (fldLecturerId) fldLecturerId.value = gvId || '';
                 if (fldLecturer) fldLecturer.value = gvId || '';
                 selectedLogin = login;
+                originalLogin = login;
                 snapshotData = { loginName: login, userName: user, group: group };
                 
                 fldLoginName.disabled = false;
@@ -420,10 +510,33 @@
             }
 
             async function doDelete(login) {
+                const isConfirmed = await window.showConfirmDialog(
+                    "Xác nhận xóa tài khoản",
+                    `Bạn có chắc chắn muốn xóa tài khoản <b>${login}</b>?<br>Thuộc tính này không thể khôi phục tự động theo Stack.`,
+                    { confirmText: "Xóa", cancelText: "Hủy", isDanger: true }
+                );
+                
+                if (!isConfirmed) return;
+
+                isSubmitting = true;
                 try {
+                    const row = document.querySelector(`#accountTableBody tr[data-login="${CSS.escape(login)}"]`);
+                    const delPayload = row ? {
+                        loginName: row.dataset.login,
+                        userName: row.dataset.gvId || row.dataset.user,
+                        role: row.dataset.group
+                    } : null;
+
                     const res = await fetchJson(URL_DELETE, { loginName: login });
                     if (res.success) {
                         removeRowFromTable(login);
+                        
+                        if (delPayload && modalEl.classList.contains('show')) {
+                            // Cẩn thận: Tạo một password mặc định
+                            delPayload.password = "123456"; 
+                            undoStack.push({ action: 'add', payload: delPayload });
+                        }
+                        
                         resetToView();
                         window.showToast(res.message, 'success');
                     } else {
@@ -431,10 +544,52 @@
                     }
                 } catch (err) {
                     window.showToast('Lỗi: ' + err.message, 'danger');
+                } finally {
+                    isSubmitting = false;
+                }
+            }
+
+            async function executeUndo() {
+                if (undoStack.length === 0) return;
+                isSubmitting = true;
+                const actionObj = undoStack.pop();
+                try {
+                    if (actionObj.action === 'add') {
+                        await fetchJson(URL_ADD, actionObj.payload);
+                        addRowToTable(actionObj.payload);
+                    } else if (actionObj.action === 'edit') {
+                        // For edit undo
+                        if (actionObj.payload.newPassword === '') {
+                            actionObj.payload.newPassword = null;
+                        }
+                        await fetchJson(URL_EDIT, actionObj.payload);
+                        
+                        const newPayload = { 
+                            loginName: actionObj.payload.newLoginName || actionObj.payload.oldLoginName,
+                            userName: actionObj.payload.newUserName,
+                            role: actionObj.payload.newRole 
+                        };
+                        updateRowInTable(newPayload, actionObj.payload.oldLoginName);
+                    } else if (actionObj.action === 'delete') {
+                        await fetchJson(URL_DELETE, actionObj.payload);
+                        removeRowFromTable(actionObj.payload.loginName);
+                    }
+                } catch(err) {
+                    window.showToast("Lỗi hoàn tác: " + err.message, "danger");
+                } finally {
+                    isSubmitting = false;
                 }
             }
 
             // ── DOM helpers ──
+
+            function updateRowInTable(p, oldLogin) {
+                const gvName = getGvNameFromCombo(p.userName);
+                const main = document.querySelector(`#accountTableBody tr[data-login="${CSS.escape(oldLogin)}"]`);
+                if (main) main.outerHTML = mainRowHtml(p, gvName);
+                const mini = document.querySelector(`#miniAccountBody tr[data-login="${CSS.escape(oldLogin)}"]`);
+                if (mini) mini.outerHTML = miniRowHtml(p, gvName);
+            }
 
             function addRowToTable(p) {
                 const tbody = document.getElementById('accountTableBody');

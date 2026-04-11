@@ -83,7 +83,6 @@ function createFormHelpers(config) {
         if (buttons.them)    buttons.them.disabled    = (m !== 'view');
         if (buttons.xoa)     buttons.xoa.disabled     = !(m === 'edit' && !!getSelectedId());
         if (buttons.ghi)     buttons.ghi.disabled     = !editing;
-        if (buttons.phucHoi) buttons.phucHoi.disabled = !editing;
         if (buttons.huy)     buttons.huy.disabled     = (m === 'view');
 
         // Animate form fields on mode transition
