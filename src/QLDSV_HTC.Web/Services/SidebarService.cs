@@ -18,12 +18,12 @@ namespace QLDSV_HTC.Web.Services
                 new() { Title = "Lớp", Path = RouteConstants.Class.ClassPath, Icon = "bi-people", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] },
                 new() { Title = "Sinh viên", Path = RouteConstants.Student.StudentPath, Icon = "bi-mortarboard", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] },
                 // new() { Title = "Môn học", Path = RouteConstants.Subject.SubjectPath, Icon = "bi-book", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] },
-                // new() { Title = "Giảng viên", Path = RouteConstants.Lecturer.LecturerPath, Icon = "bi-person-badge", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] },
+                new() { Title = "Giảng viên", Path = RouteConstants.Lecturer.LecturerPath, Icon = "bi-person-badge", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] },
                 // new() { Title = "Lớp tín chỉ", Path = RouteConstants.CreditClass.CreditClassPath, Icon = "bi-clipboard-check", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] },
                 // new() { Title = "Đăng ký tín chỉ", Path = RouteConstants.Registration.RegistrationPath, Icon = "bi-file-earmark-text", Roles = [AppConstants.Groups.PGV] },
                 // new() { Title = "Nhập điểm", Path = RouteConstants.Grade.GradePath, Icon = "bi-pencil-square", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] },
                 // new() { Title = "Báo cáo / In ấn", Path = RouteConstants.Report.ReportPath, Icon = "bi-bar-chart-line", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] },
-                // new() { Title = "Tài khoản / Phân quyền", Path = RouteConstants.Account.ManagementPath, Icon = "bi-gear", Roles = [AppConstants.Groups.PGV] }
+                new() { Title = "Tài khoản / Phân quyền", Path = RouteConstants.Account.ManagementPath, Icon = "bi-gear", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] }
             ];
         }
     }

@@ -34,6 +34,12 @@ namespace QLDSV_HTC.Domain.Constants
             {
                 public const string Id = "MAGV";
                 public const string FacultyId = "MAKHOA";
+                public const string FirstName = "HO";
+                public const string LastName = "TEN";
+                public const string Degree = "HOCVI";
+                public const string AcademicRank = "HOCHAM";
+                public const string Specialty = "CHUYENMON";
+                public const string FacultyName = "TENKHOA";
             }
 
             public static class Student
@@ -47,6 +53,16 @@ namespace QLDSV_HTC.Domain.Constants
                 public const string ClassId = "MALOP";
                 public const string ClassName = "TENLOP";
                 public const string OnLeave = "DANGHIHOC";
+            }
+
+            public static class Account
+            {
+                public const string LoginName = "LoginName";
+                public const string UserName = "UserName";
+                public const string GroupName = "GroupName";
+                public const string LecturerId = "LecturerId";
+                public const string LecturerFullName = "LecturerFullName";
+                public const string IsDisabled = "IsDisabled";
             }
         }
     }
