@@ -12,7 +12,9 @@ namespace QLDSV_HTC.Application.DTOs
 
     public class FacultyDto
     {
+        public string? OldFacultyId { get; set; }
         public string FacultyId { get; set; } = string.Empty;
         public string FacultyName { get; set; } = string.Empty;
+        public int LecturerCount { get; set; }
     }
 }

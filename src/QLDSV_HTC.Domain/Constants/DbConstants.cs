@@ -36,6 +36,7 @@ namespace QLDSV_HTC.Domain.Constants
             {
                 public const string Id = "MAKHOA";
                 public const string Name = "TENKHOA";
+                public const string LecturerCount = "SOLUONGGV";
             }
 
             public static class Lecturer

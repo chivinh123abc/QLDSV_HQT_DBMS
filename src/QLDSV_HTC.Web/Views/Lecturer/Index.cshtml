@@ -55,9 +55,9 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
         (function () {
             'use strict';
 
-            const URL_ADD = '@Url.Action("Add",    "Lecturer")';
-            const URL_EDIT = '@Url.Action("Edit",   "Lecturer")';
-            const URL_DELETE = '@Url.Action("Delete", "Lecturer")';
+            const URL_ADD = '@RouteConstants.Lecturer.AddPath';
+            const URL_EDIT = '@RouteConstants.Lecturer.EditPath';
+            const URL_DELETE = '@RouteConstants.Lecturer.DeletePath';
 
             let snapshotData = null;
             let selectedId = null;
