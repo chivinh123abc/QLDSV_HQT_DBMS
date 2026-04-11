@@ -54,11 +54,11 @@ GRANT EXECUTE ON OBJECT::dbo.sp_DangNhap_SinhVien TO [SV];
 
 GRANT EXECUTE ON OBJECT::dbo.sp_LayPhieuDiem TO [SV];
 
-GRANT EXECUTE ON [dbo].[sp_LayThongTinSinhVien] TO [SV];
+GRANT EXECUTE ON OBJECT::dbo.sp_LayThongTinSinhVien TO [SV];
 
-GRANT EXECUTE ON [dbo].[sp_LayDanhSachLopTinChi_SinhVien] TO [SV];
+GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachLopTinChi_SinhVien TO [SV];
 
-GRANT EXECUTE ON [dbo].[sp_DangKyLopTinChi] TO [SV];
+GRANT EXECUTE ON OBJECT::dbo.sp_DangKyLopTinChi TO [SV];
 
-GRANT EXECUTE ON [dbo].[sp_HuyDangKyLopTinChi] TO [SV];
+GRANT EXECUTE ON OBJECT::dbo.sp_HuyDangKyLopTinChi TO [SV];
 GO
