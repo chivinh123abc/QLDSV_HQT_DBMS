@@ -218,19 +218,32 @@
             return;
         }
 
+        // Lấy danh sách các Mã môn học đã được đăng ký
+        const registeredSubjectCodes = new Set(
+            data.filter(x => x.isRegistered).map(x => x.subjectCode)
+        );
+
         tbody.innerHTML = data.map(c => {
             const ratio = c.minStudents > 0 ? c.registered / c.minStudents : 0;
             const countClass = ratio >= 1 ? 'text-danger fw-bold' : ratio >= 0.7 ? 'text-warning fw-bold' : 'text-success fw-bold';
 
-            const btn = c.isRegistered
-                ? `<button class="btn btn-sm btn-outline-danger px-3 rounded-pill action-btn"
-                           data-id="${c.id}" data-action="unregister">
-                       <i class="bi bi-dash-circle me-1"></i>Rời lớp
-                   </button>`
-                : `<button class="btn btn-sm btn-outline-primary px-3 rounded-pill action-btn"
-                           data-id="${c.id}" data-action="register">
-                       <i class="bi bi-plus-circle me-1"></i>Đăng ký
-                   </button>`;
+            let btn = '';
+            if (c.isRegistered) {
+                btn = `<button class="btn btn-sm btn-outline-danger px-3 rounded-pill action-btn"
+                               data-id="${c.id}" data-action="unregister">
+                           <i class="bi bi-dash-circle me-1"></i>Rời lớp
+                       </button>`;
+            } else {
+                const isDuplicateSubject = registeredSubjectCodes.has(c.subjectCode);
+                const disabledAttr = isDuplicateSubject ? 'disabled' : '';
+                const styleAttr = isDuplicateSubject ? 'style="opacity: 0.5; cursor: not-allowed;"' : '';
+                const titleAttr = isDuplicateSubject ? 'title="Bạn đã đăng ký môn học này ở nhóm khác"' : 'title="Đăng ký lớp học này"';
+
+                btn = `<button class="btn btn-sm btn-outline-primary px-3 rounded-pill action-btn ${disabledAttr}"
+                               data-id="${c.id}" data-action="register" ${disabledAttr} ${styleAttr} ${titleAttr}>
+                           <i class="bi bi-plus-circle me-1"></i>Đăng ký
+                       </button>`;
+            }
 
             const regBadge = c.isRegistered
                 ? `<span class="badge bg-success-subtle text-success border border-success-subtle ms-2 small">Đã ĐK</span>`

@@ -142,7 +142,8 @@
                                 data-id="@c.Id" data-year="@c.Year" data-semester="@c.Semester"
                                 data-sub-id="@c.SubjectId.Trim()" data-sub-name="@c.SubjectName" data-group="@c.Group" 
                                 data-lec-id="@c.LecturerId.Trim()" data-fac-id="@c.FacultyId.Trim()" 
-                                data-min="@c.MinStudents" data-cancelled="@(c.Cancelled ? "true" : "false")">
+                                data-min="@c.MinStudents" data-cancelled="@(c.Cancelled ? "true" : "false")"
+                                data-reg-count="@c.RegisteredCount">
                                 <td class="fw-bold font-monospace text-primary">@c.Id</td>
                                 <td class="text-truncate" style="max-width: 150px;" title="@c.SubjectName">@c.SubjectName</td>
                                 <td class="text-center">

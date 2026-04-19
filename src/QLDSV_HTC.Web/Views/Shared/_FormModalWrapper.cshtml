@@ -12,7 +12,7 @@
         <div class="modal-content border-0 shadow-lg overflow-hidden glass-morphism">
 
             @* Modal Header *@
-            <div class="modal-header bg-primary text-white py-3 border-0">
+            <div class="modal-header bg-primary text-white py-3 border-0 shadow-sm">
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi @(ViewData["ModalIcon"] ?? "bi-pencil-square") fs-5"></i>
                     <h5 class="modal-title fw-bold mb-0" id="@labelId">
@@ -28,19 +28,18 @@
             </div>
 
             @* Modal Body *@
-            <div class="modal-body p-4 bg-white bg-opacity-75">
-                @* CRUD Toolbar area *@
+            <div class="modal-body p-4 bg-white">
+                @* CRUD Toolbar area - "Docked" style like the reference *@
                 @if (Model.ToolbarSection != null)
                 {
-                    <div
-                        class="d-flex flex-wrap gap-2 mb-4 p-3 bg-white bg-opacity-50 rounded-3 border border-light-subtle shadow-sm hover-elevate">
+                    <div class="d-flex flex-wrap gap-2 mb-4 p-3 bg-white rounded-3 border shadow-sm hover-elevate">
                         @Model.ToolbarSection(null)
                     </div>
                 }
 
                 @* Alert Banner area *@
                 <div id="@(ViewData["AlertId"] ?? "formAlert")"
-                    class="alert d-none align-items-center gap-2 animate__animated animate__fadeIn" role="alert"></div>
+                    class="alert d-none align-items-center gap-2 animate__animated animate__fadeIn mb-4" role="alert"></div>
 
                 @* The actual Form fields *@
                 <form id="@(ViewData["FormId"] ?? "form")" novalidate autocomplete="off">
@@ -53,15 +52,14 @@
                 @* Optional extra content (like a list/table inside the modal) *@
                 @if (Model.ExtraBodySection != null)
                 {
-                    <hr class="my-4 border-light-subtle">
-                    <div class="modal-list-wrapper">
+                    <div class="modal-list-container mt-5">
                         @Model.ExtraBodySection(null)
                     </div>
                 }
             </div>
 
-            @* Modal Footer for Save/Cancel all actions *@
-            <div class="modal-footer bg-light py-3 border-top-0 d-flex justify-content-end gap-2">
+            @* Modal Footer *@
+            <div class="modal-footer bg-light py-3 border-top d-flex justify-content-end gap-2">
                 <button type="button" class="btn btn-danger px-4 btn-cancel-modal"
                     title="Hoàn tác mọi thay đổi trong phiên và đóng">
                     Hoàn tác tất cả

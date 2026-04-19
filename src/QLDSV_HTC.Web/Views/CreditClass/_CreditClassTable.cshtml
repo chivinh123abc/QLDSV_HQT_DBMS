@@ -78,6 +78,7 @@
                         data-sub-id="@c.SubjectId.Trim()" data-sub-name="@c.SubjectName" data-group="@c.Group" 
                         data-lec-id="@c.LecturerId.Trim()" data-fac-id="@c.FacultyId.Trim()" 
                         data-min="@c.MinStudents" data-cancelled="@(c.Cancelled ? "true" : "false")"
+                        data-reg-count="@c.RegisteredCount"
                         data-search="@(c.SubjectName + " " + c.LecturerName)">
                         
                         <td class="fw-semibold font-monospace text-primary">@c.Id</td>
@@ -124,12 +125,13 @@
                                         data-id="@c.Id" data-year="@c.Year" data-semester="@c.Semester"
                                         data-sub-id="@c.SubjectId.Trim()" data-group="@c.Group"
                                         data-lec-id="@c.LecturerId.Trim()" data-fac-id="@c.FacultyId.Trim()"
-                                        data-min="@c.MinStudents" data-cancelled="@(c.Cancelled ? "true" : "false")">
+                                        data-min="@c.MinStudents" data-reg-count="@c.RegisteredCount"
+                                        data-cancelled="@(c.Cancelled ? "true" : "false")">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-sm hover-scale"
-                                        title="Xóa lớp tín chỉ"
-                                        data-id="@c.Id">
+                                <button class="btn btn-sm btn-outline-danger @(c.RegisteredCount > 0 ? "" : "btn-delete-row hover-scale") shadow-sm @(c.RegisteredCount > 0 ? "opacity-50" : "")"
+                                        title="@(c.RegisteredCount > 0 ? $"Không thể xóa LTC đã có {c.RegisteredCount} SV" : "Xóa lớp tín chỉ")"
+                                        data-id="@c.Id" @(c.RegisteredCount > 0 ? "disabled" : "")>
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </td>

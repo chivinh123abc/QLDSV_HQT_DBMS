@@ -140,9 +140,13 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
             });
 
             btnSaveModal?.addEventListener('click', async () => {
-                const message = undoStack.length > 0 
-                    ? "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?"
-                    : "Bạn có chắc chắn muốn đóng cửa sổ không?";
+                if (undoStack.length === 0) {
+                    forceClose = true;
+                    bootstrap.Modal.getInstance(modal).hide();
+                    return;
+                }
+
+                const message = "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?";
                 
                 const isConfirmed = await window.showConfirmDialog(
                     "Xác nhận Thoát", message,
@@ -157,14 +161,17 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
             });
 
             btnCancelModal?.addEventListener('click', async () => {
-                const isDanger = undoStack.length > 0;
-                const message = isDanger
-                    ? "Hành động này sẽ <b>Hoàn Tác toàn bộ</b> các thay đổi bạn vừa thực hiện trong bảng vừa rồi.<br>Bạn có chắc chắn muốn xóa bỏ công sức vừa làm?"
-                    : "Bạn chưa thực hiện thay đổi nào cần hoàn tác.<br>Đóng cửa sổ ngay bây giờ?";
+                if (undoStack.length === 0) {
+                    forceClose = true;
+                    bootstrap.Modal.getInstance(modal).hide();
+                    return;
+                }
+
+                const message = "Hành động này sẽ <b>Hoàn Tác toàn bộ</b> các thay đổi bạn vừa thực hiện trong bảng vừa rồi.<br>Bạn có chắc chắn muốn xóa bỏ công sức vừa làm?";
                 
                 const isConfirmed = await window.showConfirmDialog(
                     "Hoàn Tác & Đóng", message,
-                    { confirmText: isDanger ? "Xác nhận Hoàn tác" : "Đóng cửa sổ", cancelText: "Giữ lại", isDanger: isDanger }
+                    { confirmText: "Xác nhận Hoàn tác", cancelText: "Giữ lại", isDanger: true }
                 );
 
                 if (isConfirmed) {
