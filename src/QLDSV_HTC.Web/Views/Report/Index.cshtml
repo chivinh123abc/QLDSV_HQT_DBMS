@@ -2,6 +2,11 @@
     ViewData["Title"] = "Báo cáo - In ấn";
 }
 
+<!-- Select2 CSS for searchable dropdowns -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
+
 <div class="dashboard-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">Báo cáo & In ấn</h1>
@@ -97,46 +102,309 @@
     </div>
 </div>
 
-<!-- Report Printing Modal (Placeholder) -->
-<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-light">
-                <h5 class="modal-title fw-bold" id="reportModalLabel">Thông số in Báo Cáo</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center py-4">
-                <div class="spinner-border text-primary mb-3" role="status">
-                    <span class="visually-hidden">Loading...</span>
+<!-- Premium Report Viewer Modal -->
+<div class="modal fade" id="reportViewerModal" tabindex="-1" aria-labelledby="reportViewerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 95%;">
+        <div class="modal-content border-0 shadow-lg" style="height: 92vh;">
+            <div class="modal-header bg-primary text-white border-0 py-3">
+                <h5 class="modal-title fw-bold" id="reportViewerModalLabel">
+                    <i class="bi bi-table me-2 fs-4"></i> Bảng Tra Cứu Dữ Liệu Nhanh
+                </h5>
+                <div>
+                     <button type="button" id="downloadPdfBtn" class="btn btn-warning fw-bold text-dark me-3 shadow-sm">
+                         <i class="bi bi-file-earmark-pdf-fill me-1"></i> Trích xuất tệp bản in (XtraReport PDF)
+                     </button>
+                    <button type="button" class="btn-close btn-close-white align-middle" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <p class="mb-0">Form nhập tham số cho loại báo cáo này đang được xây dựng...</p>
-                <p class="text-muted small mt-2 d-none" id="reportTypeTbd"></p>
             </div>
-            <div class="modal-footer bg-light">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary" disabled>
-                    <i class="bi bi-printer me-1"></i> Xác Nhận In
-                </button>
+            <div class="modal-body p-0 bg-white position-relative">
+                <div id="reportLoader" class="position-absolute top-50 start-50 translate-middle text-center" style="z-index: 1;">
+                    <div class="spinner-border text-primary shadow-sm" role="status" style="width: 3rem; height: 3rem;"></div>
+                    <div class="mt-3 text-secondary fw-bold fs-6">Đang lập truy vấn CSDL...</div>
+                </div>
+                <div id="reportHtmlContainer" class="p-4" style="height: 100%; overflow-y: auto;">
+                    <!-- Table injected here -->
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Report Printing Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="reportForm" method="GET" action="">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold" id="reportModalLabel">Thông số in Báo Cáo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4" id="reportFormBody">
+                    <!-- Dynamic form inputs will be injected here via JS -->
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-printer me-1"></i> Xác Nhận In
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<datalist id="schoolYearsDataList">
+    @if(ViewBag.SchoolYears != null)
+    {
+        foreach(var y in ViewBag.SchoolYears)
+        {
+            <option value="@y">@y</option>
+        }
+    }
+</datalist>
+
 @section Scripts {
+    <!-- jQuery and Select2 JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <script>
+        const facultyOptions = `<option value="">-- Chọn Khoa --</option>@if(ViewBag.Faculties != null) { foreach(var f in ViewBag.Faculties) { <option value="@f.FacultyId">@f.FacultyName</option> } }`;
+        const subjectOptions = `<option value="">-- Chọn Môn học --</option>@if(ViewBag.Subjects != null) { foreach(var s in ViewBag.Subjects) { <option value="@s.SubjectId">@s.SubjectName</option> } }`;
+        const classOptions = `<option value="">-- Chọn Lớp --</option>@if(ViewBag.Classes != null) { foreach(var c in ViewBag.Classes) { <option value="@c.ClassId">@c.ClassId - @c.ClassName</option> } }`;
+
         document.addEventListener('DOMContentLoaded', function () {
-            var reportModal = document.getElementById('reportModal');
+            const reportModal = document.getElementById('reportModal');
+            const reportForm = document.getElementById('reportForm');
+            const reportFormBody = document.getElementById('reportFormBody');
+            
             if (reportModal) {
                 reportModal.addEventListener('show.bs.modal', function (event) {
-                    var button = event.relatedTarget;
-                    var reportType = button.getAttribute('data-report-type');
-
-                    var modalTitle = reportModal.querySelector('.modal-title');
-                    var reportTypeTbd = document.getElementById('reportTypeTbd');
-
+                    const button = event.relatedTarget;
+                    const reportType = button.getAttribute('data-report-type');
+                    const modalTitle = reportModal.querySelector('.modal-title');
+                    
                     modalTitle.textContent = 'Thông số in: ' + button.parentElement.querySelector('h5').textContent;
-                    reportTypeTbd.textContent = 'Mã tham chiếu: ' + reportType;
-                    reportTypeTbd.classList.remove('d-none');
+                    
+                    let formHtml = '';
+                    let actionUrl = '';
+
+                    switch (reportType) {
+                        case 'DanhSachLopTinChi':
+                            actionUrl = '/report/credit-class-list';
+                            formHtml = `
+                                <div class="mb-3">
+                                    <label class="form-label">Khoa</label>
+                                    <select class="form-select" name="facultyId" onchange="document.getElementById('hiddenFacultyName').value = this.options[this.selectedIndex].text" required>
+                                        ${facultyOptions}
+                                    </select>
+                                    <input type="hidden" id="hiddenFacultyName" name="facultyName" />
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Niên Khóa</label>
+                                        <input type="text" class="form-control" name="schoolYear" list="schoolYearsDataList" placeholder="Ví dụ: 2023-2024" autocomplete="off" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Học Kỳ</label>
+                                        <select class="form-select" name="semester" required>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            `;
+                            break;
+                            
+                        case 'DanhSachSVDangKyLTC':
+                            actionUrl = '/report/registered-students-list';
+                            formHtml = `
+                                <div class="mb-3">
+                                    <label class="form-label">Khoa</label>
+                                    <select class="form-select" name="facultyId" onchange="document.getElementById('hiddenFacultyName').value = this.options[this.selectedIndex].text" required>
+                                        ${facultyOptions}
+                                    </select>
+                                    <input type="hidden" id="hiddenFacultyName" name="facultyName" />
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Niên Khóa</label>
+                                        <input type="text" class="form-control" name="schoolYear" list="schoolYearsDataList" placeholder="Ví dụ: 2023-2024" autocomplete="off" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Học Kỳ</label>
+                                        <select class="form-select" name="semester" required>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Môn Học</label>
+                                    <select class="form-select" name="subjectId" onchange="document.getElementById('hiddenSubjectName').value = this.options[this.selectedIndex].text" required>
+                                        ${subjectOptions}
+                                    </select>
+                                    <input type="hidden" id="hiddenSubjectName" name="subjectName" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Nhóm</label>
+                                    <input type="number" class="form-control" name="group" min="1" value="1" required>
+                                </div>
+                            `;
+                            break;
+                            
+                        case 'BangDiemMonHocLTC':
+                            actionUrl = '/report/subject-grades';
+                            formHtml = `
+                                <div class="mb-3">
+                                    <label class="form-label">Khoa</label>
+                                    <select class="form-select" name="facultyId" onchange="document.getElementById('hiddenFacultyName').value = this.options[this.selectedIndex].text" required>
+                                        ${facultyOptions}
+                                    </select>
+                                    <input type="hidden" id="hiddenFacultyName" name="facultyName" />
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Niên Khóa</label>
+                                        <input type="text" class="form-control" name="schoolYear" list="schoolYearsDataList" placeholder="Ví dụ: 2023-2024" autocomplete="off" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Học Kỳ</label>
+                                        <select class="form-select" name="semester" required>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Môn Học</label>
+                                    <select class="form-select" name="subjectId" onchange="document.getElementById('hiddenSubjectName').value = this.options[this.selectedIndex].text" required>
+                                        ${subjectOptions}
+                                    </select>
+                                    <input type="hidden" id="hiddenSubjectName" name="subjectName" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Nhóm</label>
+                                    <input type="number" class="form-control" name="group" min="1" value="1" required>
+                                </div>
+                            `;
+                            break;
+                            
+                        case 'PhieuDiem':
+                            actionUrl = '/report/grades';
+                            formHtml = `
+                                <div class="mb-3">
+                                    <label class="form-label">Mã Sinh Viên</label>
+                                    <input type="text" class="form-control" name="studentId" placeholder="Ví dụ: N21DCCNxxx" required>
+                                </div>
+                            `;
+                            break;
+                            
+                        case 'BangDiemTongKetLop':
+                            actionUrl = '/report/class-grades-summary';
+                            formHtml = `
+                                <div class="mb-3">
+                                    <label class="form-label">Lớp</label>
+                                    <select class="form-select" name="classId" required>
+                                        ${classOptions}
+                                    </select>
+                                </div>
+                            `;
+                            break;
+                    }
+
+                    reportForm.action = actionUrl;
+                    reportFormBody.innerHTML = formHtml;
+
+                    // Initialize Select2 on the injected selects
+                    $('#reportFormBody .form-select').select2({
+                        theme: 'bootstrap-5',
+                        dropdownParent: $('#reportModal'),
+                        width: '100%' // Ensure proper layout inside the grid
+                    }).on('change', function() {
+                        // Ensure hidden name fields are updated when Select2 triggers change
+                        if (this.name === 'facultyId') $('#hiddenFacultyName').val($(this).find('option:selected').text());
+                        if (this.name === 'subjectId') $('#hiddenSubjectName').val($(this).find('option:selected').text());
+                    });
+                });
+            }
+            
+            // Handle ui when submitting the form (JSON Fetch)
+            if (reportForm) {
+                reportForm.addEventListener('submit', function(e) {
+                    e.preventDefault(); // Stop native post
+
+                    const modalInstance = bootstrap.Modal.getInstance(reportModal);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                    
+                    const viewerModal = new bootstrap.Modal(document.getElementById('reportViewerModal'));
+                    viewerModal.show();
+
+                    document.getElementById('reportHtmlContainer').innerHTML = '';
+                    document.getElementById('reportLoader').style.display = 'block';
+
+                    const formData = new FormData(reportForm);
+                    const queryParams = new URLSearchParams(formData);
+                    
+                    // URL for PDF Download
+                    const pdfUrl = reportForm.action + '?' + queryParams.toString();
+                    document.getElementById('downloadPdfBtn').onclick = () => window.open(pdfUrl, '_blank');
+
+                    // URL for JSON Data (Table gen)
+                    queryParams.append('asJson', 'true');
+                    const jsonUrl = reportForm.action + '?' + queryParams.toString();
+
+                    fetch(jsonUrl)
+                        .then(res => {
+                            if (!res.ok) throw new Error("Chứa tham số không hợp lệ hoặc dữ liệu sai lệch.");
+                            return res.json();
+                        })
+                        .then(data => {
+                            document.getElementById('reportLoader').style.display = 'none';
+                            
+                            if(!data || data.length === 0) {
+                                document.getElementById('reportHtmlContainer').innerHTML = "<div class='alert alert-warning text-center mt-5 fs-5'><i class='bi bi-exclamation-triangle me-2'></i> Không có sinh viên/dữ liệu nào khớp với biểu mẫu này!</div>";
+                                return;
+                            }
+
+                            // Build HTML Table dynamically
+                            let html = '<div class="table-responsive shadow-sm border rounded"><table class="table table-bordered table-striped table-hover mb-0"><thead class="table-primary"><tr>';
+                            const keys = Object.keys(data[0]);
+                            
+                            // Header
+                            html += '<th class="text-nowrap text-center align-middle bg-primary text-white" style="width: 50px;">STT</th>';
+                            keys.forEach(k => {
+                                // Since backend maps standard columns, any remaining dynamic columns (like Subjects) are spaced out
+                                const headerText = k.replace(/_/g, ' ');
+                                html += `<th class="text-nowrap text-center align-middle bg-primary text-white">${headerText}</th>`;
+                            });
+                            html += '</tr></thead><tbody>';
+                            
+                            // Rows
+                            data.forEach((row, idx) => {
+                                html += '<tr>';
+                                html += `<td class="text-center align-middle fw-bold">${idx + 1}</td>`;
+                                keys.forEach(k => {
+                                    let val = (row[k] === null || row[k] === undefined) ? '' : row[k];
+                                    // Make numbers bold
+                                    if (typeof val === 'number') val = `<strong>${val}</strong>`;
+                                    html += `<td class="text-nowrap align-middle ${typeof row[k] === 'number' ? 'text-end' : 'text-center'}">${val}</td>`;
+                                });
+                                html += '</tr>';
+                            });
+                            
+                            html += '</tbody></table></div>';
+                            document.getElementById('reportHtmlContainer').innerHTML = html;
+                        })
+                        .catch(err => {
+                            document.getElementById('reportLoader').style.display = 'none';
+                            document.getElementById('reportHtmlContainer').innerHTML = `<div class='alert alert-danger text-center mt-5 fs-5 shadow-sm'><b>Lỗi truy xuất:</b> ${err.message}</div>`;
+                        });
                 });
             }
         });

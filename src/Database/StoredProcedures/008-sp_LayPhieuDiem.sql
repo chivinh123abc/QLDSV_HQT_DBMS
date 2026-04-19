@@ -22,6 +22,9 @@ BEGIN
     )
     SELECT
         mh.TENMH,
+        fdk.DIEM_CC,
+        fdk.DIEM_GK,
+        fdk.DIEM_CK,
         CASE
             WHEN fdk.DIEM_CC IS NULL OR fdk.DIEM_GK IS NULL OR fdk.DIEM_CK IS NULL
                 THEN NULL

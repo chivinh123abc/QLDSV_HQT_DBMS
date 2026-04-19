@@ -45,10 +45,16 @@ namespace QLDSV_HTC.Domain.Constants
             public const string Index = "";
             public const string GetGradesReport = "grades";
             public const string GetCreditClassList = "credit-class-list";
+            public const string GetRegisteredStudentsList = "registered-students-list";
+            public const string GetSubjectGrades = "subject-grades";
+            public const string GetClassGradesSummary = "class-grades-summary";
 
             public const string ReportPath = Prefix;
             public const string GetGradesReportPath = $"{Prefix}/{GetGradesReport}";
             public const string GetCreditClassListPath = $"{Prefix}/{GetCreditClassList}";
+            public const string GetRegisteredStudentsListPath = $"{Prefix}/{GetRegisteredStudentsList}";
+            public const string GetSubjectGradesPath = $"{Prefix}/{GetSubjectGrades}";
+            public const string GetClassGradesSummaryPath = $"{Prefix}/{GetClassGradesSummary}";
         }
 
         public static class Class
