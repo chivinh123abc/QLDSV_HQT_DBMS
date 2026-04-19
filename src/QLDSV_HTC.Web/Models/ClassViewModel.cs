@@ -9,6 +9,7 @@ namespace QLDSV_HTC.Web.Models
         public string Year { get; set; } = string.Empty;
         public string FacultyId { get; set; } = string.Empty;
         public string FacultyName { get; set; } = string.Empty;
+        public int StudentCount { get; set; }
     }
 
     public class ClassManagementViewModel

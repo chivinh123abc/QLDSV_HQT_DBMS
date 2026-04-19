@@ -1,0 +1,81 @@
+@model QLDSV_HTC.Web.Models.SubjectManagementViewModel
+@{
+    var isPGV = (bool)(ViewData["isPGV"] ?? false);
+}
+
+<!-- Search Bar & Pagination -->
+<div class="row align-items-center mb-3">
+    <div class="col-md-6 mb-2 mb-md-0 d-flex gap-2">
+        <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white border-end-0 text-muted">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" id="subjectSearch" class="form-control border-start-0 ps-0"
+                   placeholder="Tìm kiếm theo mã, tên môn học..." value="@Model.SearchTerm">
+        </div>
+    </div>
+    <div class="col-md-6 d-flex justify-content-md-end align-items-center gap-3">
+        <span class="text-muted small">
+            Đang hiển thị <strong id="visibleCount" class="text-dark">@Model.Subjects.Count()</strong> môn học
+        </span>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 animate__animated animate__fadeIn">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="subjectTable">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Mã MH</th>
+                        <th>Tên môn học</th>
+                        <th class="text-center">Số tiết LT</th>
+                        <th class="text-center">Số tiết TH</th>
+                        @if (isPGV)
+                        {
+                            <th class="text-end pe-4" style="width: 120px;">Thao tác</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody id="subjectTableBody">
+                    @if (!Model.Subjects.Any())
+                    {
+                        <tr>
+                            <td colspan="@(isPGV ? 5 : 4)" class="text-center py-5 text-muted">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="bi bi-inbox fs-1 mb-2"></i>
+                                    <p class="mb-0">Chưa có môn học nào trong hệ thống.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var s in Model.Subjects)
+                        {
+                            <tr data-id="@s.Id" data-name="@s.Name" data-theory="@s.TheoryHours" data-practice="@s.PracticeHours">
+                                <td class="ps-4 fw-semibold font-monospace text-primary">@s.Id</td>
+                                <td>@s.Name</td>
+                                <td class="text-center">@s.TheoryHours</td>
+                                <td class="text-center">@s.PracticeHours</td>
+                                @if (isPGV)
+                                {
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row" title="Sửa"
+                                                data-id="@s.Id" data-name="@s.Name" data-theory="@s.TheoryHours" data-practice="@s.PracticeHours">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger btn-delete-row" title="Xóa"
+                                                data-id="@s.Id" data-name="@s.Name">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

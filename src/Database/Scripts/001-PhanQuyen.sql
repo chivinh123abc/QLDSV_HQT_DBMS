@@ -21,20 +21,57 @@ GO
 
 -- (C) Cấp quyền thực thi các SP được phép
 GRANT EXECUTE ON OBJECT::dbo.sp_DangNhap TO [KHOA];
+
 GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachLop TO [KHOA];
+
 GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachSinhVien TO [KHOA];
+
 GRANT EXECUTE ON OBJECT::dbo.sp_PhanTrangDong TO [KHOA];
-GRANT VIEW DEFINITION TO [KHOA]; 
+
+GRANT VIEW DEFINITION TO [KHOA];
 
 -- (D) Đảm bảo KHOA không có quyền CUD (Xóa/Sửa/Thêm) Lớp và Sinh viên
 -- Mặc dù REVOKE ở trên đã làm việc này, nhưng DENY sẽ chặn tuyệt đối kể cả khi có GRANT rời rạc.
+
+-- Lớp
 DENY EXECUTE ON OBJECT::dbo.sp_ThemLop TO [KHOA];
+
 DENY EXECUTE ON OBJECT::dbo.sp_SuaLop TO [KHOA];
+
 DENY EXECUTE ON OBJECT::dbo.sp_XoaLop TO [KHOA];
 
+-- Sinh viên
 DENY EXECUTE ON OBJECT::dbo.sp_ThemSinhVien TO [KHOA];
+
 DENY EXECUTE ON OBJECT::dbo.sp_SuaSinhVien TO [KHOA];
+
 DENY EXECUTE ON OBJECT::dbo.sp_XoaSinhVien TO [KHOA];
+
+-- Giảng viên
+DENY EXECUTE ON OBJECT::dbo.sp_ThemGiangVien TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_SuaGiangVien TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_XoaGiangVien TO [KHOA];
+
+-- Môn học
+DENY EXECUTE ON OBJECT::dbo.sp_ThemMonHoc TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_SuaMonHoc TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_XoaMonHoc TO [KHOA];
+
+-- Lớp tín chỉ
+DENY EXECUTE ON OBJECT::dbo.sp_ThemLopTinChi TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_SuaLopTinChi TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_XoaLopTinChi TO [KHOA];
+
+-- Đăng ký/hủy đăng ký lớp tín chỉ
+DENY EXECUTE ON OBJECT::dbo.sp_DangKyLopTinChi TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_HuyDangKyLopTinChi TO [KHOA];
 GO
 
 -- ========================================================
@@ -44,5 +81,14 @@ REVOKE EXECUTE ON schema::dbo FROM [SV];
 GO
 
 GRANT EXECUTE ON OBJECT::dbo.sp_DangNhap_SinhVien TO [SV];
+
 GRANT EXECUTE ON OBJECT::dbo.sp_LayPhieuDiem TO [SV];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_LayThongTinSinhVien TO [SV];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachLopTinChi_SinhVien TO [SV];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_DangKyLopTinChi TO [SV];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_HuyDangKyLopTinChi TO [SV];
 GO

@@ -12,31 +12,8 @@
         </text>,
         
         ToolbarSection = @<text>
-            <button type="button" class="btn btn-success btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-                    id="btnAccThem" title="Thêm tài khoản mới">
-                <i class="bi bi-plus-circle"></i> Thêm
-            </button>
-            <button type="button" class="btn btn-danger btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-                    id="btnAccXoa" title="Xóa tài khoản đang chọn" disabled>
-                <i class="bi bi-trash"></i> Xóa
-            </button>
-            <button type="button" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-                    id="btnAccGhi" title="Lưu dữ liệu vào CSDL" disabled>
-                <i class="bi bi-floppy"></i> Ghi
-            </button>
-            <button type="button" class="btn btn-warning btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-                    id="btnAccPhucHoi" title="Phục hồi dữ liệu gốc" disabled>
-                <i class="bi bi-arrow-counterclockwise"></i> Phục hồi
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm d-flex align-items-center gap-1 shadow-sm hover-elevate"
-                    id="btnAccHuy" title="Hủy thao tác hiện tại" disabled>
-                <i class="bi bi-x-octagon"></i> Hủy
-            </button>
-            <button type="button"
-                    class="btn btn-secondary btn-sm ms-auto d-flex align-items-center gap-1 shadow-sm hover-elevate"
-                    id="btnAccThoat" data-bs-dismiss="modal" title="Đóng form">
-                <i class="bi bi-x-circle"></i> Thoát
-            </button>
+            @{ ViewData["IdPrefix"] = "AccountForm"; }
+            @await Html.PartialAsync("_CrudToolbar", null, ViewData)
         </text>,
         
         BodySection = @<text>
@@ -96,6 +73,13 @@
                         <option value="KHOA">KHOA — Khoa</option>
                     </select>
                     <div class="invalid-feedback">Vui lòng chọn nhóm quyền.</div>
+                </div>
+            </div>
+            <div class="alert alert-light border shadow-sm p-3 rounded-3 mt-4 mb-0 d-flex align-items-start gap-3">
+                <i class="bi bi-info-circle-fill text-primary fs-4"></i>
+                <div class="small text-muted">
+                    <h6 class="text-dark fw-bold mb-1">Hướng dẫn</h6>
+                    Mọi thay đổi khi bấm <b class="text-dark">Ghi</b> sẽ lấy hiệu lực ngay trên Hệ thống CSDL. Bạn có thể bấm <b class="text-warning">Phục hồi</b> để lui lại thao tác lỡ tay hoặc <b class="text-danger">Hoàn tác tất cả</b> ở dưới cùng để hủy toàn phiên.
                 </div>
             </div>
         </text>,

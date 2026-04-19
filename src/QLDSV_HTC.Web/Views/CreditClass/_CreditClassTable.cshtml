@@ -1,0 +1,157 @@
+@model QLDSV_HTC.Web.Models.CreditClassManagementViewModel
+@using QLDSV_HTC.Web.Models
+
+@{
+    var isPGV = (bool)(ViewData["isPGV"] ?? false);
+    
+    var tableModel = new GenericTableViewModel
+    {
+        FiltersSection = @<text>
+            <div class="input-group" style="max-width:240px">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" id="creditClassSearch" class="form-control border-start-0"
+                       placeholder="Tìm môn học, giảng viên…">
+            </div>
+            
+            <form id="filterForm" method="GET" action="@Url.Action("Index", "CreditClass")" class="d-flex gap-2 align-items-center">
+                <select name="filterYear" class="form-select form-select-sm" style="max-width:140px;" onchange="this.form.submit()">
+                    <option value="">— Niên khóa —</option>
+                    @foreach (var y in Model.Years)
+                    {
+                        <option value="@y" selected="@(Model.FilterYear == y)">@y</option>
+                    }
+                </select>
+                <select name="filterSemester" class="form-select form-select-sm" style="max-width:110px;" onchange="this.form.submit()">
+                    <option value="">— Học kỳ —</option>
+                    @foreach (var s in Model.Semesters)
+                    {
+                        <option value="@s" selected="@(Model.FilterSemester == s)">HK @s</option>
+                    }
+                </select>
+                @if (isPGV && Model.Faculties.Any())
+                {
+                    <select name="filterFaculty" class="form-select form-select-sm" style="max-width:200px;" onchange="this.form.submit()">
+                        <option value="">— Khoa (Bộ môn) —</option>
+                        @foreach (var f in Model.Faculties)
+                        {
+                            <option value="@f.Id.Trim()" selected="@(Model.FilterFaculty == f.Id.Trim())">@f.Name (@f.Id.Trim())</option>
+                        }
+                    </select>
+                }
+            </form>
+        </text>,
+        
+        HeadSection = @<text>
+            <tr>
+                <th scope="col" style="width:50px">Mã LTC</th>
+                <th scope="col" style="width:120px">Năm HK</th>
+                <th scope="col" style="width:200px">Môn học</th>
+                <th scope="col" style="width:50px" class="text-center">Nhóm</th>
+                <th scope="col" style="width:200px">Giảng viên</th>
+                <th scope="col" style="width:50px" class="text-center">Sinh viên tối thiểu</th>
+                <th scope="col" style="width:50px" class="text-center">Đã đăng kí</th>
+                <th scope="col" style="width:50px" class="text-center">Tình trạng</th>
+                @if (isPGV)
+                {
+                    <th scope="col" class="text-end" style="width:150px">Hành động</th>
+                }
+            </tr>
+        </text>,
+        
+        BodySection = @<text>
+            @if (!Model.CreditClasses.Any())
+            {
+                <tr>
+                    <td colspan="@(isPGV ? 9 : 8)" class="text-center text-muted py-5">
+                        <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                        Không có dữ liệu lớp tín chỉ.
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var c in Model.CreditClasses)
+                {
+                    <tr data-id="@c.Id" data-year="@c.Year" data-semester="@c.Semester"
+                        data-sub-id="@c.SubjectId.Trim()" data-sub-name="@c.SubjectName" data-group="@c.Group" 
+                        data-lec-id="@c.LecturerId.Trim()" data-fac-id="@c.FacultyId.Trim()" 
+                        data-min="@c.MinStudents" data-cancelled="@(c.Cancelled ? "true" : "false")"
+                        data-reg-count="@c.RegisteredCount"
+                        data-search="@(c.SubjectName + " " + c.LecturerName)">
+                        
+                        <td class="fw-semibold font-monospace text-primary">@c.Id</td>
+                        <td class="small">@c.Year (HK @c.Semester)</td>
+                        <td>@c.SubjectName</td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">@c.Group</span>
+                        </td>
+                        <td class="text-truncate" style="max-width:200px;">@c.LecturerName</td>
+                        <td class="text-center">@c.MinStudents</td>
+                        <td class="text-center">
+                            @if (c.RegisteredCount > 0)
+                            {
+                                <span class="fw-bold @(c.RegisteredCount < c.MinStudents ? "text-warning" : "text-success")">@c.RegisteredCount</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">0</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (c.Cancelled)
+                            {
+                                <span class="badge bg-danger">Hủy</span>
+                            }
+                            else if (c.RegisteredCount < c.MinStudents)
+                            {
+                                <span class="badge bg-warning text-dark">Chưa đủ</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Đã đạt</span>
+                            }
+                        </td>
+                        @if (isPGV)
+                        {
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-info me-1 shadow-sm hover-scale"
+                                        title="Xem DSSV" onclick="window.location.href='@Url.Action("Index", "Registration")?filterCreditClassId=@c.Id'">
+                                    <i class="bi bi-people"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row shadow-sm hover-scale"
+                                        title="Sửa lớp tín chỉ"
+                                        data-id="@c.Id" data-year="@c.Year" data-semester="@c.Semester"
+                                        data-sub-id="@c.SubjectId.Trim()" data-group="@c.Group"
+                                        data-lec-id="@c.LecturerId.Trim()" data-fac-id="@c.FacultyId.Trim()"
+                                        data-min="@c.MinStudents" data-reg-count="@c.RegisteredCount"
+                                        data-cancelled="@(c.Cancelled ? "true" : "false")">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger @(c.RegisteredCount > 0 ? "" : "btn-delete-row hover-scale") shadow-sm @(c.RegisteredCount > 0 ? "opacity-50" : "")"
+                                        title="@(c.RegisteredCount > 0 ? $"Không thể xóa LTC đã có {c.RegisteredCount} SV" : "Xóa lớp tín chỉ")"
+                                        data-id="@c.Id" @(c.RegisteredCount > 0 ? "disabled" : "")>
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        }
+                    </tr>
+                }
+            }
+        </text>,
+        
+        FooterSection = @<text>
+            <div class="d-flex align-items-center w-100">
+                <span class="text-muted small me-auto">
+                    Hiển thị <strong id="visibleCount">@Model.CreditClasses.Count()</strong> lớp tín chỉ (Lọc theo năm và học kỳ)
+                </span>
+            </div>
+        </text>
+    };
+
+    ViewData["TableId"] = "creditClassTable";
+    ViewData["TableBodyId"] = "creditClassTableBody";
+}
+
+@await Html.PartialAsync("_CardTableWrapper", tableModel, ViewData)

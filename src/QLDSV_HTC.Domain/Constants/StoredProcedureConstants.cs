@@ -14,6 +14,27 @@ namespace QLDSV_HTC.Domain.Constants
             public const string FacultyId = "@MAKHOA";
         }
 
+        public static class GetRegisteredStudentsList
+        {
+            public const string SchoolYear = "@NIENKHOA";
+            public const string Semester = "@HOCKY";
+            public const string SubjectId = "@MAMH";
+            public const string Group = "@NHOM";
+        }
+
+        public static class GetSubjectGrades
+        {
+            public const string SchoolYear = "@NIENKHOA";
+            public const string Semester = "@HOCKY";
+            public const string SubjectId = "@MAMH";
+            public const string Group = "@NHOM";
+        }
+
+        public static class GetClassGradesSummary
+        {
+            public const string ClassId = "@MALOP";
+        }
+
         public static class Login
         {
             public const string LoginName = "@TENLOGIN";
@@ -53,6 +74,14 @@ namespace QLDSV_HTC.Domain.Constants
             public const string Password = "@PASSWORD";
         }
 
+        public static class SubjectCrud
+        {
+            public const string OldSubjectId = "@MAMH_OLD";
+            public const string SubjectId = "@MAMH";
+            public const string SubjectName = "@TENMH";
+            public const string TheoryHours = "@SOTIET_LT";
+            public const string PracticeHours = "@SOTIET_TH";
+        }
         public static class LecturerCrud
         {
             public const string OldLecturerId = "@MAGV_OLD";
@@ -68,6 +97,19 @@ namespace QLDSV_HTC.Domain.Constants
         public static class Faculty
         {
             public const string LecturerId = "@MAGV";
+        }
+
+        public static class CreditClassCrud
+        {
+            public const string CreditClassId = "@MALTC";
+            public const string SchoolYear = "@NIENKHOA";
+            public const string Semester = "@HOCKY";
+            public const string SubjectId = "@MAMH";
+            public const string Group = "@NHOM";
+            public const string LecturerId = "@MAGV";
+            public const string FacultyId = "@MAKHOA";
+            public const string MinStudents = "@SOSVTOITHIEU";
+            public const string IsCancelled = "@HUYLOP";
         }
 
         public static class AccountCrud
@@ -93,6 +135,14 @@ namespace QLDSV_HTC.Domain.Constants
             public const string PageNumber = "@PageNumber";
             public const string PageSize = "@PageSize";
             public const string TotalCount = "TotalCount";
+        }
+
+        public static class Registration
+        {
+            public const string SchoolYear = "@NIENKHOA";
+            public const string Semester = "@HOCKY";
+            public const string StudentId = "@MASV";
+            public const string CreditClassId = "@MALTC";
         }
     }
 }

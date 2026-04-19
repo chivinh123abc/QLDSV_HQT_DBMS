@@ -1,0 +1,53 @@
+@* _RegistrationTable.cshtml — Bảng danh sách lớp tín chỉ đăng ký (AJAX-rendered) *@
+@using QLDSV_HTC.Web.Models
+
+@{
+    var tableModel = new GenericTableViewModel
+    {
+        FiltersSection = @<text>
+            <div class="input-group" style="max-width:360px">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" id="searchInput" class="form-control border-start-0"
+                       placeholder="Tìm mã, tên môn học hoặc giảng viên…">
+            </div>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 ms-auto" id="resultCount">
+                Chưa lọc
+            </span>
+        </text>,
+
+        HeadSection = @<text>
+            <tr>
+                <th scope="col" class="ps-4" style="width:120px">Mã MH</th>
+                <th scope="col">Tên môn học</th>
+                <th scope="col" class="text-center" style="width:80px">Nhóm</th>
+                <th scope="col" style="width:200px">Giảng viên</th>
+                <th scope="col" class="text-center" style="width:120px">SV đã ĐK</th>
+                <th scope="col" class="text-center pe-4" style="width:140px">Thao tác</th>
+            </tr>
+        </text>,
+
+        BodySection = @<text>
+            <tr id="emptyRow">
+                <td colspan="6" class="text-center text-muted py-5">
+                    <div class="d-flex flex-column align-items-center gap-2">
+                        <i class="bi bi-hourglass-split fs-1 opacity-25"></i>
+                        <span>Đang tải danh sách lớp tín chỉ...</span>
+                    </div>
+                </td>
+            </tr>
+        </text>,
+
+        FooterSection = @<text>
+            <span class="text-muted small" id="footerInfo">
+                <i class="bi bi-info-circle me-1"></i>Chọn niên khóa và học kỳ để lọc
+            </span>
+        </text>
+    };
+
+    ViewData["TableId"] = "registrationTable";
+    ViewData["TableBodyId"] = "classTableBody";
+}
+
+@await Html.PartialAsync("_CardTableWrapper", tableModel, ViewData)

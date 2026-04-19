@@ -188,9 +188,9 @@ namespace QLDSV_HTC.Web.Controllers
                 }
 
                 var currentLoginName = User.FindFirst(AppConstants.SessionKeys.Username)?.Value;
-                if (!string.IsNullOrEmpty(currentLoginName) &&
-                    input.OldLoginName.Equals(currentLoginName, StringComparison.OrdinalIgnoreCase) &&
-                    (!string.IsNullOrWhiteSpace(input.NewLoginName) || !string.IsNullOrWhiteSpace(input.NewRole)))
+                bool isSelfUpdate = !string.IsNullOrEmpty(currentLoginName) && input.OldLoginName.Equals(currentLoginName, StringComparison.OrdinalIgnoreCase);
+
+                if (isSelfUpdate && (!string.IsNullOrWhiteSpace(input.NewLoginName) || !string.IsNullOrWhiteSpace(input.NewRole)))
                 {
                     return BadRequest(new { success = false, message = "Bạn không thể tự đổi tên đăng nhập hoặc quyền của chính mình khi đang thao tác!" });
                 }
@@ -203,6 +203,13 @@ namespace QLDSV_HTC.Web.Controllers
                     NewUserName = string.IsNullOrWhiteSpace(input.NewUserName) ? null : input.NewUserName.Trim(),
                     NewRole = string.IsNullOrWhiteSpace(input.NewRole) ? null : input.NewRole.Trim(),
                 });
+
+                if (isSelfUpdate && !string.IsNullOrWhiteSpace(input.NewPassword))
+                {
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return Ok(new { success = true, forceLogout = true, message = "Đổi mật khẩu thành công. Hệ thống sẽ đăng xuất để áp dụng thay đổi." });
+                }
+
                 return Ok(new { success = true, message = "Cập nhật tài khoản thành công." });
             }
             catch (SqlException ex)

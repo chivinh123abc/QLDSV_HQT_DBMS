@@ -24,12 +24,13 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                 SchoolYear = row[DbConstants.Columns.Class.SchoolYear]?.ToString() ?? string.Empty,
                 FacultyId = row[DbConstants.Columns.Class.FacultyId]?.ToString() ?? string.Empty,
                 FacultyName = row[DbConstants.Columns.Class.FacultyName]?.ToString() ?? string.Empty,
+                StudentCount = dt.Columns.Contains(DbConstants.Columns.Class.StudentCount) ? row[DbConstants.Columns.Class.StudentCount] as int? ?? 0 : 0
             });
         }
 
         public async Task<PagedResult<ClassDto>> GetPagedClassListAsync(PaginationQuery paging)
         {
-            const string selectCols = "l.MALOP, l.TENLOP, l.KHOAHOC, l.MAKHOA, ISNULL(k.TENKHOA, l.MAKHOA) AS TENKHOA";
+            const string selectCols = $"l.MALOP, l.TENLOP, l.KHOAHOC, l.MAKHOA, ISNULL(k.TENKHOA, l.MAKHOA) AS TENKHOA, (SELECT COUNT(*) FROM SINHVIEN sv WHERE sv.MALOP = l.MALOP) AS {DbConstants.Columns.Class.StudentCount}";
             const string tableName = "LOP l";
             const string joinClause = "LEFT JOIN KHOA k ON k.MAKHOA = l.MAKHOA";
             const string whereClause = "(IS_MEMBER('PGV') = 1 OR USER_NAME() = 'dbo' OR (IS_MEMBER('KHOA') = 1 AND l.MAKHOA = (SELECT MAKHOA FROM GIANGVIEN WHERE MAGV = USER_NAME())))";
@@ -56,6 +57,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                     SchoolYear = row[DbConstants.Columns.Class.SchoolYear]?.ToString() ?? string.Empty,
                     FacultyId = row[DbConstants.Columns.Class.FacultyId]?.ToString() ?? string.Empty,
                     FacultyName = row[DbConstants.Columns.Class.FacultyName]?.ToString() ?? string.Empty,
+                    StudentCount = row[DbConstants.Columns.Class.StudentCount] as int? ?? 0
                 }),
                 TotalCount = totalCount,
                 PageNumber = paging.PageNumber,

@@ -35,6 +35,7 @@
                 </button>
             }
         </div>
+        <div id="studentTableContainer" class="position-relative" style="min-height: 400px;">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0" id="studentTable">
                     <thead class="table-light">
@@ -53,17 +54,22 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td colspan="7" class="text-center text-muted">Vui lòng chọn 1 lớp ở bảng trên.</td>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="bi bi-arrow-up-circle fs-2 d-block mb-2 opacity-50"></i>
+                                Vui lòng chọn 1 lớp ở bảng trên để xem danh sách.
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="mt-3 d-flex justify-content-between align-items-center" id="studentPaginationContainer" style="display: none !important;">
+            <div class="mt-3 d-flex justify-content-between align-items-center px-2 pb-2"
+                id="studentPaginationContainer" style="display: none !important;">
                 <span class="text-muted small" id="studentDisplayCount"></span>
                 <div id="studentPaginationControls"></div>
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Modal Thêm/Sửa Sinh Viên -->
@@ -82,6 +88,12 @@
         let snapshotData = null;
         let selectedStudentId = null;
         let originalStudentId = null;
+
+        // -- UNDO STACK STATE --
+        let undoStack = [];
+        let forceClose = false;
+        
+        let allStudentsForClass = []; // Store full students of current class for modal list sync
 
         const fldStudentId = document.getElementById('fldStudentId');
         const fldPassword = document.getElementById('fldPassword');
@@ -114,15 +126,99 @@
             if (modalEl) {
                 studentModalInstance = new bootstrap.Modal(modalEl);
                 modalEl.addEventListener('hidden.bs.modal', resetToView);
+
+                const btnCancelModal = modalEl.querySelector('.btn-cancel-modal');
+                const btnSaveModal = modalEl.querySelector('.btn-save-modal');
+
+                modalEl.addEventListener('show.bs.modal', () => {
+                    undoStack = [];
+                    forceClose = false;
+                });
+
+                modalEl.addEventListener('hide.bs.modal', async (e) => {
+                    if (undoStack.length > 0 && !forceClose) {
+                        e.preventDefault();
+                        const isConfirmed = await window.showConfirmDialog(
+                            "Xác nhận Thoát",
+                            "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?",
+                            { confirmText: "Xác nhận Thoát", cancelText: "Trở lại", isDanger: true }
+                        );
+                        if (isConfirmed) {
+                            forceClose = true;
+                            studentModalInstance.hide();
+                        }
+                    }
+                });
+
+                btnSaveModal?.addEventListener('click', async () => {
+                    if (undoStack.length === 0) {
+                        forceClose = true;
+                        studentModalInstance.hide();
+                        return;
+                    }
+
+                    const message = "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?";
+                    
+                    const isConfirmed = await window.showConfirmDialog(
+                        "Xác nhận Thoát", message,
+                        { confirmText: "Xác nhận", cancelText: "Trở lại" }
+                    );
+
+                    if (isConfirmed) {
+                        undoStack = [];
+                        forceClose = true;
+                        studentModalInstance.hide();
+                    }
+                });
+
+                btnCancelModal?.addEventListener('click', async () => {
+                    if (undoStack.length === 0) {
+                        forceClose = true;
+                        studentModalInstance.hide();
+                        return;
+                    }
+
+                    const message = "Hành động này sẽ <b>Hoàn Tác toàn bộ</b> các thay đổi bạn vừa thực hiện trong phiên này.<br>Bạn có chắc chắn muốn xóa bỏ công sức vừa làm?";
+                    
+                    const isConfirmed = await window.showConfirmDialog(
+                        "Hoàn Tác & Đóng", message,
+                        { confirmText: "Xác nhận Hoàn tác", cancelText: "Giữ lại", isDanger: true }
+                    );
+
+                    if (isConfirmed) {
+                        btnCancelModal.disabled = true;
+                        while (undoStack.length > 0) {
+                            await executeUndo();
+                        }
+                        undoStack = [];
+                        forceClose = true;
+                        btnCancelModal.disabled = false;
+                        studentModalInstance.hide();
+                    }
+                });
+
+                // Modal Quick Search
+                const modalSearchInput = document.getElementById('modalStudentSearch');
+                modalSearchInput?.addEventListener('input', function() {
+                    const q = this.value.toLowerCase();
+                    const filtered = allStudentsForClass.filter(s => 
+                        s.studentId.toLowerCase().includes(q) || 
+                        `${s.firstName} ${s.lastName}`.toLowerCase().includes(q)
+                    );
+                    renderModalStudentList(filtered);
+                });
             }
 
-            // Toolbar Events
             btnThem?.addEventListener('click', () => {
                 selectedStudentId = null;
                 snapshotData = null;
                 clearFields();
                 helpers.clearValidation();
                 helpers.setMode('add');
+
+                // Update placeholder for adding new student
+                fldPassword.placeholder = "Nhập mật khẩu cho sinh viên mới";
+
                 fldStudentId.focus();
                 helpers.showAlert('Nhập thông tin sinh viên mới rồi nhấn <b>Ghi</b> để lưu.', 'info');
             });
@@ -134,11 +230,14 @@
 
             btnGhi?.addEventListener('click', submitStudentForm);
 
-            btnPhucHoi?.addEventListener('click', () => {
-                if (!snapshotData) { resetToView(); return; }
-                populateFieldsFromSnapshot(snapshotData);
-                helpers.clearValidation();
-                helpers.showAlert('Dữ liệu đã được phục hồi về trạng thái ban đầu.', 'warning');
+            btnPhucHoi?.addEventListener('click', async () => {
+                if (undoStack.length === 0) {
+                    helpers.showAlert('Không có hành động nào để phục hồi.', 'info');
+                    return;
+                }
+                await executeUndo();
+                resetToView();
+                helpers.showAlert('Đã hoàn tác 1 hành động.', 'warning');
             });
 
             btnHuy?.addEventListener('click', resetToView);
@@ -151,26 +250,45 @@
             const btnAction = document.getElementById('btnActionStudent');
             if (btnAction) btnAction.disabled = false;
 
-            document.querySelector('#studentTable tbody').innerHTML = '<tr><td colspan="7" class="text-center"><div class="spinner-border text-primary spinner-border-sm"></div> Đang tải...</td></tr>';
+            const container = document.getElementById('studentTableContainer');
+            container.classList.add('container-loading');
+
+            // Add overlay if it doesn't exist
+            if (!container.querySelector('.loading-overlay')) {
+                const overlay = document.createElement('div');
+                overlay.className = 'loading-overlay';
+                overlay.innerHTML = '<div class="loading-spinner-premium"></div><div class="mt-2 fw-medium text-primary">Đang nạp dữ liệu...</div>';
+                container.appendChild(overlay);
+            }
 
             const pageSize = 10;
             fetch(`@RouteConstants.Student.ListPath?classId=${encodeURIComponent(classId)}&page=${page}&pageSize=${pageSize}`)
                 .then(res => res.json())
                 .then(res => {
+                    container.classList.remove('container-loading');
+                    const overlay = container.querySelector('.loading-overlay');
+                    if (overlay) overlay.remove();
+
                     if (res.success) {
+                        allStudentsForClass = res.data; // Store for modal use
                         renderStudents(res.data);
+                        renderModalStudentList(res.data);
                         renderStudentPagination(res.pagination, className);
                     } else {
                         window.showToast("Lỗi tải danh sách sinh viên: " + res.message, 'danger');
                     }
                 })
                 .catch(err => {
+                    container.classList.remove('container-loading');
+                    const overlay = container.querySelector('.loading-overlay');
+                    if (overlay) overlay.remove();
+
                     console.error("AJAX Error: ", err);
                     window.showToast("Có lỗi xảy ra khi gọi API.", 'danger');
                 });
         };
 
-        window.goToStudentPage = function(page, pageSize) {
+        window.goToStudentPage = function (page, pageSize) {
             if (!currentSelectedClassId) return;
             const className = document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', '').split(' (')[0];
             window.loadStudentsForClass(currentSelectedClassId, className, page);
@@ -180,14 +298,14 @@
             const container = document.getElementById('studentPaginationContainer');
             const controls = document.getElementById('studentPaginationControls');
             const displayCount = document.getElementById('studentDisplayCount');
-            
+
             if (pagination.totalCount === 0) {
                 container.style.setProperty('display', 'none', 'important');
                 return;
             }
-            
+
             container.style.setProperty('display', 'flex', 'important');
-            
+
             const startItem = (pagination.pageNumber - 1) * pagination.pageSize + 1;
             const endItem = Math.min(pagination.pageNumber * pagination.pageSize, pagination.totalCount);
             displayCount.innerHTML = `Hiển thị <strong>${endItem - startItem + 1}</strong> / ${pagination.totalCount} sinh viên`;
@@ -200,13 +318,13 @@
             const maxPagesToShow = 5;
             let startPage = Math.max(1, pagination.pageNumber - Math.floor(maxPagesToShow / 2));
             let endPage = Math.min(pagination.totalPages, startPage + maxPagesToShow - 1);
-            
+
             if (endPage - startPage + 1 < maxPagesToShow) {
                 startPage = Math.max(1, endPage - maxPagesToShow + 1);
             }
 
             let html = '<nav aria-label="Pagination"><ul class="pagination pagination-sm mb-0">';
-            
+
             // Prev
             if (pagination.hasPreviousPage) {
                 html += `<li class="page-item"><button class="page-link" onclick="goToStudentPage(${pagination.pageNumber - 1}, ${pagination.pageSize})"><i class="bi bi-chevron-left"></i></button></li>`;
@@ -262,18 +380,58 @@
             data.forEach(s => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                        <td class="fw-medium text-primary">${s.studentId}</td>
-                        <td>${s.firstName} ${s.lastName}</td>
-                        <td>${s.gender ? 'Nữ' : 'Nam'}</td>
-                        <td>${s.dob ? formatDateDisplay(s.dob) : ''}</td>
-                        <td>${s.address || ''}</td>
-                        <td>${s.onLeave ? '<span class="badge bg-danger">Nghỉ học</span>' : '<span class="badge bg-success">Đang học</span>'}</td>
-                        ${isPGV ? `
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent('${s.studentId}')"><i class="bi bi-trash"></i></button>
-                        </td>` : ''}
-                    `;
+                            <td class="fw-semibold font-monospace text-primary">${s.studentId}</td>
+                            <td class="fw-medium">${s.firstName} ${s.lastName}</td>
+                            <td>${s.gender ? 'Nữ' : 'Nam'}</td>
+                            <td>${s.dob ? formatDateDisplay(s.dob) : ''}</td>
+                            <td>${s.address || ''}</td>
+                            <td>${s.onLeave ? '<span class="badge bg-danger">Nghỉ học</span>' : '<span class="badge bg-success">Đang học</span>'}</td>
+                            ${isPGV ? `
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary me-1 hover-scale shadow-sm" title="Sửa sinh viên" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm btn-outline-danger ${s.hasDependencies ? '' : 'hover-scale'} shadow-sm" 
+                                        title="${s.hasDependencies ? 'Không thể xóa sinh viên đã có dữ liệu liên quan' : 'Xóa sinh viên'}" 
+                                        ${s.hasDependencies ? 'disabled' : `onclick="deleteStudent('${s.studentId}')"`}>
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>` : ''}
+                        `;
+            tbody.appendChild(tr);
+            });
+        }
+
+        function renderModalStudentList(data) {
+            const tbody = document.querySelector('#modalStudentTable tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted small">Không tìm thấy sinh viên nào.</td></tr>';
+                return;
+            }
+
+            data.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.className = 'modal-selectable-row';
+                if (selectedStudentId === s.studentId) tr.classList.add('selected');
+
+                tr.innerHTML = `
+                    <td class="ps-3"><a href="javascript:void(0)" class="text-primary fw-bold text-decoration-none font-monospace">${s.studentId}</a></td>
+                    <td class="fw-medium text-dark">${s.firstName} ${s.lastName}</td>
+                    <td class="text-center text-muted small">${s.gender ? 'Nữ' : 'Nam'}</td>
+                    <td class="pe-3 text-end">
+                        ${s.onLeave 
+                            ? '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-2 py-1" style="font-size: 0.7rem; font-weight: 500;">NGHỈ</span>' 
+                            : '<span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1" style="font-size: 0.7rem; font-weight: 500;">HỌC</span>'}
+                    </td>
+                `;
+
+                tr.addEventListener('click', () => {
+                    document.querySelectorAll('.modal-selectable-row').forEach(r => r.classList.remove('selected'));
+                    tr.classList.add('selected');
+                    editStudent(s);
+                });
+
                 tbody.appendChild(tr);
             });
         }
@@ -295,6 +453,17 @@
             resetToView();
             populateFieldsFromSnapshot(s);
             helpers.setMode('edit');
+
+            // Update placeholder for editing student
+            fldPassword.placeholder = "Bỏ qua nếu không thay đổi mật khẩu";
+
+            if (s.hasDependencies) {
+                btnXoa.disabled = true;
+                btnXoa.title = "Không thể xóa sinh viên đã có dữ liệu liên quan";
+            } else {
+                btnXoa.title = "Xóa (Phím tắt: Del)";
+            }
+
             studentModalInstance.show();
             helpers.hideAlert();
         }
@@ -331,6 +500,7 @@
             helpers.clearValidation();
             helpers.hideAlert();
             helpers.setMode('view');
+            fldPassword.placeholder = "Password";
         }
 
         // SUBMIT
@@ -364,6 +534,29 @@
                 .then(res => {
                     if (res.success) {
                         window.showToast(res.message, 'success');
+
+                        // UNDO LOGIC
+                        if (helpers.getMode() === 'add') {
+                            undoStack.push({ action: 'delete', payload: { studentId: dataObj.StudentId } });
+                        } else {
+                            if (snapshotData) {
+                                undoStack.push({
+                                    action: 'edit', payload: {
+                                        OldStudentId: dataObj.StudentId,
+                                        StudentId: snapshotData.studentId || snapshotData.StudentId,
+                                        FirstName: snapshotData.firstName || snapshotData.FirstName,
+                                        LastName: snapshotData.lastName || snapshotData.LastName,
+                                        Gender: snapshotData.gender !== undefined ? snapshotData.gender : snapshotData.Gender,
+                                        Dob: snapshotData.dob || snapshotData.Dob || '',
+                                        Address: snapshotData.address || snapshotData.Address || '',
+                                        ClassId: snapshotData.classId || snapshotData.ClassId,
+                                        OnLeave: snapshotData.onLeave !== undefined ? snapshotData.onLeave : snapshotData.OnLeave,
+                                        Password: snapshotData.password || snapshotData.Password || ''
+                                    }
+                                });
+                            }
+                        }
+
                         // Reload table
                         const className = document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', '').split(' (')[0];
                         window.loadStudentsForClass(currentSelectedClassId, className);
@@ -385,8 +578,14 @@
         }
 
         // DELETE
-        function deleteStudent(studentId) {
-            if (!confirm(`Bạn có chắc chắn muốn xóa sinh viên ${studentId}? Hành động này sẽ không thể phục hồi.`)) return;
+        async function deleteStudent(studentId) {
+            const isConfirmed = await window.showConfirmDialog(
+                "Xác nhận xóa sinh viên",
+                `Bạn có chắc chắn muốn xóa sinh viên <b>${studentId}</b>?<br>Hành động này sẽ không thể phục hồi (kể cả khi Undo).`,
+                { confirmText: "Xóa", cancelText: "Hủy", isDanger: true }
+            );
+
+            if (!isConfirmed) return;
 
             fetch('@RouteConstants.Student.DeletePath', {
                 method: 'POST',
@@ -400,6 +599,25 @@
                 .then(res => {
                     if (res.success) {
                         window.showToast(res.message, 'success');
+
+                        const modalEl = document.getElementById('studentFormModal');
+                        let currentStudentId = snapshotData ? (snapshotData.studentId || snapshotData.StudentId) : null;
+                        if (modalEl && modalEl.classList.contains('show') && snapshotData && currentStudentId === studentId) {
+                            undoStack.push({
+                                action: 'add', payload: {
+                                    StudentId: currentStudentId,
+                                    FirstName: snapshotData.firstName || snapshotData.FirstName,
+                                    LastName: snapshotData.lastName || snapshotData.LastName,
+                                    Gender: snapshotData.gender !== undefined ? snapshotData.gender : snapshotData.Gender,
+                                    Dob: snapshotData.dob || snapshotData.Dob || '',
+                                    Address: snapshotData.address || snapshotData.Address || '',
+                                    ClassId: snapshotData.classId || snapshotData.ClassId,
+                                    OnLeave: snapshotData.onLeave !== undefined ? snapshotData.onLeave : snapshotData.OnLeave,
+                                    Password: ''
+                                }
+                            });
+                        }
+
                         const className = document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', '').split(' (')[0];
                         window.loadStudentsForClass(currentSelectedClassId, className);
 
@@ -415,6 +633,44 @@
                     console.error(err);
                     window.showToast("Lỗi kết nối.", 'danger');
                 });
+        }
+
+        async function executeUndo() {
+            if (undoStack.length === 0) return;
+            const actionObj = undoStack.pop();
+            try {
+                let url = '';
+                let bodyObj = {};
+
+                if (actionObj.action === 'add') {
+                    url = '@RouteConstants.Student.AddPath';
+                    bodyObj = actionObj.payload;
+                } else if (actionObj.action === 'edit') {
+                    url = '@RouteConstants.Student.EditPath';
+                    bodyObj = actionObj.payload;
+                } else if (actionObj.action === 'delete') {
+                    url = '@RouteConstants.Student.DeletePath';
+                    bodyObj = { studentId: actionObj.payload.studentId };
+                }
+
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(bodyObj)
+                }).then(r => r.json());
+
+                if (!res.success) {
+                    window.showToast("Lỗi hoàn tác: " + res.message, "danger");
+                } else {
+                    const className = document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', '').split(' (')[0];
+                    window.loadStudentsForClass(currentSelectedClassId, className);
+                }
+            } catch (err) {
+                window.showToast("Lỗi hoàn tác: " + err.message, "danger");
+            }
         }
     </script>
 }

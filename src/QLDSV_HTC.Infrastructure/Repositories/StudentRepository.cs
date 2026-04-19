@@ -34,7 +34,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
 
         public async Task<PagedResult<StudentDto>> GetPagedStudentListAsync(PaginationQuery paging, string? classId = null)
         {
-            const string selectCols = "sv.MASV, sv.HO, sv.TEN, sv.PHAI, sv.DIACHI, sv.NGAYSINH, sv.MALOP, sv.DANGHIHOC, ISNULL(l.TENLOP, sv.MALOP) AS TENLOP";
+            const string selectCols = $"sv.MASV, sv.HO, sv.TEN, sv.PHAI, sv.DIACHI, sv.NGAYSINH, sv.MALOP, sv.DANGHIHOC, ISNULL(l.TENLOP, sv.MALOP) AS TENLOP, CAST(CASE WHEN EXISTS(SELECT 1 FROM DANGKY WHERE MASV = sv.MASV) THEN 1 ELSE 0 END AS BIT) AS {DbConstants.Columns.Student.HasDependencies}";
             const string tableName = "SINHVIEN sv";
             const string joinClause = "LEFT JOIN LOP l ON l.MALOP = sv.MALOP";
             const string rlsClause = "(IS_MEMBER('PGV') = 1 OR USER_NAME() = 'dbo' OR (IS_MEMBER('KHOA') = 1 AND l.MAKHOA = (SELECT MAKHOA FROM GIANGVIEN WHERE MAGV = USER_NAME())))";
@@ -69,11 +69,33 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                     Dob = row[DbConstants.Columns.Student.Dob] as DateTime?,
                     ClassId = row[DbConstants.Columns.Student.ClassId]?.ToString() ?? string.Empty,
                     ClassName = row[DbConstants.Columns.Student.ClassName]?.ToString() ?? string.Empty,
-                    OnLeave = row[DbConstants.Columns.Student.OnLeave] as bool? ?? false
+                    OnLeave = row[DbConstants.Columns.Student.OnLeave] as bool? ?? false,
+                    HasDependencies = row[DbConstants.Columns.Student.HasDependencies] as bool? ?? false
                 }),
                 TotalCount = totalCount,
                 PageNumber = paging.PageNumber,
                 PageSize = paging.PageSize
+            };
+        }
+
+        public async Task<StudentDto?> GetStudentByIdAsync(string studentId)
+        {
+            var dt = await ExecuteQueryAsync(
+                AppConstants.SpNames.GetStudentById,
+                CommandType.StoredProcedure,
+                new SqlParameter("@MASV", studentId)
+            );
+
+            if (dt.Rows.Count == 0) return null;
+
+            var row = dt.Rows[0];
+            return new StudentDto
+            {
+                StudentId = row[DbConstants.Columns.Student.Id]?.ToString()?.Trim() ?? string.Empty,
+                FirstName = row[DbConstants.Columns.Student.FirstName]?.ToString()?.Trim() ?? string.Empty,
+                LastName = row[DbConstants.Columns.Student.LastName]?.ToString()?.Trim() ?? string.Empty,
+                ClassId = row[DbConstants.Columns.Student.ClassId]?.ToString()?.Trim() ?? string.Empty,
+                ClassName = row[DbConstants.Columns.Student.ClassName]?.ToString()?.Trim() ?? string.Empty,
             };
         }
 

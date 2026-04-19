@@ -97,8 +97,14 @@ namespace QLDSV_HTC.Domain.Constants
         {
             public const string Prefix = "/subject";
             public const string Index = "";
+            public const string Add = "add";
+            public const string Edit = "edit";
+            public const string Delete = "delete";
 
             public const string SubjectPath = Prefix;
+            public const string AddPath = $"{Prefix}/{Add}";
+            public const string EditPath = $"{Prefix}/{Edit}";
+            public const string DeletePath = $"{Prefix}/{Delete}";
         }
 
         public static class Lecturer
@@ -119,16 +125,28 @@ namespace QLDSV_HTC.Domain.Constants
         {
             public const string Prefix = "/credit-class";
             public const string Index = "";
+            public const string Add = "add";
+            public const string Edit = "edit";
+            public const string Delete = "delete";
 
             public const string CreditClassPath = Prefix;
+            public const string AddPath = $"{Prefix}/{Add}";
+            public const string EditPath = $"{Prefix}/{Edit}";
+            public const string DeletePath = $"{Prefix}/{Delete}";
         }
 
         public static class Registration
         {
             public const string Prefix = "/registration";
             public const string Index = "";
+            public const string Filter = "filter";
+            public const string Register = "register";
+            public const string Unregister = "unregister";
 
             public const string RegistrationPath = Prefix;
+            public const string FilterPath = $"{Prefix}/{Filter}";
+            public const string RegisterPath = $"{Prefix}/{Register}";
+            public const string UnregisterPath = $"{Prefix}/{Unregister}";
         }
 
         public static class Grade

@@ -26,6 +26,9 @@ namespace QLDSV_HTC.Web.Models
         public IEnumerable<string> Years { get; set; } = [];
         public IEnumerable<int> Semesters { get; set; } = [];
 
+        public string CurrentYear { get; set; } = string.Empty;
+        public int CurrentSemester { get; set; }
+
         public string SelectedYear { get; set; } = string.Empty;
         public int SelectedSemester { get; set; } = 0;
         public string SearchTerm { get; set; } = string.Empty;

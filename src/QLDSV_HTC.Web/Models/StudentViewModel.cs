@@ -14,6 +14,7 @@ namespace QLDSV_HTC.Web.Models
         public string ClassName { get; set; } = string.Empty;
         public bool OnLeave { get; set; }
         public string? Password { get; set; }
+        public bool HasDependencies { get; set; }
     }
 
     public class StudentManagementViewModel
