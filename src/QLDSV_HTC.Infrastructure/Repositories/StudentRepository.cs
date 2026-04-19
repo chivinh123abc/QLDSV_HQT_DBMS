@@ -34,7 +34,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
 
         public async Task<PagedResult<StudentDto>> GetPagedStudentListAsync(PaginationQuery paging, string? classId = null)
         {
-            const string selectCols = $"sv.MASV, sv.HO, sv.TEN, sv.PHAI, sv.DIACHI, sv.NGAYSINH, sv.MALOP, sv.DANGHIHOC, ISNULL(l.TENLOP, sv.MALOP) AS TENLOP, CAST(CASE WHEN EXISTS(SELECT 1 FROM DANGKY WHERE MASV = sv.MASV) OR EXISTS(SELECT 1 FROM HOCPHI WHERE MASV = sv.MASV) THEN 1 ELSE 0 END AS BIT) AS {DbConstants.Columns.Student.HasDependencies}";
+            const string selectCols = $"sv.MASV, sv.HO, sv.TEN, sv.PHAI, sv.DIACHI, sv.NGAYSINH, sv.MALOP, sv.DANGHIHOC, ISNULL(l.TENLOP, sv.MALOP) AS TENLOP, CAST(CASE WHEN EXISTS(SELECT 1 FROM DANGKY WHERE MASV = sv.MASV) THEN 1 ELSE 0 END AS BIT) AS {DbConstants.Columns.Student.HasDependencies}";
             const string tableName = "SINHVIEN sv";
             const string joinClause = "LEFT JOIN LOP l ON l.MALOP = sv.MALOP";
             const string rlsClause = "(IS_MEMBER('PGV') = 1 OR USER_NAME() = 'dbo' OR (IS_MEMBER('KHOA') = 1 AND l.MAKHOA = (SELECT MAKHOA FROM GIANGVIEN WHERE MAGV = USER_NAME())))";
