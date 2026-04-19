@@ -16,6 +16,40 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_ThemLopTinChi]
 AS
 BEGIN
     SET NOCOUNT ON;
+    
+    -- So sánh chi tiết: năm + học kỳ
+    DECLARE @NAM_BAT_DAU INT = CAST(LEFT(@NIENKHOA, 4) AS INT);
+    DECLARE @NAM_KET_THUC INT = CAST(RIGHT(@NIENKHOA, 4) AS INT);
+    DECLARE @NAM_HIEN_TAI INT = YEAR(GETDATE());
+    DECLARE @THANG_HIEN_TAI INT = MONTH(GETDATE());
+
+    -- Xác định học kỳ hiện tại dựa trên tháng:
+    --   HK1: tháng 9-12 (thuộc năm bắt đầu)
+    --   HK2: tháng 1-5  (thuộc năm kết thúc) 
+    --   HK3 (hè): tháng 6-8 (thuộc năm kết thúc)
+    DECLARE @HOCKY_HIENTAI INT;
+    IF @THANG_HIEN_TAI >= 9
+        SET @HOCKY_HIENTAI = 1;
+    ELSE IF @THANG_HIEN_TAI <= 5
+        SET @HOCKY_HIENTAI = 2;
+    ELSE
+        SET @HOCKY_HIENTAI = 3;
+
+    -- Xác định niên khóa hiện tại
+    DECLARE @NK_BAT_DAU_HIENTAI INT;
+    IF @THANG_HIEN_TAI >= 9
+        SET @NK_BAT_DAU_HIENTAI = @NAM_HIEN_TAI;
+    ELSE
+        SET @NK_BAT_DAU_HIENTAI = @NAM_HIEN_TAI - 1;
+
+    -- So sánh: niên khóa nhập < niên khóa hiện tại → chặn
+    -- Hoặc cùng niên khóa nhưng học kỳ nhập < học kỳ hiện tại → chặn
+    IF @NAM_BAT_DAU < @NK_BAT_DAU_HIENTAI
+       OR (@NAM_BAT_DAU = @NK_BAT_DAU_HIENTAI AND @HOCKY < @HOCKY_HIENTAI)
+    BEGIN
+        RAISERROR(N'Không thể mở lớp tín chỉ cho niên khóa hoặc học kỳ đã diễn ra.', 16, 1);
+        RETURN;
+    END
 
     IF EXISTS (SELECT 1 FROM LOPTINCHI WHERE NIENKHOA = @NIENKHOA AND HOCKY = @HOCKY AND MAMH = @MAMH AND NHOM = @NHOM)
     BEGIN
@@ -101,7 +135,7 @@ GO
 -- =============================================
 -- Description: Lấy danh sách Lớp Tín Chỉ theo lọc
 -- =============================================
-CREATE OR ALTER PROCEDURE [dbo].[sp_LayDanhSachLopTinChi_Full]
+CREATE OR ALTER PROCEDURE [dbo].[sp_LayDanhSachLopTinChi]
     @NIENKHOA NVARCHAR(9) = NULL,
     @HOCKY    INT = NULL,
     @MAKHOA   NVARCHAR(10) = NULL

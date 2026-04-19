@@ -14,21 +14,21 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             var dt = await ExecuteQueryAsync(
                 AppConstants.SpNames.GetCreditClassListForSV,
                 CommandType.StoredProcedure,
-                new SqlParameter("@NIENKHOA", nienKhoa),
-                new SqlParameter("@HOCKY", hocKy),
-                new SqlParameter("@MASV", maSv)
+                new SqlParameter(StoredProcedureConstants.Registration.SchoolYear, nienKhoa),
+                new SqlParameter(StoredProcedureConstants.Registration.Semester, hocKy),
+                new SqlParameter(StoredProcedureConstants.Registration.StudentId, maSv)
             );
 
             return dt.AsEnumerable().Select(row => new AvailableCreditClassDto
             {
-                Id = Convert.ToInt32(row["MALTC"]),
-                SubjectId = row["MAMH"]?.ToString() ?? string.Empty,
-                SubjectName = row["TENMH"]?.ToString() ?? string.Empty,
-                Group = Convert.ToInt32(row["NHOM"]),
-                LecturerName = row["HOTEN_GV"]?.ToString() ?? string.Empty,
-                MinStudents = Convert.ToInt32(row["SOSVTOITHIEU"]),
-                RegisteredCount = Convert.ToInt32(row["SOSV_DANGKY"]),
-                IsRegistered = Convert.ToBoolean(row["DA_DANGKY"])
+                Id = Convert.ToInt32(row[DbConstants.Columns.CreditClass.Id]),
+                SubjectId = row[DbConstants.Columns.CreditClass.SubjectId]?.ToString() ?? string.Empty,
+                SubjectName = row[DbConstants.Columns.CreditClass.SubjectName]?.ToString() ?? string.Empty,
+                Group = Convert.ToInt32(row[DbConstants.Columns.CreditClass.Group]),
+                LecturerName = row[DbConstants.Columns.CreditClass.LecturerName]?.ToString() ?? string.Empty,
+                MinStudents = Convert.ToInt32(row[DbConstants.Columns.CreditClass.MinStudents]),
+                RegisteredCount = Convert.ToInt32(row[DbConstants.Columns.CreditClass.RegisteredCount]),
+                IsRegistered = Convert.ToBoolean(row[DbConstants.Columns.CreditClass.IsRegistered])
             });
         }
 
@@ -37,8 +37,8 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             await ExecuteNonQueryAsync(
                 AppConstants.SpNames.RegisterCreditClass,
                 CommandType.StoredProcedure,
-                new SqlParameter("@MASV", maSv),
-                new SqlParameter("@MALTC", maLtc)
+                new SqlParameter(StoredProcedureConstants.Registration.StudentId, maSv),
+                new SqlParameter(StoredProcedureConstants.Registration.CreditClassId, maLtc)
             );
         }
 
@@ -47,8 +47,8 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             await ExecuteNonQueryAsync(
                 AppConstants.SpNames.UnregisterCreditClass,
                 CommandType.StoredProcedure,
-                new SqlParameter("@MASV", maSv),
-                new SqlParameter("@MALTC", maLtc)
+                new SqlParameter(StoredProcedureConstants.Registration.StudentId, maSv),
+                new SqlParameter(StoredProcedureConstants.Registration.CreditClassId, maLtc)
             );
         }
     }

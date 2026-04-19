@@ -147,12 +147,12 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
 
             btnSaveModal?.addEventListener('click', async () => {
                 const message = undoStack.length > 0 
-                  ? "Thay đổi sẽ được lưu lại vĩnh viễn và không thể phục hồi bằng chức năng này nữa.<br>Bạn có chắc chắn muốn đóng Modal?"
-                  : "Chưa có thay đổi nào được thực hiện so với ban đầu.<br>Bạn có chắc chắn muốn đóng lại không?";
+                    ? "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?"
+                    : "Bạn có chắc chắn muốn đóng cửa sổ không?";
                 
                 const isConfirmed = await window.showConfirmDialog(
-                    "Xác nhận đóng", message,
-                    { confirmText: "Lưu và Đóng", cancelText: "Trở lại" }
+                    "Xác nhận Thoát", message,
+                    { confirmText: "Xác nhận", cancelText: "Trở lại" }
                 );
                 
                 if (isConfirmed) {

@@ -34,7 +34,8 @@ namespace QLDSV_HTC.Web.Controllers
                     Name = c.ClassName,
                     Year = c.SchoolYear,
                     FacultyId = c.FacultyId,
-                    FacultyName = c.FacultyName
+                    FacultyName = c.FacultyName,
+                    StudentCount = c.StudentCount
                 }),
                 Faculties = faculties.Select(f => new FacultyViewModel
                 {
@@ -81,7 +82,8 @@ namespace QLDSV_HTC.Web.Controllers
                     ClassId = s.ClassId,
                     ClassName = s.ClassName,
                     OnLeave = s.OnLeave,
-                    Password = s.Password
+                    Password = s.Password,
+                    HasDependencies = s.HasDependencies
                 });
 
                 var pagination = new PaginationViewModel

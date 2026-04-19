@@ -13,5 +13,6 @@ namespace QLDSV_HTC.Application.DTOs
         public string ClassName { get; set; } = string.Empty;
         public bool OnLeave { get; set; }
         public string? Password { get; set; }
+        public bool HasDependencies { get; set; }
     }
 }

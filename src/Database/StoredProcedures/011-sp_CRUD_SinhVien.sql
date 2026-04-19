@@ -73,6 +73,13 @@ BEGIN
         RETURN;
     END
 
+    -- Validate tuổi (Age >= 16)
+    IF @NGAYSINH IS NOT NULL AND DATEDIFF(YEAR, @NGAYSINH, GETDATE()) < 16
+    BEGIN
+        RAISERROR(N'Sinh viên phải từ 16 tuổi trở lên.', 16, 1);
+        RETURN;
+    END
+
     -- Kiểm tra MALOP hợp lệ (khử phép nối: dùng EXISTS thay vì JOIN)
     IF NOT EXISTS (SELECT 1 FROM LOP WHERE MALOP = @MALOP)
     BEGIN
@@ -117,6 +124,13 @@ BEGIN
         RETURN;
     END
 
+    -- Validate tuổi (Age >= 16)
+    IF @NGAYSINH IS NOT NULL AND DATEDIFF(YEAR, @NGAYSINH, GETDATE()) < 16
+    BEGIN
+        RAISERROR(N'Sinh viên phải từ 16 tuổi trở lên.', 16, 1);
+        RETURN;
+    END
+
     -- Kiểm tra MALOP hợp lệ
     IF NOT EXISTS (SELECT 1 FROM LOP WHERE MALOP = @MALOP)
     BEGIN
@@ -154,14 +168,17 @@ BEGIN
         RETURN;
     END
 
-    -- Kiểm tra ràng buộc: đã đăng ký lớp tín chỉ chưa
-    -- AND ordering: MASV (xác suất sai cao hơn) đặt trước
-    IF EXISTS (SELECT 1 FROM DANGKY WHERE MASV = @MASV)
-    BEGIN
-        RAISERROR(N'Không thể xóa sinh viên vì đã có bản ghi đăng ký lớp tín chỉ.', 16, 1);
-        RETURN;
-    END
-
-    DELETE FROM SINHVIEN WHERE MASV = @MASV;
+    BEGIN TRY
+        DELETE FROM SINHVIEN WHERE MASV = @MASV;
+    END TRY
+    BEGIN CATCH
+        IF ERROR_NUMBER() = 547
+            RAISERROR(N'Không thể xóa sinh viên do dữ liệu đang bị ràng buộc (ví dụ: đã đăng ký môn học hoặc có điểm).', 16, 1);
+        ELSE
+        BEGIN
+            DECLARE @Err NVARCHAR(4000) = ERROR_MESSAGE();
+            RAISERROR(@Err, 16, 1);
+        END
+    END CATCH
 END
 GO

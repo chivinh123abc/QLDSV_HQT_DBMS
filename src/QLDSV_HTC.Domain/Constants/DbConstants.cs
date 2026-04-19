@@ -22,6 +22,7 @@ namespace QLDSV_HTC.Domain.Constants
                 public const string SchoolYear = "KHOAHOC";
                 public const string FacultyId = "MAKHOA";
                 public const string FacultyName = "TENKHOA";
+                public const string StudentCount = "StudentCount";
             }
 
             public static class Subject
@@ -61,6 +62,7 @@ namespace QLDSV_HTC.Domain.Constants
                 public const string ClassId = "MALOP";
                 public const string ClassName = "TENLOP";
                 public const string OnLeave = "DANGHIHOC";
+                public const string HasDependencies = "HasDependencies";
             }
 
             public static class Account
@@ -71,6 +73,23 @@ namespace QLDSV_HTC.Domain.Constants
                 public const string LecturerId = "LecturerId";
                 public const string LecturerFullName = "LecturerFullName";
                 public const string IsDisabled = "IsDisabled";
+            }
+
+            public static class CreditClass
+            {
+                public const string Id = "MALTC";
+                public const string Year = "NIENKHOA";
+                public const string Semester = "HOCKY";
+                public const string SubjectId = "MAMH";
+                public const string SubjectName = "TENMH";
+                public const string Group = "NHOM";
+                public const string LecturerId = "MAGV";
+                public const string LecturerName = "HOTEN_GV";
+                public const string FacultyId = "MAKHOA";
+                public const string MinStudents = "SOSVTOITHIEU";
+                public const string IsCancelled = "HUYLOP";
+                public const string RegisteredCount = "SOSV_DANGKY";
+                public const string IsRegistered = "DA_DANGKY";
             }
         }
     }

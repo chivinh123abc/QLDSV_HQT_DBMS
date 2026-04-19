@@ -131,10 +131,10 @@
                     if (undoStack.length > 0 && !forceClose) {
                         e.preventDefault();
                         const isConfirmed = await window.showConfirmDialog(
-                            "Dữ liệu chưa đóng",
-                            "Ghi nhận có thay đổi chưa lưu (bạn sẽ mất các trạng thái có thể Phục hồi).<br><br>Nhấn <b>Tiếp tục đóng</b> nếu bạn không cần Phục hồi nữa.<br>Nhấn <b>Hủy bỏ</b> để ở lại form.",
-                            { confirmText: "Tiếp tục đóng", cancelText: "Hủy bỏ", isDanger: true }
-                        );
+                        "Xác nhận Thoát",
+                        "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?",
+                        { confirmText: "Xác nhận Thoát", cancelText: "Trở lại", isDanger: true }
+                    );
                         if (isConfirmed) {
                             forceClose = true;
                             studentModalInstance.hide();
@@ -144,13 +144,13 @@
 
                 btnSaveModal?.addEventListener('click', async () => {
                     const message = undoStack.length > 0 
-                      ? "Thay đổi sẽ được lưu lại vĩnh viễn và không thể phục hồi bằng chức năng này nữa.<br>Bạn có chắc chắn muốn đóng Modal?"
-                      : "Chưa có thay đổi nào được thực hiện so với ban đầu.<br>Bạn có chắc chắn muốn đóng lại không?";
-                    
-                    const isConfirmed = await window.showConfirmDialog(
-                        "Xác nhận đóng", message,
-                        { confirmText: "Lưu và Đóng", cancelText: "Trở lại" }
-                    );
+                    ? "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?"
+                    : "Bạn có chắc chắn muốn đóng cửa sổ không?";
+                
+                const isConfirmed = await window.showConfirmDialog(
+                    "Xác nhận Thoát", message,
+                    { confirmText: "Xác nhận", cancelText: "Trở lại" }
+                );
                     
                     if (isConfirmed) {
                         undoStack = [];
@@ -340,8 +340,12 @@
                         <td>${s.onLeave ? '<span class="badge bg-danger">Nghỉ học</span>' : '<span class="badge bg-success">Đang học</span>'}</td>
                         ${isPGV ? `
                         <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary me-1 hover-scale shadow-sm" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger hover-scale shadow-sm" onclick="deleteStudent('${s.studentId}')"><i class="bi bi-trash"></i></button>
+                            <button class="btn btn-sm btn-outline-primary me-1 hover-scale shadow-sm" title="Sửa sinh viên" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger ${s.hasDependencies ? '' : 'hover-scale'} shadow-sm" 
+                                    title="${s.hasDependencies ? 'Không thể xóa sinh viên đã có dữ liệu liên quan' : 'Xóa sinh viên'}" 
+                                    ${s.hasDependencies ? 'disabled' : `onclick="deleteStudent('${s.studentId}')"`}>
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </td>` : ''}
                     `;
                 tbody.appendChild(tr);
@@ -365,6 +369,14 @@
             resetToView();
             populateFieldsFromSnapshot(s);
             helpers.setMode('edit');
+            
+            if (s.hasDependencies) {
+                btnXoa.disabled = true;
+                btnXoa.title = "Không thể xóa sinh viên đã có dữ liệu liên quan";
+            } else {
+                btnXoa.title = "Xóa (Phím tắt: Del)";
+            }
+
             studentModalInstance.show();
             helpers.hideAlert();
         }

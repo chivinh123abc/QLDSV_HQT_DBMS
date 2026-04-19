@@ -33,7 +33,6 @@ namespace QLDSV_HTC.Domain.Constants
             public const string DeleteLecturer = "sp_XoaGiangVien";
 
             public const string GetCreditClassList = "sp_LayDanhSachLopTinChi";
-            public const string GetCreditClassListFull = "sp_LayDanhSachLopTinChi_Full";
             public const string AddCreditClass = "sp_ThemLopTinChi";
             public const string UpdateCreditClass = "sp_SuaLopTinChi";
             public const string DeleteCreditClass = "sp_XoaLopTinChi";

@@ -14,6 +14,27 @@ namespace QLDSV_HTC.Domain.Constants
             public const string FacultyId = "@MAKHOA";
         }
 
+        public static class GetRegisteredStudentsList
+        {
+            public const string SchoolYear = "@NIENKHOA";
+            public const string Semester = "@HOCKY";
+            public const string SubjectId = "@MAMH";
+            public const string Group = "@NHOM";
+        }
+
+        public static class GetSubjectGrades
+        {
+            public const string SchoolYear = "@NIENKHOA";
+            public const string Semester = "@HOCKY";
+            public const string SubjectId = "@MAMH";
+            public const string Group = "@NHOM";
+        }
+
+        public static class GetClassGradesSummary
+        {
+            public const string ClassId = "@MALOP";
+        }
+
         public static class Login
         {
             public const string LoginName = "@TENLOGIN";
@@ -78,6 +99,19 @@ namespace QLDSV_HTC.Domain.Constants
             public const string LecturerId = "@MAGV";
         }
 
+        public static class CreditClassCrud
+        {
+            public const string CreditClassId = "@MALTC";
+            public const string SchoolYear = "@NIENKHOA";
+            public const string Semester = "@HOCKY";
+            public const string SubjectId = "@MAMH";
+            public const string Group = "@NHOM";
+            public const string LecturerId = "@MAGV";
+            public const string FacultyId = "@MAKHOA";
+            public const string MinStudents = "@SOSVTOITHIEU";
+            public const string IsCancelled = "@HUYLOP";
+        }
+
         public static class AccountCrud
         {
             public const string LoginName = "@LGNAME";
@@ -101,6 +135,14 @@ namespace QLDSV_HTC.Domain.Constants
             public const string PageNumber = "@PageNumber";
             public const string PageSize = "@PageSize";
             public const string TotalCount = "TotalCount";
+        }
+
+        public static class Registration
+        {
+            public const string SchoolYear = "@NIENKHOA";
+            public const string Semester = "@HOCKY";
+            public const string StudentId = "@MASV";
+            public const string CreditClassId = "@MALTC";
         }
     }
 }

@@ -1,4 +1,5 @@
 USE [QLDSV_HTC]
+GO
 
 -- ========================================================
 -- 1. NHÓM PGV: TOÀN QUYỀN TRÊN DATABASE
@@ -31,17 +32,46 @@ GRANT VIEW DEFINITION TO [KHOA];
 
 -- (D) Đảm bảo KHOA không có quyền CUD (Xóa/Sửa/Thêm) Lớp và Sinh viên
 -- Mặc dù REVOKE ở trên đã làm việc này, nhưng DENY sẽ chặn tuyệt đối kể cả khi có GRANT rời rạc.
+
+-- Lớp
 DENY EXECUTE ON OBJECT::dbo.sp_ThemLop TO [KHOA];
 
 DENY EXECUTE ON OBJECT::dbo.sp_SuaLop TO [KHOA];
 
 DENY EXECUTE ON OBJECT::dbo.sp_XoaLop TO [KHOA];
 
+-- Sinh viên
 DENY EXECUTE ON OBJECT::dbo.sp_ThemSinhVien TO [KHOA];
 
 DENY EXECUTE ON OBJECT::dbo.sp_SuaSinhVien TO [KHOA];
 
 DENY EXECUTE ON OBJECT::dbo.sp_XoaSinhVien TO [KHOA];
+
+-- Giảng viên
+DENY EXECUTE ON OBJECT::dbo.sp_ThemGiangVien TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_SuaGiangVien TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_XoaGiangVien TO [KHOA];
+
+-- Môn học
+DENY EXECUTE ON OBJECT::dbo.sp_ThemMonHoc TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_SuaMonHoc TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_XoaMonHoc TO [KHOA];
+
+-- Lớp tín chỉ
+DENY EXECUTE ON OBJECT::dbo.sp_ThemLopTinChi TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_SuaLopTinChi TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_XoaLopTinChi TO [KHOA];
+
+-- Đăng ký/hủy đăng ký lớp tín chỉ
+DENY EXECUTE ON OBJECT::dbo.sp_DangKyLopTinChi TO [KHOA];
+
+DENY EXECUTE ON OBJECT::dbo.sp_HuyDangKyLopTinChi TO [KHOA];
 GO
 
 -- ========================================================

@@ -59,7 +59,7 @@
                             <th>Tên User (DB)</th>
                             <th>Nhóm quyền</th>
                             <th>Mã GV</th>
-                            <th>Giảng viên liên kết</th>
+                            <th>Giảng viên</th>
                             <th class="text-end">Thao tác</th>
                         </tr>
                     </thead>
@@ -199,9 +199,9 @@
                 if (undoStack.length > 0 && !forceClose) {
                     e.preventDefault();
                     const isConfirmed = await window.showConfirmDialog(
-                        "Dữ liệu chưa đóng",
-                        "Ghi nhận có thay đổi chưa lưu (bạn sẽ mất các trạng thái có thể Phục hồi).<br><br>Nhấn <b>Tiếp tục đóng</b> nếu bạn không cần Phục hồi nữa.<br>Nhấn <b>Hủy bỏ</b> để ở lại form.",
-                        { confirmText: "Tiếp tục đóng", cancelText: "Hủy bỏ", isDanger: true }
+                        "Xác nhận Thoát",
+                        "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?",
+                        { confirmText: "Xác nhận Thoát", cancelText: "Trở lại", isDanger: true }
                     );
                     if (isConfirmed) {
                         forceClose = true;
@@ -212,12 +212,12 @@
 
             btnSaveModal?.addEventListener('click', async () => {
                 const message = undoStack.length > 0 
-                    ? "Thay đổi sẽ được lưu lại vĩnh viễn và không thể phục hồi bằng chức năng này nữa.<br>Bạn có chắc chắn muốn đóng Modal?"
-                    : "Chưa có thay đổi nào được thực hiện so với ban đầu.<br>Bạn có chắc chắn muốn đóng lại không?";
+                    ? "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?"
+                    : "Bạn có chắc chắn muốn đóng cửa sổ không?";
                 
                 const isConfirmed = await window.showConfirmDialog(
-                    "Xác nhận đóng", message,
-                    { confirmText: "Lưu và Đóng", cancelText: "Trở lại" }
+                    "Xác nhận Thoát", message,
+                    { confirmText: "Xác nhận", cancelText: "Trở lại" }
                 );
                 
                 if (isConfirmed) {
@@ -342,6 +342,15 @@
 
                 try {
                     const res = await fetchJson(url, payload);
+
+                    if (res.forceLogout === true) {
+                        window.showToast(res.message || "Mật khẩu của bạn đã thay đổi. Đang đăng xuất...", 'warning');
+                        setTimeout(() => {
+                            window.location.href = '@Url.Action("Login", "Account")';
+                        }, 1500);
+                        return;
+                    }
+
                     if (res.success) {
                         window.showToast(res.message, 'success');
                         if (mode === 'add') {

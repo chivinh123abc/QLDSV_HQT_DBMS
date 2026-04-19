@@ -12,27 +12,27 @@ namespace QLDSV_HTC.Infrastructure.Repositories
         public async Task<IEnumerable<CreditClassDto>> GetListAsync(string? nienKhoa, int? hocKy, string? maKhoa)
         {
             var dt = await ExecuteQueryAsync(
-                AppConstants.SpNames.GetCreditClassListFull,
+                AppConstants.SpNames.GetCreditClassList,
                 CommandType.StoredProcedure,
-                new SqlParameter("@NIENKHOA", (object?)nienKhoa ?? DBNull.Value),
-                new SqlParameter("@HOCKY", (object?)hocKy ?? DBNull.Value),
-                new SqlParameter("@MAKHOA", (object?)maKhoa ?? DBNull.Value)
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.SchoolYear, (object?)nienKhoa ?? DBNull.Value),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.Semester, (object?)hocKy ?? DBNull.Value),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.FacultyId, (object?)maKhoa ?? DBNull.Value)
             );
 
             return dt.AsEnumerable().Select(row => new CreditClassDto
             {
-                Id = Convert.ToInt32(row["MALTC"]),
-                Year = row["NIENKHOA"]?.ToString() ?? string.Empty,
-                Semester = Convert.ToInt32(row["HOCKY"]),
-                SubjectId = row["MAMH"]?.ToString() ?? string.Empty,
-                SubjectName = row["TENMH"]?.ToString() ?? string.Empty,
-                Group = Convert.ToInt32(row["NHOM"]),
-                LecturerId = row["MAGV"]?.ToString() ?? string.Empty,
-                LecturerName = row["HOTEN_GV"]?.ToString() ?? string.Empty,
-                FacultyId = row["MAKHOA"]?.ToString() ?? string.Empty,
-                MinStudents = Convert.ToInt32(row["SOSVTOITHIEU"]),
-                IsCancelled = row["HUYLOP"] != DBNull.Value && Convert.ToBoolean(row["HUYLOP"]),
-                RegisteredCount = Convert.ToInt32(row["SOSV_DANGKY"])
+                Id = Convert.ToInt32(row[DbConstants.Columns.CreditClass.Id]),
+                Year = row[DbConstants.Columns.CreditClass.Year]?.ToString() ?? string.Empty,
+                Semester = Convert.ToInt32(row[DbConstants.Columns.CreditClass.Semester]),
+                SubjectId = row[DbConstants.Columns.CreditClass.SubjectId]?.ToString() ?? string.Empty,
+                SubjectName = row[DbConstants.Columns.CreditClass.SubjectName]?.ToString() ?? string.Empty,
+                Group = Convert.ToInt32(row[DbConstants.Columns.CreditClass.Group]),
+                LecturerId = row[DbConstants.Columns.CreditClass.LecturerId]?.ToString() ?? string.Empty,
+                LecturerName = row[DbConstants.Columns.CreditClass.LecturerName]?.ToString() ?? string.Empty,
+                FacultyId = row[DbConstants.Columns.CreditClass.FacultyId]?.ToString() ?? string.Empty,
+                MinStudents = Convert.ToInt32(row[DbConstants.Columns.CreditClass.MinStudents]),
+                IsCancelled = row[DbConstants.Columns.CreditClass.IsCancelled] != DBNull.Value && Convert.ToBoolean(row[DbConstants.Columns.CreditClass.IsCancelled]),
+                RegisteredCount = Convert.ToInt32(row[DbConstants.Columns.CreditClass.RegisteredCount])
             });
         }
 
@@ -41,14 +41,14 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             var result = await ExecuteScalarAsync(
                 AppConstants.SpNames.AddCreditClass,
                 CommandType.StoredProcedure,
-                new SqlParameter("@NIENKHOA", dto.Year),
-                new SqlParameter("@HOCKY", dto.Semester),
-                new SqlParameter("@MAMH", dto.SubjectId),
-                new SqlParameter("@NHOM", dto.Group),
-                new SqlParameter("@MAGV", dto.LecturerId),
-                new SqlParameter("@MAKHOA", dto.FacultyId),
-                new SqlParameter("@SOSVTOITHIEU", dto.MinStudents),
-                new SqlParameter("@HUYLOP", dto.IsCancelled)
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.SchoolYear, dto.Year),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.Semester, dto.Semester),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.SubjectId, dto.SubjectId),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.Group, dto.Group),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.LecturerId, dto.LecturerId),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.FacultyId, dto.FacultyId),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.MinStudents, dto.MinStudents),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.IsCancelled, dto.IsCancelled)
             );
 
             return result != null && result != DBNull.Value ? Convert.ToInt32(result) : 0;
@@ -59,15 +59,15 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             await ExecuteNonQueryAsync(
                 AppConstants.SpNames.UpdateCreditClass,
                 CommandType.StoredProcedure,
-                new SqlParameter("@MALTC", dto.Id),
-                new SqlParameter("@NIENKHOA", dto.Year),
-                new SqlParameter("@HOCKY", dto.Semester),
-                new SqlParameter("@MAMH", dto.SubjectId),
-                new SqlParameter("@NHOM", dto.Group),
-                new SqlParameter("@MAGV", dto.LecturerId),
-                new SqlParameter("@MAKHOA", dto.FacultyId),
-                new SqlParameter("@SOSVTOITHIEU", dto.MinStudents),
-                new SqlParameter("@HUYLOP", dto.IsCancelled)
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.CreditClassId, dto.Id),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.SchoolYear, dto.Year),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.Semester, dto.Semester),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.SubjectId, dto.SubjectId),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.Group, dto.Group),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.LecturerId, dto.LecturerId),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.FacultyId, dto.FacultyId),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.MinStudents, dto.MinStudents),
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.IsCancelled, dto.IsCancelled)
             );
         }
 
@@ -76,7 +76,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             await ExecuteNonQueryAsync(
                 AppConstants.SpNames.DeleteCreditClass,
                 CommandType.StoredProcedure,
-                new SqlParameter("@MALTC", maLtc)
+                new SqlParameter(StoredProcedureConstants.CreditClassCrud.CreditClassId, maLtc)
             );
         }
     }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using QLDSV_HTC.Application.DTOs;
 using QLDSV_HTC.Application.Interfaces;
+using QLDSV_HTC.Application.Helpers;
 using QLDSV_HTC.Domain.Constants;
 using QLDSV_HTC.Web.Models;
 
@@ -26,6 +27,16 @@ namespace QLDSV_HTC.Web.Controllers
             if (!isPGV && string.IsNullOrEmpty(filterFaculty))
             {
                 filterFaculty = currentFacultyId;
+            }
+
+            // Auto-fill year/semester
+            if (string.IsNullOrEmpty(filterYear))
+            {
+                filterYear = DateTimeHelper.GetCurrentSchoolYear();
+            }
+            if (!filterSemester.HasValue)
+            {
+                filterSemester = DateTimeHelper.GetCurrentSemester();
             }
 
             // Fetch list based on filters
@@ -58,8 +69,8 @@ namespace QLDSV_HTC.Web.Controllers
                 Faculties = faculties.Select(f => new FacultyViewModel { Id = f.FacultyId, Name = f.FacultyName }),
                 Subjects = subjects.Select(s => new SubjectViewModel { Id = s.SubjectId, Name = s.SubjectName }),
                 Lecturers = lecturers.Select(l => new LecturerViewModel { Id = l.LecturerId, FirstName = l.FirstName, LastName = l.LastName }),
-                Years = new List<string> { "2021-2022", "2022-2023", "2023-2024", "2024-2025" },
-                Semesters = new List<int> { 1, 2, 3 },
+                Years = DateTimeHelper.GetSchoolYears(),
+                Semesters = DateTimeHelper.GetSemesters(),
                 FilterYear = filterYear ?? string.Empty,
                 FilterSemester = filterSemester,
                 FilterFaculty = filterFaculty ?? string.Empty,
@@ -71,7 +82,8 @@ namespace QLDSV_HTC.Web.Controllers
         }
 
         [HttpPost]
-        [Route("Add")]
+        [Route(RouteConstants.CreditClass.Add)]
+        [Authorize(Roles = AppConstants.Groups.PGV)]
         public async Task<IActionResult> Add([FromBody] CreditClassInputModel input)
         {
             if (!ModelState.IsValid) return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ." });
@@ -98,7 +110,8 @@ namespace QLDSV_HTC.Web.Controllers
         }
 
         [HttpPost]
-        [Route("Edit")]
+        [Route(RouteConstants.CreditClass.Edit)]
+        [Authorize(Roles = AppConstants.Groups.PGV)]
         public async Task<IActionResult> Edit([FromBody] CreditClassInputModel input)
         {
             if (!ModelState.IsValid) return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ." });
@@ -126,7 +139,8 @@ namespace QLDSV_HTC.Web.Controllers
         }
 
         [HttpPost]
-        [Route("Delete")]
+        [Route(RouteConstants.CreditClass.Delete)]
+        [Authorize(Roles = AppConstants.Groups.PGV)]
         public async Task<IActionResult> Delete([FromBody] CreditClassDeleteModel input)
         {
             if (!ModelState.IsValid) return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ." });

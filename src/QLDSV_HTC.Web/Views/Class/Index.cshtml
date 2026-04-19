@@ -141,12 +141,12 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
 
             btnSaveModal?.addEventListener('click', async () => {
                 const message = undoStack.length > 0 
-                  ? "Thay đổi sẽ được lưu lại vĩnh viễn và không thể phục hồi bằng chức năng này nữa.<br>Bạn có chắc chắn muốn đóng Modal?"
-                  : "Chưa có thay đổi nào được thực hiện so với ban đầu.<br>Bạn có chắc chắn muốn đóng lại không?";
+                    ? "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?"
+                    : "Bạn có chắc chắn muốn đóng cửa sổ không?";
                 
                 const isConfirmed = await window.showConfirmDialog(
-                    "Xác nhận đóng", message,
-                    { confirmText: "Lưu và Đóng", cancelText: "Trở lại" }
+                    "Xác nhận Thoát", message,
+                    { confirmText: "Xác nhận", cancelText: "Trở lại" }
                 );
                 
                 if (isConfirmed) {
@@ -281,10 +281,19 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                     const name = editBtn.dataset.name;
                     const year = editBtn.dataset.year;
                     const facultyId = editBtn.dataset.faculty;
+                    const studentCount = parseInt(editBtn.closest('tr').dataset.studentCount || '0', 10);
                     bootstrap.Modal.getOrCreateInstance(modal).show();
                     setTimeout(() => {
                         populateFields(id, name, year, facultyId);
                         helpers.setMode('edit');
+                        
+                        if (studentCount > 0) {
+                            btnXoa.disabled = true;
+                            btnXoa.title = `Không thể xóa lớp đã có sinh viên (${studentCount} SV)`;
+                        } else {
+                            btnXoa.title = "Xóa (Phím tắt: Del)";
+                        }
+
                         highlightMiniRow(id);
                         helpers.hideAlert();
                     }, 200);
@@ -395,7 +404,7 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 const tbody = document.getElementById('classTableBody');
                 const empty = tbody.querySelector('td[colspan]');
                 if (empty) empty.closest('tr').remove();
-                tbody.insertAdjacentHTML('beforeend', mainRowHtml(p, facultyName));
+                tbody.insertAdjacentHTML('beforeend', mainRowHtml(p, facultyName, 0));
                 document.getElementById('miniClassBody').insertAdjacentHTML('beforeend', miniRowHtml(p));
                 updateCount(1);
             }
@@ -404,7 +413,8 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 const opt = fldFacultyId.querySelector(`option[value="${p.facultyId}"]`);
                 const facultyName = opt ? opt.textContent : p.facultyId;
                 const main = document.querySelector(`#classTableBody tr[data-id="${CSS.escape(oldId)}"]`);
-                if (main) main.outerHTML = mainRowHtml(p, facultyName);
+                const studentCount = main ? parseInt(main.dataset.studentCount || '0', 10) : 0;
+                if (main) main.outerHTML = mainRowHtml(p, facultyName, studentCount);
                 const mini = document.querySelector(`#miniClassBody  tr[data-id="${CSS.escape(oldId)}"]`);
                 if (mini) mini.outerHTML = miniRowHtml(p);
             }
@@ -420,10 +430,14 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 if (el) el.textContent = String(parseInt(el.textContent || '0', 10) + delta);
             }
 
-            function mainRowHtml(p, facultyName) {
+            function mainRowHtml(p, facultyName, studentCount = 0) {
+                const disabledDelete = studentCount > 0 ? "disabled" : "";
+                const deleteTitle = studentCount > 0 ? `Không thể xóa lớp đã có sinh viên (${studentCount} SV)` : "Xóa lớp này";
+                const deleteClass = studentCount > 0 ? "" : "btn-delete-row hover-scale";
+                
                 return `<tr data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
                                 data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}"
-                                data-faculty-filter="${escapeHtml(p.facultyId)}">
+                                data-faculty-filter="${escapeHtml(p.facultyId)}" data-student-count="${studentCount}">
                         <td class="fw-semibold font-monospace text-primary">${escapeHtml(p.classId)}</td>
                         <td>${escapeHtml(p.className)}</td>
                         <td>${escapeHtml(p.schoolYear)}</td>
@@ -431,13 +445,13 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                             <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">${escapeHtml(p.facultyId)}</span>
                         </td>
                         <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row" title="Sửa"
+                            <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row shadow-sm hover-scale" title="Sửa lớp này"
                                     data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
                                     data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger btn-delete-row" title="Xóa"
-                                    data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}">
+                            <button class="btn btn-sm btn-outline-danger ${deleteClass} shadow-sm" title="${deleteTitle}"
+                                    data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}" ${disabledDelete}>
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>
