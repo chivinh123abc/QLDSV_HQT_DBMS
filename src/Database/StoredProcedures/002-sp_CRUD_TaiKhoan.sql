@@ -294,6 +294,3 @@ BEGIN
     END CATCH
 END
 GO
-
--- Nếu trước đó chưa tạo role securityadmin thì chạy lệnh này
--- ALTER SERVER ROLE [securityadmin] ADD MEMBER [login_name];
