@@ -1,12 +1,9 @@
-@model QLDSV_HTC.Web.Models.LecturerManagementViewModel
+@model QLDSV_HTC.Web.Models.FacultyManagementViewModel
 @using QLDSV_HTC.Domain.Constants
 @{
-    ViewData["Title"] = "Quản lý Giảng viên";
+    ViewData["Title"] = "Quản lý Khoa";
     var isPGV = User.IsInRole("PGV");
-    var hasFaculty = !string.IsNullOrEmpty(Model.CurrentFacultyId);
-    var pageTitle = hasFaculty
-    ? $"Danh sách Giảng viên — Khoa {Model.CurrentFacultyId}"
-    : "Danh sách Giảng viên toàn trường";
+    var hasFaculty = User.IsInRole("KHOA");
 
     ViewData["isPGV"] = isPGV;
     ViewData["hasFaculty"] = hasFaculty;
@@ -14,39 +11,15 @@
 
 <div class="dashboard-container fade-in-up">
 
-    @* ── Thanh tiêu đề + nút Thêm Mới ── *@
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-1 fw-bold text-gray-800">@pageTitle</h1>
-            <p class="text-muted mb-0 small">
-                <i class="bi bi-person-badge me-1"></i>
-                Tổng: <strong>@Model.Lecturers.Count()</strong> giảng viên
-                @if (hasFaculty)
-                {
-                    <span class="ms-2 badge bg-primary-subtle text-primary border border-primary-subtle">
-                        <i class="bi bi-building me-1"></i>@Model.CurrentFacultyId
-                    </span>
-                }
-            </p>
-        </div>
-        @if (isPGV)
-        {
-            <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2" id="btnOpenLecturerForm" type="button"
-                data-bs-toggle="modal" data-bs-target="#lecturerFormModal">
-                <i class="bi bi-pencil-square"></i>
-                <span>Cập nhật danh mục Giảng viên</span>
-            </button>
-        }
-    </div>
-
-    @* ── Bảng danh sách giảng viên ── *@
-    @await Html.PartialAsync("_LecturerTable", Model, ViewData)
+<div class="dashboard-container fade-in-up">
+    @* ── Bảng danh sách khoa ── *@
+    @await Html.PartialAsync("_FacultyTable", Model, ViewData)
 </div>
 
 @* ══════════════════════════════════════════════════════════
-MODAL: Nhập danh mục giảng viên / Xác nhận xóa
+MODAL: Nhập danh mục khoa / Xác nhận xóa
 ══════════════════════════════════════════════════════════ *@
-@await Html.PartialAsync("_LecturerFormModal", Model, ViewData)
+@await Html.PartialAsync("_FacultyFormModal", Model, ViewData)
 <partial name="_DeleteConfirmModal" />
 
 @section Scripts {
@@ -55,27 +28,22 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
         (function () {
             'use strict';
 
-            const URL_ADD = '@RouteConstants.Lecturer.AddPath';
-            const URL_EDIT = '@RouteConstants.Lecturer.EditPath';
-            const URL_DELETE = '@RouteConstants.Lecturer.DeletePath';
+            const URL_ADD = '@RouteConstants.Faculty.AddPath';
+            const URL_EDIT = '@RouteConstants.Faculty.EditPath';
+            const URL_DELETE = '@RouteConstants.Faculty.DeletePath';
 
             let snapshotData = null;
             let selectedId = null;
             let originalId = null;
-            
+
             // Undo Stack State
             let undoStack = [];
             let forceClose = false;
 
-            const modal = document.getElementById('lecturerFormModal');
+            const modal = document.getElementById('facultyFormModal');
             const deleteModal = document.getElementById('deleteConfirmModal');
-            const fldLecturerId = document.getElementById('fldLecturerId');
-            const fldFirstName = document.getElementById('fldFirstName');
-            const fldLastName = document.getElementById('fldLastName');
-            const fldDegree = document.getElementById('fldDegree');
-            const fldAcademicRank = document.getElementById('fldAcademicRank');
-            const fldSpecialty = document.getElementById('fldSpecialty');
             const fldFacultyId = document.getElementById('fldFacultyId');
+            const fldFacultyName = document.getElementById('fldFacultyName');
 
             const btnThem = document.getElementById('btnFormThem');
             const btnXoa = document.getElementById('btnFormXoa');
@@ -88,8 +56,8 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 alertEl: document.getElementById('formAlert'),
                 modeLabelEl: document.getElementById('formModeLabel'),
                 buttons: { them: btnThem, xoa: btnXoa, ghi: btnGhi, phucHoi: btnPhucHoi, huy: btnHuy },
-                allFields: [fldLecturerId, fldFirstName, fldLastName, fldDegree, fldAcademicRank, fldSpecialty, fldFacultyId],
-                requiredFields: [fldLecturerId, fldFirstName, fldLastName, fldFacultyId],
+                allFields: [fldFacultyId, fldFacultyName],
+                requiredFields: [fldFacultyId, fldFacultyName],
                 getSelectedId: () => selectedId,
             });
 
@@ -118,7 +86,7 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
             const btnSaveModal = modal.querySelector('.btn-save-modal');
 
             // Mở modal qua nút Thêm Mới → reset về view
-            document.getElementById('btnOpenLecturerForm')?.addEventListener('click', () => {
+            document.getElementById('btnOpenFacultyForm')?.addEventListener('click', () => {
                 resetToView();
                 undoStack = [];
                 forceClose = false;
@@ -135,9 +103,9 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 if (undoStack.length > 0 && !forceClose) {
                     e.preventDefault();
                     const isConfirmed = await window.showConfirmDialog(
-                        "Dữ liệu chưa đóng",
-                        "Ghi nhận có thay đổi chưa lưu (bạn sẽ mất các trạng thái có thể Phục hồi).<br><br>Nhấn <b>Tiếp tục đóng</b> nếu bạn không cần Phục hồi nữa.<br>Nhấn <b>Hủy bỏ</b> để ở lại form và chọn nút dưới cùng.",
-                        { confirmText: "Tiếp tục đóng", cancelText: "Hủy bỏ", isDanger: true }
+                        "Xác nhận thoát",
+                        "Bạn có các thao tác đã thực hiện nhưng chưa đóng phiên làm việc.<br>Nếu thoát bây giờ, bạn sẽ <b>không thể Phục hồi (Undo)</b> các thay đổi này được nữa.<br><br>Bạn vẫn muốn thoát?",
+                        { confirmText: "Tiếp tục thoát", cancelText: "Ở lại", isDanger: true }
                     );
                     if (isConfirmed) {
                         forceClose = true;
@@ -153,7 +121,7 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                     return;
                 }
 
-                const message = "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?";
+                const message = "Các thay đổi đã được <b>Ghi</b> vào hệ thống. Tuy nhiên, nếu đóng cửa sổ này, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa thực hiện.<br><br>Bạn có chắc chắn muốn thoát?";
                 
                 const isConfirmed = await window.showConfirmDialog(
                     "Xác nhận Thoát", message,
@@ -197,8 +165,8 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
             modal.addEventListener('hidden.bs.modal', resetToView);
 
             // Chọn hàng trong mini-table → chỉ block khi đang ở chế độ Thêm
-            document.getElementById('miniLecturerBody').addEventListener('click', e => {
-                if (helpers.getMode() === 'add') return; // Đang Thêm → không cho chuyển sang Sửa
+            document.getElementById('miniFacultyBody').addEventListener('click', e => {
+                if (helpers.getMode() === 'add') return;
                 const row = e.target.closest('tr.mini-row');
                 if (!row) return;
                 selectMiniRow(row);
@@ -212,15 +180,15 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 clearFields();
                 helpers.clearValidation();
                 helpers.setMode('add');
-                fldLecturerId.disabled = false;
-                fldLecturerId.focus();
-                helpers.showAlert('Nhập thông tin giảng viên mới rồi nhấn <b>Ghi</b> để lưu.', 'info');
+                fldFacultyId.disabled = false;
+                fldFacultyId.focus();
+                helpers.showAlert('Nhập thông tin khoa mới rồi nhấn <b>Ghi</b> để lưu.', 'info');
             });
 
             // ── Nút Xóa ──────────────────────────────────────────────
             btnXoa.addEventListener('click', () => {
-                if (!selectedId) return;
-                showDeleteModal(selectedId, fldFirstName.value + ' ' + fldLastName.value);
+                if (!selectedId || btnXoa.disabled) return;
+                showDeleteModal(selectedId, fldFacultyName.value);
             });
 
             // ── Nút Ghi ──────────────────────────────────────────────
@@ -228,14 +196,9 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 if (!helpers.validateForm()) return;
 
                 const payload = {
-                    oldLecturerId: originalId,
-                    lecturerId: fldLecturerId.value.trim(),
-                    firstName: fldFirstName.value.trim(),
-                    lastName: fldLastName.value.trim(),
-                    degree: fldDegree.value.trim(),
-                    academicRank: fldAcademicRank.value.trim(),
-                    specialty: fldSpecialty.value.trim(),
+                    oldFacultyId: originalId,
                     facultyId: fldFacultyId.value.trim(),
+                    facultyName: fldFacultyName.value.trim(),
                 };
 
                 try {
@@ -244,28 +207,23 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                         window.showToast(res.message, 'success');
                         if (helpers.getMode() === 'add') {
                             addRowToTables(payload);
-                            undoStack.push({ action: 'delete', payload: { lecturerId: payload.lecturerId } });
+                            undoStack.push({ action: 'delete', payload: { facultyId: payload.facultyId } });
                         } else {
                             updateRowInTables(payload, originalId);
                             if (snapshotData) {
                                 undoStack.push({ 
                                     action: 'edit', 
                                     payload: { 
-                                        oldLecturerId: payload.lecturerId, 
-                                        lecturerId: snapshotData.lecturerId, 
-                                        firstName: snapshotData.firstName,
-                                        lastName: snapshotData.lastName,
-                                        degree: snapshotData.degree,
-                                        academicRank: snapshotData.academicRank,
-                                        specialty: snapshotData.specialty,
-                                        facultyId: snapshotData.facultyId
+                                        oldFacultyId: payload.facultyId, 
+                                        facultyId: snapshotData.facultyId, 
+                                        facultyName: snapshotData.facultyName
                                     } 
                                 });
                             }
                         }
                         snapshotData = { ...payload };
-                        selectedId = payload.lecturerId;
-                        originalId = payload.lecturerId;
+                        selectedId = payload.facultyId;
+                        originalId = payload.facultyId;
                         helpers.setMode('edit');
                         highlightMiniRow(selectedId);
                     } else {
@@ -291,7 +249,7 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
             btnHuy?.addEventListener('click', resetToView);
 
             // ── Sửa / Xóa nhanh từ bảng chính ───────────────────────
-            document.getElementById('lecturerTableBody').addEventListener('click', e => {
+            document.getElementById('facultyTableBody').addEventListener('click', e => {
                 const editBtn = e.target.closest('.btn-edit-row');
                 const delBtn = e.target.closest('.btn-delete-row');
 
@@ -299,15 +257,15 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                     const ds = editBtn.dataset;
                     bootstrap.Modal.getOrCreateInstance(modal).show();
                     setTimeout(() => {
-                        populateFields(ds.id, ds.first, ds.last, ds.degree, ds.rank, ds.spec, ds.faculty);
+                        populateFields(ds.id, ds.name, parseInt(ds.lecturerCount || '0'));
                         helpers.setMode('edit');
                         highlightMiniRow(ds.id);
                         helpers.hideAlert();
                     }, 200);
                 }
 
-                if (delBtn) {
-                    showDeleteModal(delBtn.dataset.id, delBtn.dataset.first + ' ' + delBtn.dataset.last);
+                if (delBtn && !delBtn.disabled) {
+                    showDeleteModal(delBtn.dataset.id, delBtn.dataset.name);
                 }
             });
 
@@ -319,62 +277,57 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 helpers.setMode('view');
             }
 
-            function populateFields(id, first, last, degree, rank, spec, facultyId) {
-                fldLecturerId.value = id;
-                fldFirstName.value = first;
-                fldLastName.value = last;
-                fldDegree.value = degree;
-                fldAcademicRank.value = rank;
-                fldSpecialty.value = spec;
-                fldFacultyId.value = facultyId;
+            function populateFields(id, name, lecturerCount = 0) {
+                fldFacultyId.value = id;
+                fldFacultyName.value = name;
                 selectedId = id;
                 originalId = id;
-                snapshotData = {
-                    lecturerId: id, firstName: first, lastName: last,
-                    degree: degree, academicRank: rank, specialty: spec, facultyId: facultyId
+                snapshotData = { 
+                    facultyId: id, 
+                    facultyName: name,
+                    lecturerCount: lecturerCount
                 };
+
+                const canDelete = lecturerCount === 0;
+                btnXoa.disabled = !canDelete;
+                btnXoa.classList.toggle('opacity-50', !canDelete);
+                btnXoa.title = canDelete ? "Xóa khoa đang chọn" : `Không thể xóa vì còn ${lecturerCount} GV`;
             }
 
             function clearFields() {
-                fldLecturerId.value = fldFirstName.value = fldLastName.value = '';
-                fldDegree.value = fldAcademicRank.value = fldSpecialty.value = fldFacultyId.value = '';
+                fldFacultyId.value = fldFacultyName.value = '';
             }
 
             function selectMiniRow(row) {
                 deselectMiniRow();
                 row.classList.add('table-active', 'fw-semibold');
-                const ds = row.dataset;
-                populateFields(ds.id, ds.first, ds.last, ds.degree, ds.rank, ds.spec, ds.faculty);
+                populateFields(row.dataset.id, row.dataset.name, parseInt(row.dataset.lecturerCount || '0'));
                 helpers.setMode('edit');
                 helpers.hideAlert();
             }
 
             function highlightMiniRow(id) {
                 deselectMiniRow();
-                const row = document.querySelector(`#miniLecturerBody tr[data-id="${CSS.escape(id)}"]`);
+                const row = document.querySelector(`#miniFacultyBody tr[data-id="${CSS.escape(id)}"]`);
                 if (row) row.classList.add('table-active', 'fw-semibold');
             }
 
             function deselectMiniRow() {
-                document.querySelectorAll('#miniLecturerBody tr.table-active')
+                document.querySelectorAll('#miniFacultyBody tr.table-active')
                     .forEach(r => r.classList.remove('table-active', 'fw-semibold'));
             }
 
             async function doDelete(id) {
                 try {
                     // Save for undo before delete
-                    const row = document.querySelector(`#lecturerTableBody tr[data-id="${CSS.escape(id)}"]`);
+                    const row = document.querySelector(`#facultyTableBody tr[data-id="${CSS.escape(id)}"]`);
                     const delPayload = row ? {
-                        lecturerId: row.dataset.id,
-                        firstName: row.dataset.first,
-                        lastName: row.dataset.last,
-                        degree: row.dataset.degree,
-                        academicRank: row.dataset.rank,
-                        specialty: row.dataset.spec,
-                        facultyId: row.dataset.faculty
+                        facultyId: row.dataset.id,
+                        facultyName: row.dataset.name,
+                        lecturerCount: row.dataset.lecturerCount || 0
                     } : null;
 
-                    const res = await fetchJson(URL_DELETE, { lecturerId: id });
+                    const res = await fetchJson(URL_DELETE, { facultyId: id });
                     if (res.success) {
                         removeRowFromTables(id);
                         // Only add to stack if we have delPayload and modal is shown
@@ -387,8 +340,8 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                     } else {
                         window.showToast(res.message, 'danger');
                     }
-                } catch (err) {
-                    window.showToast('Lỗi: ' + err.message, 'danger');
+                } catch (err) { 
+                    window.showToast('Lỗi: ' + err.message, 'danger'); 
                 }
             }
 
@@ -401,41 +354,38 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                         addRowToTables(actionObj.payload);
                     } else if (actionObj.action === 'edit') {
                         await fetchJson(URL_EDIT, actionObj.payload);
-                        updateRowInTables(actionObj.payload, actionObj.payload.oldLecturerId);
+                        updateRowInTables(actionObj.payload, actionObj.payload.oldFacultyId);
                     } else if (actionObj.action === 'delete') {
                         await fetchJson(URL_DELETE, actionObj.payload);
-                        removeRowFromTables(actionObj.payload.lecturerId);
+                        removeRowFromTables(actionObj.payload.facultyId);
                     }
                 } catch(err) {
                     window.showToast("Lỗi hoàn tác: " + err.message, "danger");
                 }
             }
 
-            // ── DOM table helpers ─────────────────────────────────────
-
             function addRowToTables(p) {
-                const opt = fldFacultyId.querySelector(`option[value="${p.facultyId}"]`);
-                const facultyName = opt ? opt.textContent : p.facultyId;
-                const tbody = document.getElementById('lecturerTableBody');
+                const tbody = document.getElementById('facultyTableBody');
                 const empty = tbody.querySelector('td[colspan]');
                 if (empty) empty.closest('tr').remove();
-                tbody.insertAdjacentHTML('beforeend', mainRowHtml(p, facultyName));
-                document.getElementById('miniLecturerBody').insertAdjacentHTML('beforeend', miniRowHtml(p));
+                
+                const count = p.lecturerCount !== undefined ? p.lecturerCount : 0;
+                tbody.insertAdjacentHTML('beforeend', mainRowHtml(p, count));
+                document.getElementById('miniFacultyBody').insertAdjacentHTML('beforeend', miniRowHtml(p));
                 updateCount(1);
             }
 
             function updateRowInTables(p, oldId) {
-                const opt = fldFacultyId.querySelector(`option[value="${p.facultyId}"]`);
-                const facultyName = opt ? opt.textContent : p.facultyId;
-                const main = document.querySelector(`#lecturerTableBody tr[data-id="${CSS.escape(oldId)}"]`);
-                if (main) main.outerHTML = mainRowHtml(p, facultyName);
-                const mini = document.querySelector(`#miniLecturerBody  tr[data-id="${CSS.escape(oldId)}"]`);
+                const main = document.querySelector(`#facultyTableBody tr[data-id="${CSS.escape(oldId)}"]`);
+                const lecturerCount = main ? (main.dataset.lecturerCount || 0) : 0;
+                if (main) main.outerHTML = mainRowHtml(p, lecturerCount);
+                const mini = document.querySelector(`#miniFacultyBody tr[data-id="${CSS.escape(oldId)}"]`);
                 if (mini) mini.outerHTML = miniRowHtml(p);
             }
 
             function removeRowFromTables(id) {
-                document.querySelector(`#lecturerTableBody tr[data-id="${CSS.escape(id)}"]`)?.remove();
-                document.querySelector(`#miniLecturerBody  tr[data-id="${CSS.escape(id)}"]`)?.remove();
+                document.querySelector(`#facultyTableBody tr[data-id="${CSS.escape(id)}"]`)?.remove();
+                document.querySelector(`#miniFacultyBody tr[data-id="${CSS.escape(id)}"]`)?.remove();
                 updateCount(-1);
             }
 
@@ -444,42 +394,54 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 if (el) el.textContent = String(parseInt(el.textContent || '0', 10) + delta);
             }
 
-            function mainRowHtml(p, facultyName) {
-                return `<tr data-id="${escapeHtml(p.lecturerId)}" data-first="${escapeHtml(p.firstName)}" data-last="${escapeHtml(p.lastName)}"
-                                data-degree="${escapeHtml(p.degree ?? '')}" data-rank="${escapeHtml(p.academicRank ?? '')}"
-                                data-spec="${escapeHtml(p.specialty ?? '')}" data-faculty="${escapeHtml(p.facultyId)}"
-                                data-faculty-filter="${escapeHtml(p.facultyId)}">
-                        <td class="fw-semibold font-monospace text-primary">${escapeHtml(p.lecturerId)}</td>
-                        <td class="fw-medium">${escapeHtml(p.firstName)} ${escapeHtml(p.lastName)}</td>
-                        <td>${escapeHtml(p.degree ?? '')}</td>
-                        <td>${escapeHtml(p.academicRank ?? '')}</td>
-                        <td class="text-truncate" style="max-width:150px;" title="${escapeHtml(p.specialty ?? '')}">${escapeHtml(p.specialty ?? '')}</td>
-                        <td>
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">${escapeHtml(p.facultyId)}</span>
-                        </td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row shadow-sm hover-scale" title="Sửa"
-                                    data-id="${escapeHtml(p.lecturerId)}" data-first="${escapeHtml(p.firstName)}" data-last="${escapeHtml(p.lastName)}"
-                                    data-degree="${escapeHtml(p.degree ?? '')}" data-rank="${escapeHtml(p.academicRank ?? '')}"
-                                    data-spec="${escapeHtml(p.specialty ?? '')}" data-faculty="${escapeHtml(p.facultyId)}">
-                                <i class="bi bi-pencil"></i>
+            function mainRowHtml(p, lecturerCount = 0) {
+                const canDelete = lecturerCount === 0;
+                const deleteTooltip = canDelete ? "Xóa khoa này" : `Không thể xóa khoa vì đang có ${lecturerCount} giảng viên`;
+                
+                return `<tr data-id="${escapeHtml(p.facultyId)}" 
+                            data-name="${escapeHtml(p.facultyName)}" 
+                            data-lecturer-count="${lecturerCount}"
+                            class="hover-row transition-base">
+                    <td>
+                        <span class="badge bg-primary-subtle text-primary tabular-nums border border-primary-subtle px-2 py-1 font-monospace">
+                            ${escapeHtml(p.facultyId)}
+                        </span>
+                    </td>
+                    <td class="fw-medium">${escapeHtml(p.facultyName)}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="badge-status ${lecturerCount > 0 ? 'badge-info' : 'badge-secondary text-muted bg-light'} d-flex align-items-center gap-1">
+                                <i class="bi ${lecturerCount > 0 ? 'bi-person-check' : 'bi-person-dash'} small"></i>
+                                <span class="tabular-nums">${lecturerCount}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-end action-cell">
+                        <div class="d-flex justify-content-end gap-1">
+                            <button class="btn btn-sm btn-icon btn-outline-primary btn-edit-row hover-scale shadow-sm" 
+                                    title="Chỉnh sửa thông tin khoa"
+                                    data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}" data-lecturer-count="${lecturerCount}">
+                                <i class="bi bi-pencil-square"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-sm hover-scale" title="Xóa"
-                                    data-id="${escapeHtml(p.lecturerId)}" data-first="${escapeHtml(p.firstName)}" data-last="${escapeHtml(p.lastName)}">
-                                <i class="bi bi-trash"></i>
+                            <button class="btn btn-sm btn-icon ${canDelete ? 'btn-outline-danger btn-delete-row hover-scale shadow-sm' : 'btn-light text-muted border-0 opacity-50'}" 
+                                    title="${deleteTooltip}"
+                                    data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}"
+                                    ${canDelete ? '' : 'disabled'}>
+                                <i class="bi ${canDelete ? 'bi-trash3' : 'bi-trash3-fill'}"></i>
                             </button>
-                        </td>
-                    </tr>`;
+                        </div>
+                    </td>
+                </tr>`;
             }
 
-            function miniRowHtml(p) {
+            function miniRowHtml(p, lecturerCount = 0) {
                 return `<tr class="mini-row transition-base" role="button"
-                                data-id="${escapeHtml(p.lecturerId)}" data-first="${escapeHtml(p.firstName)}" data-last="${escapeHtml(p.lastName)}"
-                                data-degree="${escapeHtml(p.degree ?? '')}" data-rank="${escapeHtml(p.academicRank ?? '')}"
-                                data-spec="${escapeHtml(p.specialty ?? '')}" data-faculty="${escapeHtml(p.facultyId)}">
-                        <td class="fw-bold font-monospace text-primary">${escapeHtml(p.lecturerId)}</td>
-                        <td>${escapeHtml(p.firstName)} ${escapeHtml(p.lastName)}</td>
-                        <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle small px-2">${escapeHtml(p.facultyId)}</span></td>
+                                data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}" data-lecturer-count="${lecturerCount}">
+                        <td class="fw-bold font-monospace text-primary small">${escapeHtml(p.facultyId)}</td>
+                        <td class="small d-flex justify-content-between align-items-center">
+                            <span>${escapeHtml(p.facultyName)}</span>
+                            <span class="badge rounded-pill bg-light text-muted border tabular-nums" style="font-size: 0.65rem">${lecturerCount}</span>
+                        </td>
                     </tr>`;
             }
 
@@ -495,26 +457,42 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 return json;
             }
 
-            // ── Client-side search + faculty filter ─────────────────────
-            ['lecturerSearch', 'facultyFilter'].forEach(id => {
-                document.getElementById(id)?.addEventListener('input', applyFilters);
-                document.getElementById(id)?.addEventListener('change', applyFilters);
-            });
+            // Client-side search
+            const searchInput = document.getElementById('facultySearch');
+            const clearSearchBtn = document.getElementById('clearFacultySearch');
 
-            function applyFilters() {
-                const q = (document.getElementById('lecturerSearch')?.value ?? '').toLowerCase();
-                const faculty = document.getElementById('facultyFilter')?.value ?? '';
+            function performSearch() {
+                const q = (searchInput?.value ?? '').toLowerCase();
                 let vis = 0;
-                document.querySelectorAll('#lecturerTableBody tr[data-id]').forEach(row => {
-                    const match =
-                        (!q || row.dataset.id.toLowerCase().includes(q) || (row.dataset.first + ' ' + row.dataset.last).toLowerCase().includes(q)) &&
-                        (!faculty || row.dataset.facultyFilter === faculty);
+                
+                clearSearchBtn?.classList.toggle('d-none', !q);
+
+                document.querySelectorAll('#facultyTableBody tr[data-id]').forEach(row => {
+                    const match = !q || row.dataset.id.toLowerCase().includes(q) || (row.dataset.name ?? '').toLowerCase().includes(q);
                     row.style.display = match ? '' : 'none';
                     if (match) vis++;
                 });
+                
                 const vc = document.getElementById('visibleCount');
                 if (vc) vc.textContent = String(vis);
             }
+
+            searchInput?.addEventListener('input', performSearch);
+
+            clearSearchBtn?.addEventListener('click', () => {
+                if (searchInput) {
+                    searchInput.value = '';
+                    performSearch();
+                    searchInput.focus();
+                }
+            });
+
+            searchInput?.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    searchInput.value = '';
+                    performSearch();
+                }
+            });
 
         })();
     </script>

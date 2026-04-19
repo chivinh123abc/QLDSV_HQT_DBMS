@@ -7,7 +7,28 @@
 }
 
 <div class="qldsv-card border-0 shadow-sm overflow-hidden animate__animated animate__fadeIn">
-    @* --- Header & Search/Filters area --- *@
+    @* --- Header Title & Actions --- *@
+    @if (ViewData["TitleSection"] != null || ViewData["Title"] != null)
+    {
+        <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-3 border-bottom">
+            @if (ViewData["TitleSection"] is Func<object?, Microsoft.AspNetCore.Html.IHtmlContent> titleSectionDelegate)
+            {
+                @titleSectionDelegate(null)
+            }
+            else if (ViewData["TitleSection"] is Microsoft.AspNetCore.Html.IHtmlContent htmlContent)
+            {
+                @htmlContent
+            }
+            else
+            {
+                <h5 class="mb-0 fw-bold text-primary">
+                    @ViewData["Title"]
+                </h5>
+            }
+        </div>
+    }
+
+    @* --- Search & Filters area --- *@
     @if (Model.FiltersSection != null)
     {
         <div class="p-3 border-bottom d-flex align-items-center gap-3 bg-light-subtle">

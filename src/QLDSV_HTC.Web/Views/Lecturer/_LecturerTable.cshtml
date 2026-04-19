@@ -8,36 +8,82 @@
     var tableModel = new GenericTableViewModel
     {
         FiltersSection = @<text>
-            <div class="input-group" style="max-width:340px">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="bi bi-search text-muted"></i>
-                </span>
-                <input type="text" id="lecturerSearch" class="form-control border-start-0"
-                       placeholder="Tìm mã hoặc tên giảng viên…">
+            <div class="d-flex flex-wrap align-items-center gap-3 w-100">
+                <div class="glass-search" style="min-width: 350px;">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="lecturerSearch" class="search-input"
+                           placeholder="Tìm mã hoặc tên giảng viên…">
+                    <button class="clear-btn d-none" type="button" id="btnClearLecturerSearch">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                </div>
+
+                @if (!hasFaculty && Model.Faculties.Any())
+                {
+                    <div class="input-group input-group-sm" style="max-width:300px">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-filter text-primary"></i></span>
+                        <select id="facultyFilter" class="form-select border-start-0 shadow-none">
+                            <option value="">— Tất cả khoa —</option>
+                            @foreach (var f in Model.Faculties)
+                            {
+                                <option value="@f.Id?.Trim()">@f.Name (@f.Id?.Trim())</option>
+                            }
+                        </select>
+                    </div>
+                }
+
+                <div class="ms-auto text-muted small d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill shadow-sm border">
+                    <i class="bi bi-info-circle text-primary"></i>
+                    <span>
+                        Hiển thị <strong id="visibleCount" class="text-primary tabular-nums">@Model.Lecturers.Count()</strong> giảng viên
+                    </span>
+                </div>
             </div>
-            @if (!hasFaculty && Model.Faculties.Any())
-            {
-                <select id="facultyFilter" class="form-select" style="max-width:300px">
-                    <option value="">— Tất cả khoa —</option>
-                    @foreach (var f in Model.Faculties)
-                    {
-                        <option value="@f.Id?.Trim()">@f.Name (@f.Id?.Trim())</option>
-                    }
-                </select>
-            }
         </text>,
         
         HeadSection = @<text>
             <tr>
-                <th scope="col" style="width:130px">Mã GV</th>
-                <th scope="col">Họ và Tên</th>
-                <th scope="col" style="width:120px">Học Vị</th>
-                <th scope="col" style="width:120px">Học Hàm</th>
-                <th scope="col" style="width:150px">Chuyên Môn</th>
-                <th scope="col" style="width:100px">Khoa</th>
+                <th scope="col" class="ps-4" style="width:130px">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-hash text-primary"></i>
+                        <span>Mã GV</span>
+                    </div>
+                </th>
+                <th scope="col">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-person-badge text-primary"></i>
+                        <span>Họ và Tên</span>
+                    </div>
+                </th>
+                <th scope="col" style="width:120px">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-mortarboard text-primary"></i>
+                        <span>Học Vị</span>
+                    </div>
+                </th>
+                <th scope="col" style="width:120px">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-award text-primary"></i>
+                        <span>Học Hàm</span>
+                    </div>
+                </th>
+                <th scope="col" style="width:180px">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-briefcase text-primary"></i>
+                        <span>Chuyên Môn</span>
+                    </div>
+                </th>
+                <th scope="col" style="width:100px">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-building text-primary"></i>
+                        <span>Khoa</span>
+                    </div>
+                </th>
                 @if (isPGV)
                 {
-                    <th scope="col" class="text-end" style="width:120px">Hành động</th>
+                    <th scope="col" class="text-end pe-4" style="width:120px">
+                        <i class="bi bi-gear-fill text-muted"></i>
+                    </th>
                 }
             </tr>
         </text>,
@@ -46,9 +92,16 @@
             @if (!Model.Lecturers.Any())
             {
                 <tr>
-                    <td colspan="7" class="text-center text-muted py-5">
-                        <i class="bi bi-person-x fs-2 d-block mb-2"></i>
-                        Chưa có giảng viên nào.
+                    <td colspan="@(isPGV ? 7 : 6)" class="text-center py-5 border-0">
+                        <div class="animate__animated animate__fadeIn py-5">
+                            <div class="icon-box-lg bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
+                                <i class="bi bi-person-x text-body-tertiary fs-1"></i>
+                            </div>
+                            <h5 class="text-dark fw-bold mb-2">Chưa có giảng viên nào</h5>
+                            <p class="text-muted small mx-auto" style="max-width: 300px;">
+                                Thử thay đổi từ khóa tìm kiếm hoặc kiểm tra lại danh sách khoa.
+                            </p>
+                        </div>
                     </td>
                 </tr>
             }
@@ -56,34 +109,47 @@
             {
                 @foreach (var l in Model.Lecturers)
                 {
-                    <tr data-id="@l.Id?.Trim()" data-first="@l.FirstName" data-last="@l.LastName"
+                    <tr class="hover-row animate__animated animate__fadeIn"
+                        data-id="@l.Id?.Trim()" data-first="@l.FirstName" data-last="@l.LastName"
                         data-degree="@l.Degree" data-rank="@l.Rank" data-spec="@l.Specialty"
                         data-faculty="@l.FacultyId?.Trim()" data-faculty-filter="@l.FacultyId?.Trim()">
-                        <td class="fw-semibold font-monospace text-primary">@l.Id?.Trim()</td>
-                        <td class="fw-medium">@l.FirstName @l.LastName</td>
-                        <td>@l.Degree</td>
-                        <td>@l.Rank</td>
-                        <td class="text-truncate" style="max-width: 150px;" title="@l.Specialty">@l.Specialty</td>
+                        <td class="ps-4">
+                            <span class="fw-bold font-monospace text-primary bg-primary-subtle px-2 py-1 rounded small border border-primary-subtle shadow-sm">
+                                @l.Id?.Trim()
+                            </span>
+                        </td>
+                        <td class="fw-bold text-dark">@l.FirstName @l.LastName</td>
                         <td>
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">
+                            <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 rounded-pill">@l.Degree</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill">@l.Rank</span>
+                        </td>
+                        <td class="text-truncate small" style="max-width: 180px;" title="@l.Specialty">
+                            <i class="bi bi-dot text-primary"></i> @l.Specialty
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-1 rounded-pill">
                                 @l.FacultyId?.Trim()
                             </span>
                         </td>
                         @if (isPGV)
                         {
-                            <td class="text-end">
-                                <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row shadow-sm hover-scale"
-                                        title="Sửa giảng viên"
-                                        data-id="@l.Id?.Trim()" data-first="@l.FirstName" data-last="@l.LastName"
-                                        data-degree="@l.Degree" data-rank="@l.Rank" data-spec="@l.Specialty"
-                                        data-faculty="@l.FacultyId?.Trim()">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-sm hover-scale"
-                                        title="Xóa giảng viên"
-                                        data-id="@l.Id?.Trim()" data-first="@l.FirstName" data-last="@l.LastName">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-1">
+                                    <button class="btn btn-sm btn-outline-primary btn-edit-row shadow-none hover-scale rounded-3"
+                                            title="Sửa giảng viên"
+                                            data-id="@l.Id?.Trim()" data-first="@l.FirstName" data-last="@l.LastName"
+                                            data-degree="@l.Degree" data-rank="@l.Rank" data-spec="@l.Specialty"
+                                            data-faculty="@l.FacultyId?.Trim()">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-none hover-scale rounded-3"
+                                            title="Xóa giảng viên"
+                                            data-id="@l.Id?.Trim()" data-first="@l.FirstName" data-last="@l.LastName">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
                             </td>
                         }
                     </tr>
@@ -92,11 +158,14 @@
         </text>,
         
         FooterSection = @<text>
-            <div class="d-flex align-items-center w-100">
-                <span class="text-muted small me-auto">
-                    Hiển thị <strong id="visibleCount">@Model.Lecturers.Count()</strong>
-                    / @Model.Pagination.TotalCount giảng viên
-                </span>
+            <div class="d-flex align-items-center justify-content-between w-100 px-3 py-1">
+                <div class="text-muted small d-flex align-items-center gap-2">
+                    <i class="bi bi-info-circle-fill text-primary opacity-75"></i>
+                    <span>
+                        Hiển thị <strong id="visibleCount" class="text-primary tabular-nums">@Model.Lecturers.Count()</strong>
+                        / <span class="tabular-nums">@Model.Pagination.TotalCount</span> giảng viên
+                    </span>
+                </div>
                 
                 @await Html.PartialAsync("_PaginationControls", Model.Pagination)
             </div>
@@ -105,6 +174,7 @@
 
     ViewData["TableId"] = "lecturerTable";
     ViewData["TableBodyId"] = "lecturerTableBody";
+    ViewData["Title"] = "Danh sách Giảng viên";
 }
 
 @await Html.PartialAsync("_CardTableWrapper", tableModel, ViewData)

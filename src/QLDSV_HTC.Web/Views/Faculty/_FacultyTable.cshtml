@@ -1,0 +1,160 @@
+@model QLDSV_HTC.Web.Models.FacultyManagementViewModel
+@using QLDSV_HTC.Web.Models
+
+@{
+    var isPGV = (bool)(ViewData["isPGV"] ?? false);
+
+    // ── Prepare Title Section ──
+    ViewData["TitleSection"] = (Func<object, Microsoft.AspNetCore.Html.IHtmlContent>)(@<text>
+        <div class="d-flex align-items-center gap-2">
+            <div class="bg-primary bg-opacity-10 text-primary rounded-2 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <i class="bi bi-building-fill fs-5"></i>
+            </div>
+            <div>
+                <h5 class="mb-0 fw-bold text-dark">Quản lý Khoa</h5>
+                <div class="text-muted small">Quản lý danh sách các khoa thành viên</div>
+            </div>
+        </div>
+        @if (isPGV)
+        {
+            <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2 rounded-3 hover-scale px-3 ms-auto" 
+                    id="btnOpenFacultyForm" type="button" data-bs-toggle="modal" data-bs-target="#facultyFormModal">
+                <i class="bi bi-plus-circle-fill"></i>
+                <span class="fw-semibold">Cập nhật Danh mục</span>
+            </button>
+        }
+    </text>);
+
+    var tableModel = new GenericTableViewModel
+    {
+        FiltersSection = @<text>
+            <div class="d-flex align-items-center gap-3 w-100">
+                <div class="glass-search flex-grow-1" style="max-width:450px">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="facultySearch" class="search-input" 
+                           placeholder="Tìm mã khoa hoặc tên khoa…">
+                    <button type="button" id="clearFacultySearch" class="clear-btn d-none" title="Xóa tìm kiếm">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                </div>
+                <div class="ms-auto d-none d-md-flex align-items-center text-muted small bg-white px-3 py-2 rounded-pill shadow-sm border">
+                    <i class="bi bi-info-circle me-2 text-primary"></i>
+                    <span>Nhấn <kbd class="bg-light text-dark border px-1">ESC</kbd> để xóa nhanh tìm kiếm</span>
+                </div>
+            </div>
+        </text>,
+
+    HeadSection = @<text>
+        <tr class="text-uppercase small fw-bold text-muted border-bottom-0">
+            <th scope="col" class="ps-4" style="width:180px">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-hash me-2 text-primary"></i>Mã Khoa
+                </div>
+            </th>
+            <th scope="col">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-building me-2 text-primary"></i>Tên Khoa
+                </div>
+            </th>
+            <th scope="col" class="text-center" style="width:180px">
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="bi bi-people me-2 text-primary"></i>Số Giảng Viên
+                </div>
+            </th>
+            @if (isPGV)
+            {
+                <th scope="col" class="text-end pe-4" style="width:150px">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <i class="bi bi-lightning-charge me-2 text-primary"></i>Thao tác
+                    </div>
+                </th>
+            }
+        </tr>
+    </text>,
+
+    BodySection = @<text>
+        @if (!Model.Faculties.Any())
+        {
+            <tr>
+                <td colspan="@(isPGV ? 4 : 3)" class="text-center py-5 border-0">
+                    <div class="animate__animated animate__fadeIn py-5">
+                        <div class="icon-box-lg bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
+                            <i class="bi bi-building-dash text-body-tertiary fs-1"></i>
+                        </div>
+                        <h5 class="text-dark fw-bold mb-2">Không tìm thấy khoa nào</h5>
+                        <p class="text-muted small mx-auto" style="max-width: 300px;">
+                            Hãy thử thay đổi từ khóa tìm kiếm hoặc kiểm tra lại danh mục khoa.
+                        </p>
+                    </div>
+                </td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var faculty in Model.Faculties)
+            {
+                <tr data-id="@faculty.Id?.Trim()" 
+                    data-name="@faculty.Name" 
+                    data-lecturer-count="@faculty.LecturerCount"
+                    class="hover-row transition-base animate__animated animate__fadeIn">
+                    <td class="ps-4">
+                        <span class="badge bg-primary-subtle text-primary tabular-nums border border-primary-subtle px-2 py-1 rounded-pill shadow-sm font-monospace">
+                            @faculty.Id?.Trim()
+                        </span>
+                    </td>
+                    <td class="fw-bold text-dark">@faculty.Name</td>
+                    <td class="text-center">
+                        <div class="d-inline-flex align-items-center">
+                            <div class="badge-status @(faculty.LecturerCount > 0 ? "badge-info" : "badge-secondary text-muted bg-light border") d-flex align-items-center gap-2 rounded-pill px-3 py-1 shadow-sm">
+                                <i class="bi @(faculty.LecturerCount > 0 ? "bi-person-check-fill" : "bi-person-dash") small"></i>
+                                <span class="tabular-nums fw-semibold">@faculty.LecturerCount</span>
+                            </div>
+                        </div>
+                    </td>
+                    @if (isPGV)
+                    {
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-1">
+                                <button class="btn btn-sm btn-outline-primary btn-edit-row shadow-none hover-scale rounded-3" 
+                                        title="Chỉnh sửa thông tin khoa"
+                                        data-id="@faculty.Id?.Trim()" data-name="@faculty.Name">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                @{
+                                    var canDelete = faculty.LecturerCount == 0;
+                                    var deleteTooltip = canDelete ? "Xóa khoa này" : $"Không thể xóa khoa vì đang có {faculty.LecturerCount} giảng viên";
+                                }
+                                <button class="btn btn-sm @(canDelete ? "btn-outline-danger btn-delete-row shadow-none hover-scale rounded-3" : "btn-light text-muted border-0 opacity-50")" 
+                                        title="@deleteTooltip"
+                                        data-id="@faculty.Id?.Trim()" data-name="@faculty.Name"
+                                        @(canDelete ? "" : "disabled")>
+                                    <i class="bi @(canDelete ? "bi-trash" : "bi-trash-fill")"></i>
+                                </button>
+                            </div>
+                        </td>
+                    }
+                </tr>
+            }
+        }
+    </text>,
+
+    FooterSection = @<text>
+        <div class="d-flex align-items-center justify-content-between w-100 px-3 py-1">
+            <div class="text-muted small d-flex align-items-center gap-2">
+                <i class="bi bi-info-circle-fill text-primary opacity-75"></i>
+                <span>
+                    Hiển thị <strong id="visibleCount" class="text-primary tabular-nums">@Model.Faculties.Count()</strong>
+                    / <span class="tabular-nums">@Model.Pagination.TotalCount</span> khoa thành viên
+                </span>
+            </div>
+
+            @await Html.PartialAsync("_PaginationControls", Model.Pagination)
+        </div>
+    </text>
+};
+
+    ViewData["TableId"] = "facultyTable";
+    ViewData["TableBodyId"] = "facultyTableBody";
+}
+
+@await Html.PartialAsync("_CardTableWrapper", tableModel, ViewData)

@@ -4,44 +4,16 @@
     ViewData["Title"] = "Quản lý Lớp";
     var isPGV = User.IsInRole("PGV");
     var hasFaculty = !string.IsNullOrEmpty(Model.CurrentFacultyId);
-    var pageTitle = hasFaculty
-    ? $"Danh sách Lớp — Khoa {Model.CurrentFacultyId}"
-    : "Danh sách Lớp toàn trường";
 
     ViewData["isPGV"] = isPGV;
     ViewData["hasFaculty"] = hasFaculty;
 }
 
 <div class="dashboard-container fade-in-up">
-
-    @* ── Thanh tiêu đề + nút Thêm Lớp Mới ── *@
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-1 fw-bold text-gray-800">@pageTitle</h1>
-            <p class="text-muted mb-0 small">
-                <i class="bi bi-mortarboard me-1"></i>
-                Tổng: <strong>@Model.Classes.Count()</strong> lớp
-                @if (hasFaculty)
-                {
-                    <span class="ms-2 badge bg-primary-subtle text-primary border border-primary-subtle">
-                        <i class="bi bi-building me-1"></i>@Model.CurrentFacultyId
-                    </span>
-                }
-            </p>
-        </div>
-        @if (isPGV)
-        {
-            <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2" id="btnOpenClassForm" type="button"
-                data-bs-toggle="modal" data-bs-target="#classFormModal">
-                <i class="bi bi-pencil-square"></i>
-                <span>Cập nhật danh mục Lớp</span>
-            </button>
-        }
-    </div>
-
     @* ── Bảng danh sách lớp ── *@
     @await Html.PartialAsync("_ClassTable", Model, ViewData)
 </div>
+
 
 @* ══════════════════════════════════════════════════════════
 MODAL: Nhập danh mục lớp / Xác nhận xóa
@@ -55,9 +27,9 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
         (function () {
             'use strict';
 
-            const URL_ADD = '@Url.Action("Add",    "Class")';
-            const URL_EDIT = '@Url.Action("Edit",   "Class")';
-            const URL_DELETE = '@Url.Action("Delete", "Class")';
+            const URL_ADD = '@RouteConstants.Class.AddPath';
+            const URL_EDIT = '@RouteConstants.Class.EditPath';
+            const URL_DELETE = '@RouteConstants.Class.DeletePath';
 
             let snapshotData = null;
             let selectedId = null;
@@ -328,7 +300,12 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 fldFacultyId.value = facultyId;
                 selectedId = id;
                 originalId = id;
-                snapshotData = { classId: id, className: name, schoolYear: year, facultyId: facultyId };
+                snapshotData = { 
+                    classId: id, 
+                    className: name, 
+                    schoolYear: year, 
+                    facultyId: facultyId 
+                };
             }
 
             function clearFields() {
@@ -441,26 +418,41 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 const disabledDelete = studentCount > 0 ? "disabled" : "";
                 const deleteTitle = studentCount > 0 ? `Không thể xóa lớp đã có sinh viên (${studentCount} SV)` : "Xóa lớp này";
                 const deleteClass = studentCount > 0 ? "" : "btn-delete-row hover-scale";
+                const studentBadge = studentCount > 0 ? `<div class="small text-muted d-flex align-items-center gap-1"><i class="bi bi-person-badge"></i><span>${studentCount} sinh viên</span></div>` : "";
                 
-                return `<tr data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
-                                data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}"
-                                data-faculty-filter="${escapeHtml(p.facultyId)}" data-student-count="${studentCount}">
-                        <td class="fw-semibold font-monospace text-primary">${escapeHtml(p.classId)}</td>
-                        <td>${escapeHtml(p.className)}</td>
-                        <td>${escapeHtml(p.schoolYear)}</td>
-                        <td>
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">${escapeHtml(p.facultyId)}</span>
+                return `<tr class="hover-row transition-base animate__animated animate__fadeIn" 
+                             data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
+                             data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}"
+                             data-faculty-filter="${escapeHtml(p.facultyId)}" data-student-count="${studentCount}">
+                         <td class="ps-4">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2 py-1 rounded-pill shadow-sm">
+                                ${escapeHtml(p.classId)}
+                            </span>
                         </td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row shadow-sm hover-scale" title="Sửa lớp này"
-                                    data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
-                                    data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger ${deleteClass} shadow-sm" title="${deleteTitle}"
-                                    data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}" ${disabledDelete}>
-                                <i class="bi bi-trash"></i>
-                            </button>
+                        <td>
+                            <div class="fw-bold text-dark mb-1">${escapeHtml(p.className)}</div>
+                            ${studentBadge}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark border tabular-nums rounded-3 px-2 py-1">${escapeHtml(p.schoolYear)}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-3">
+                                <i class="bi bi-building me-1 small"></i>${escapeHtml(p.facultyId)}
+                            </span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-1">
+                                <button class="btn btn-sm btn-outline-primary btn-edit-row shadow-none hover-scale rounded-3" title="Sửa lớp này"
+                                        data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
+                                        data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger shadow-none hover-scale rounded-3 ${deleteClass}" title="${deleteTitle}"
+                                        data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}" ${disabledDelete}>
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>`;
             }
@@ -469,10 +461,18 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
                 return `<tr class="mini-row transition-base" role="button"
                                 data-id="${escapeHtml(p.classId)}" data-name="${escapeHtml(p.className)}"
                                 data-year="${escapeHtml(p.schoolYear)}" data-faculty="${escapeHtml(p.facultyId)}">
-                        <td class="fw-bold font-monospace text-primary">${escapeHtml(p.classId)}</td>
-                        <td>${escapeHtml(p.className)}</td>
-                        <td>${escapeHtml(p.schoolYear)}</td>
-                        <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle small px-2">${escapeHtml(p.facultyId)}</span></td>
+                        <td class="fw-bold font-monospace text-primary">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2">
+                                ${escapeHtml(p.classId)}
+                            </span>
+                        </td>
+                        <td class="fw-medium">${escapeHtml(p.className)}</td>
+                        <td class="text-center text-muted tabular-nums small">${escapeHtml(p.schoolYear)}</td>
+                        <td class="text-center small">
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 rounded-pill">
+                                ${escapeHtml(p.facultyId)}
+                            </span>
+                        </td>
                     </tr>`;
             }
 
@@ -489,14 +489,39 @@ MODAL: Nhập danh mục lớp / Xác nhận xóa
             }
 
             // ── Client-side search + faculty filter ─────────────────────
-            ['classSearch', 'facultyFilter'].forEach(id => {
-                document.getElementById(id)?.addEventListener('input', applyFilters);
-                document.getElementById(id)?.addEventListener('change', applyFilters);
+            const classSearch = document.getElementById('classSearch');
+            const btnClearSearch = document.getElementById('btnClearSearch');
+            const facultyFilter = document.getElementById('facultyFilter');
+
+            [classSearch, facultyFilter].forEach(el => {
+                el?.addEventListener('input', applyFilters);
+                el?.addEventListener('change', applyFilters);
+            });
+
+            btnClearSearch?.addEventListener('click', () => {
+                if (classSearch) {
+                    classSearch.value = '';
+                    applyFilters();
+                    classSearch.focus();
+                }
+            });
+
+            classSearch?.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    classSearch.value = '';
+                    applyFilters();
+                }
             });
 
             function applyFilters() {
-                const q = (document.getElementById('classSearch')?.value ?? '').toLowerCase();
-                const faculty = document.getElementById('facultyFilter')?.value ?? '';
+                const q = (classSearch?.value ?? '').toLowerCase();
+                const faculty = facultyFilter?.value ?? '';
+                
+                // Toggle clear button
+                if (btnClearSearch) {
+                    btnClearSearch.classList.toggle('d-none', q.length === 0);
+                }
+
                 let vis = 0;
                 document.querySelectorAll('#classTableBody tr[data-id]').forEach(row => {
                     const match =

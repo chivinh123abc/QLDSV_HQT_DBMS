@@ -5,44 +5,16 @@
     ViewData["Title"] = "Quản lý Lớp tín chỉ";
     var isPGV = User.IsInRole("PGV");
     var hasFaculty = !string.IsNullOrEmpty(Model.CurrentFacultyId);
-    var pageTitle = hasFaculty
-        ? $"Quản lý Lớp tín chỉ — Khoa {Model.CurrentFacultyId}"
-        : "Quản lý Lớp tín chỉ toàn trường";
 
     ViewData["isPGV"] = isPGV;
     ViewData["hasFaculty"] = hasFaculty;
 }
 
 <div class="dashboard-container fade-in-up">
-
-    @* ── Thanh tiêu đề + nút Thêm Mới ── *@
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-1 fw-bold text-gray-800">@pageTitle</h1>
-            <p class="text-muted mb-0 small">
-                <i class="bi bi-calendar2-range me-1"></i>
-                Tổng: <strong>@Model.CreditClasses.Count()</strong> lớp tín chỉ
-                @if (hasFaculty)
-                {
-                    <span class="ms-2 badge bg-primary-subtle text-primary border border-primary-subtle">
-                        <i class="bi bi-building me-1"></i>@Model.CurrentFacultyId
-                    </span>
-                }
-            </p>
-        </div>
-        @if (isPGV)
-        {
-            <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2 hover-scale" id="btnOpenCreditClassForm" type="button"
-                    data-bs-toggle="modal" data-bs-target="#creditClassFormModal">
-                <i class="bi bi-plus-circle"></i>
-                <span>Tạo / Cập nhật Lớp tín chỉ</span>
-            </button>
-        }
-    </div>
-
     @* ── Bảng danh sách LTC ── *@
     @await Html.PartialAsync("_CreditClassTable", Model, ViewData)
 </div>
+
 
 @* ══════════════════════════════════════════════════════════
 MODAL: Nhập danh mục LTC / Xác nhận xóa
@@ -376,8 +348,16 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
             });
 
             // ── Filter (Client-side)
-            document.getElementById('creditClassSearch')?.addEventListener('input', e => {
+            const searchInput = document.getElementById('creditClassSearch');
+            const btnClearSearch = document.getElementById('btnClearSearch');
+
+            searchInput?.addEventListener('input', e => {
                 const q = e.target.value.toLowerCase();
+                
+                if (btnClearSearch) {
+                    btnClearSearch.style.display = q.length > 0 ? 'block' : 'none';
+                }
+
                 let vis = 0;
                 document.querySelectorAll('#creditClassTableBody table tr[data-id]').forEach(row => {
                     const txt = (row.dataset.id + ' ' + row.dataset.search).toLowerCase();
@@ -387,6 +367,21 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
                 });
                 const vc = document.getElementById('visibleCount');
                 if (vc) vc.textContent = String(vis);
+            });
+
+            // Clear search button
+            btnClearSearch?.addEventListener('click', () => {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+                searchInput.focus();
+            });
+
+            // ESC key to clear search
+            searchInput?.addEventListener('keydown', e => {
+                if (e.key === 'Escape') {
+                    searchInput.value = '';
+                    searchInput.dispatchEvent(new Event('input'));
+                }
             });
 
             // ── Helpers
@@ -467,48 +462,59 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
                 
                 let statusHtml = '';
                 if (p.isCancelled) {
-                    statusHtml = '<span class="badge bg-danger">Hủy</span>';
+                    statusHtml = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill"><i class="bi bi-x-circle-fill me-1"></i>Đã hủy</span>';
                 } else if (registeredCount < p.minStudents) {
-                    statusHtml = '<span class="badge bg-warning text-dark">Chưa đủ</span>';
+                    statusHtml = '<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 rounded-pill"><i class="bi bi-hourglass-split me-1"></i>Chưa đủ SV</span>';
                 } else {
-                    statusHtml = '<span class="badge bg-success">Đã đạt</span>';
+                    statusHtml = '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Đã mở</span>';
                 }
                 
                 let registeredHtml = registeredCount > 0 
-                    ? `<span class="fw-bold ${registeredCount < p.minStudents ? 'text-warning' : 'text-success'}">${registeredCount}</span>`
-                    : '<span class="text-muted">0</span>';
+                    ? `<div class="badge ${registeredCount < p.minStudents ? 'bg-warning-subtle text-warning border-warning-subtle' : 'bg-success-subtle text-success border-success-subtle'} border px-2 py-1 rounded-3 shadow-sm"><span class="fw-bold fs-6">${registeredCount}</span></div>`
+                    : '<span class="text-muted opacity-50">0</span>';
 
                 let actions = isPGV ? `
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-outline-info me-1 shadow-sm hover-scale"
-                                title="Xem DSSV" onclick="window.location.href='@Url.Action("Index", "Registration")?filterCreditClassId=${p.id}'">
-                            <i class="bi bi-people"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row shadow-sm hover-scale"
-                                title="Sửa lớp tín chỉ"
-                                data-id="${p.id}" data-year="${p.year}" data-semester="${p.semester}"
-                                data-sub-id="${p.subjectId}" data-group="${p.group}"
-                                data-lec-id="${p.lecturerId}" data-fac-id="${p.facultyId}"
-                                data-min="${p.minStudents}" data-reg-count="${registeredCount}"
-                                data-cancelled="${p.isCancelled}">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger ${registeredCount > 0 ? '' : 'btn-delete-row'} shadow-sm ${registeredCount > 0 ? 'opacity-50' : 'hover-scale'}"
-                                title="${registeredCount > 0 ? `Không thể xóa (đã có ${registeredCount} SV)` : 'Xóa lớp tín chỉ'}" 
-                                data-id="${p.id}" ${registeredCount > 0 ? 'disabled' : ''}>
-                            <i class="bi bi-trash"></i>
-                        </button>
+                    <td class="text-end pe-3">
+                        <div class="d-flex justify-content-end gap-1">
+                            <button class="btn btn-sm btn-outline-info shadow-none hover-scale rounded-3"
+                                    title="Xem DSSV" onclick="window.location.href='@Url.Action("Index", "Registration")?filterCreditClassId=${p.id}'">
+                                <i class="bi bi-people"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary btn-edit-row shadow-none hover-scale rounded-3"
+                                    title="Sửa lớp tín chỉ"
+                                    data-id="${p.id}" data-year="${p.year}" data-semester="${p.semester}"
+                                    data-sub-id="${p.subjectId}" data-group="${p.group}"
+                                    data-lec-id="${p.lecturerId}" data-fac-id="${p.facultyId}"
+                                    data-min="${p.minStudents}" data-reg-count="${registeredCount}"
+                                    data-cancelled="${p.isCancelled}">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger shadow-none hover-scale rounded-3 ${registeredCount > 0 ? 'disabled opacity-50' : 'btn-delete-row'}"
+                                    title="${registeredCount > 0 ? `Không thể xóa (đã có ${registeredCount} SV)` : 'Xóa lớp tín chỉ'}" 
+                                    data-id="${p.id}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
                     </td>` : '';
 
                 return `
-                    <td class="fw-semibold font-monospace text-primary">${p.id}</td>
-                    <td class="small">${p.year} (HK ${p.semester})</td>
-                    <td>${subName}</td>
-                    <td class="text-center">
-                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">${p.group}</span>
+                    <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2 rounded-pill shadow-sm">${p.id}</span></td>
+                    <td class="small py-3">
+                        <div class="fw-bold text-dark">${p.year}</div>
+                        <div class="text-muted" style="font-size: 0.7rem;"><i class="bi bi-clock-history me-1"></i>Học kỳ ${p.semester}</div>
                     </td>
-                    <td class="text-truncate" style="max-width:200px;">${lecName}</td>
-                    <td class="text-center">${p.minStudents}</td>
+                    <td>
+                        <div class="fw-bold text-dark mb-1">${subName}</div>
+                        <div class="text-muted small font-monospace"><i class="bi bi-journal-code me-1"></i>${p.subjectId}</div>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-3">Nhóm ${p.group}</span>
+                    </td>
+                    <td class="text-truncate" style="max-width:200px;">
+                        <div class="fw-medium text-dark">${lecName}</div>
+                        <div class="text-muted small" style="font-size: 0.75rem;"><i class="bi bi-person-badge me-1"></i>${p.lecturerId}</div>
+                    </td>
+                    <td class="text-center fw-medium text-muted">${p.minStudents}</td>
                     <td class="text-center">${registeredHtml}</td>
                     <td class="text-center">${statusHtml}</td>
                     ${actions}
@@ -518,17 +524,17 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
             function miniRowHtml(p) {
                 const subName = fldSubjectId.options[fldSubjectId.selectedIndex]?.text.split(' (')[0] || p.subjectId;
                 const statusHtml = p.isCancelled
-                    ? '<span class="badge bg-danger-subtle text-danger border border-danger-subtle">Hủy</span>'
-                    : '<span class="badge bg-success-subtle text-success border border-success-subtle">Mở</span>';
+                    ? '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill" style="font-size:0.65rem;"><i class="bi bi-x-circle me-1"></i>HỦY</span>'
+                    : '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill" style="font-size:0.65rem;"><i class="bi bi-check-circle me-1"></i>MỞ</span>';
 
                 return `
-                    <td class="fw-bold font-monospace text-primary">${p.id}</td>
-                    <td class="text-truncate" style="max-width: 150px;" title="${subName}">${subName}</td>
+                    <td class="fw-bold font-monospace text-primary small ps-3">#${p.id}</td>
+                    <td class="text-truncate small py-2" style="max-width: 150px;" title="${subName}">${subName}</td>
                     <td class="text-center">
-                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2">${p.group}</span>
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 rounded-2" style="font-size:0.65rem;">G${p.group}</span>
                     </td>
-                    <td class="text-center">${p.minStudents}</td>
-                    <td class="text-center">${statusHtml}</td>
+                    <td class="text-center text-muted small tabular-nums">${p.minStudents}</td>
+                    <td class="text-center pe-3">${statusHtml}</td>
                 `;
             }
 
