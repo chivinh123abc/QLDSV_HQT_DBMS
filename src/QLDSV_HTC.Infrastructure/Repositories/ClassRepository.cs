@@ -24,7 +24,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                 SchoolYear = row[DbConstants.Columns.Class.SchoolYear]?.ToString() ?? string.Empty,
                 FacultyId = row[DbConstants.Columns.Class.FacultyId]?.ToString() ?? string.Empty,
                 FacultyName = row[DbConstants.Columns.Class.FacultyName]?.ToString() ?? string.Empty,
-                StudentCount = row[DbConstants.Columns.Class.StudentCount] as int? ?? 0
+                StudentCount = dt.Columns.Contains(DbConstants.Columns.Class.StudentCount) ? row[DbConstants.Columns.Class.StudentCount] as int? ?? 0 : 0
             });
         }
 
