@@ -51,7 +51,7 @@
                         @foreach (var f in Model.Faculties)
                         {
                             <tr class="mini-row transition-base" role="button"
-                                data-id="@f.Id?.Trim()" data-name="@f.Name">
+                                data-id="@f.Id?.Trim()" data-name="@f.Name" data-lecturer-count="@f.LecturerCount">
                                 <td class="fw-bold font-monospace text-primary">@f.Id?.Trim()</td>
                                 <td>@f.Name</td>
                             </tr>

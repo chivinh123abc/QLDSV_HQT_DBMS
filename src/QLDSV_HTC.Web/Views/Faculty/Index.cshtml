@@ -206,7 +206,7 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
 
             // ── Nút Xóa ──────────────────────────────────────────────
             btnXoa.addEventListener('click', () => {
-                if (!selectedId) return;
+                if (!selectedId || btnXoa.disabled) return;
                 showDeleteModal(selectedId, fldFacultyName.value);
             });
 
@@ -273,18 +273,17 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
                 const delBtn = e.target.closest('.btn-delete-row');
 
                 if (editBtn) {
-                    const id = editBtn.dataset.id;
-                    const name = editBtn.dataset.name;
+                    const ds = editBtn.dataset;
                     bootstrap.Modal.getOrCreateInstance(modal).show();
                     setTimeout(() => {
-                        populateFields(id, name);
+                        populateFields(ds.id, ds.name, parseInt(ds.lecturerCount || '0'));
                         helpers.setMode('edit');
-                        highlightMiniRow(id);
+                        highlightMiniRow(ds.id);
                         helpers.hideAlert();
                     }, 200);
                 }
 
-                if (delBtn) {
+                if (delBtn && !delBtn.disabled) {
                     showDeleteModal(delBtn.dataset.id, delBtn.dataset.name);
                 }
             });
@@ -297,15 +296,21 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
                 helpers.setMode('view');
             }
 
-            function populateFields(id, name) {
+            function populateFields(id, name, lecturerCount = 0) {
                 fldFacultyId.value = id;
                 fldFacultyName.value = name;
                 selectedId = id;
                 originalId = id;
                 snapshotData = { 
                     facultyId: id, 
-                    facultyName: name 
+                    facultyName: name,
+                    lecturerCount: lecturerCount
                 };
+
+                const canDelete = lecturerCount === 0;
+                btnXoa.disabled = !canDelete;
+                btnXoa.classList.toggle('opacity-50', !canDelete);
+                btnXoa.title = canDelete ? "Xóa khoa đang chọn" : `Không thể xóa vì còn ${lecturerCount} GV`;
             }
 
             function clearFields() {
@@ -315,7 +320,7 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
             function selectMiniRow(row) {
                 deselectMiniRow();
                 row.classList.add('table-active', 'fw-semibold');
-                populateFields(row.dataset.id, row.dataset.name);
+                populateFields(row.dataset.id, row.dataset.name, parseInt(row.dataset.lecturerCount || '0'));
                 helpers.setMode('edit');
                 helpers.hideAlert();
             }
@@ -409,6 +414,9 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
             }
 
             function mainRowHtml(p, lecturerCount = 0) {
+                const canDelete = lecturerCount === 0;
+                const deleteTooltip = canDelete ? "Xóa khoa này" : `Không thể xóa khoa vì còn ${lecturerCount} GV`;
+                
                 return `<tr data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}" data-lecturer-count="${lecturerCount}">
                         <td class="fw-semibold font-monospace text-primary">${escapeHtml(p.facultyId)}</td>
                         <td>${escapeHtml(p.facultyName)}</td>
@@ -417,20 +425,22 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
                         </td>
                         <td class="text-end">
                             <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row shadow-sm hover-scale" title="Sửa"
-                                    data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}">
+                                    data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}" data-lecturer-count="${lecturerCount}">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-sm hover-scale" title="Xóa"
-                                    data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}">
+                            <button class="btn btn-sm btn-outline-danger ${canDelete ? 'btn-delete-row hover-scale' : 'opacity-50'} shadow-sm" 
+                                    title="${deleteTooltip}"
+                                    data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}"
+                                    ${canDelete ? '' : 'disabled'}>
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>
                     </tr>`;
             }
 
-            function miniRowHtml(p) {
+            function miniRowHtml(p, lecturerCount = 0) {
                 return `<tr class="mini-row transition-base" role="button"
-                                data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}">
+                                data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}" data-lecturer-count="${lecturerCount}">
                         <td class="fw-bold font-monospace text-primary small">${escapeHtml(p.facultyId)}</td>
                         <td class="small">${escapeHtml(p.facultyName)}</td>
                     </tr>`;
