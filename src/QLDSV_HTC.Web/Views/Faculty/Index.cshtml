@@ -4,7 +4,6 @@
     ViewData["Title"] = "Quản lý Khoa";
     var isPGV = User.IsInRole("PGV");
     var hasFaculty = User.IsInRole("KHOA");
-    var pageTitle = "Danh sách Khoa";
 
     ViewData["isPGV"] = isPGV;
     ViewData["hasFaculty"] = hasFaculty;
@@ -12,25 +11,7 @@
 
 <div class="dashboard-container fade-in-up">
 
-    @* ── Thanh tiêu đề + nút Thêm Khoa ── *@
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-1 fw-bold text-gray-800">@pageTitle</h1>
-            <p class="text-muted mb-0 small">
-                <i class="bi bi-building me-1"></i>
-                Tổng: <strong>@Model.Faculties.Count()</strong> khoa
-            </p>
-        </div>
-        @if (isPGV)
-        {
-            <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2" id="btnOpenFacultyForm" type="button"
-                data-bs-toggle="modal" data-bs-target="#facultyFormModal">
-                <i class="bi bi-pencil-square"></i>
-                <span>Cập nhật danh mục Khoa</span>
-            </button>
-        }
-    </div>
-
+<div class="dashboard-container fade-in-up">
     @* ── Bảng danh sách khoa ── *@
     @await Html.PartialAsync("_FacultyTable", Model, ViewData)
 </div>
@@ -415,34 +396,52 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
 
             function mainRowHtml(p, lecturerCount = 0) {
                 const canDelete = lecturerCount === 0;
-                const deleteTooltip = canDelete ? "Xóa khoa này" : `Không thể xóa khoa vì còn ${lecturerCount} GV`;
+                const deleteTooltip = canDelete ? "Xóa khoa này" : `Không thể xóa khoa vì đang có ${lecturerCount} giảng viên`;
                 
-                return `<tr data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}" data-lecturer-count="${lecturerCount}">
-                        <td class="fw-semibold font-monospace text-primary">${escapeHtml(p.facultyId)}</td>
-                        <td>${escapeHtml(p.facultyName)}</td>
-                        <td>
-                             <span class="badge text-primary bg-secondary-subtle border-primary border px-2">${lecturerCount}</span>
-                        </td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row shadow-sm hover-scale" title="Sửa"
+                return `<tr data-id="${escapeHtml(p.facultyId)}" 
+                            data-name="${escapeHtml(p.facultyName)}" 
+                            data-lecturer-count="${lecturerCount}"
+                            class="hover-row transition-base">
+                    <td>
+                        <span class="badge bg-primary-subtle text-primary tabular-nums border border-primary-subtle px-2 py-1 font-monospace">
+                            ${escapeHtml(p.facultyId)}
+                        </span>
+                    </td>
+                    <td class="fw-medium">${escapeHtml(p.facultyName)}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="badge-status ${lecturerCount > 0 ? 'badge-info' : 'badge-secondary text-muted bg-light'} d-flex align-items-center gap-1">
+                                <i class="bi ${lecturerCount > 0 ? 'bi-person-check' : 'bi-person-dash'} small"></i>
+                                <span class="tabular-nums">${lecturerCount}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-end action-cell">
+                        <div class="d-flex justify-content-end gap-1">
+                            <button class="btn btn-sm btn-icon btn-outline-primary btn-edit-row hover-scale shadow-sm" 
+                                    title="Chỉnh sửa thông tin khoa"
                                     data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}" data-lecturer-count="${lecturerCount}">
-                                <i class="bi bi-pencil"></i>
+                                <i class="bi bi-pencil-square"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger ${canDelete ? 'btn-delete-row hover-scale' : 'opacity-50'} shadow-sm" 
+                            <button class="btn btn-sm btn-icon ${canDelete ? 'btn-outline-danger btn-delete-row hover-scale shadow-sm' : 'btn-light text-muted border-0 opacity-50'}" 
                                     title="${deleteTooltip}"
                                     data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}"
                                     ${canDelete ? '' : 'disabled'}>
-                                <i class="bi bi-trash"></i>
+                                <i class="bi ${canDelete ? 'bi-trash3' : 'bi-trash3-fill'}"></i>
                             </button>
-                        </td>
-                    </tr>`;
+                        </div>
+                    </td>
+                </tr>`;
             }
 
             function miniRowHtml(p, lecturerCount = 0) {
                 return `<tr class="mini-row transition-base" role="button"
                                 data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}" data-lecturer-count="${lecturerCount}">
                         <td class="fw-bold font-monospace text-primary small">${escapeHtml(p.facultyId)}</td>
-                        <td class="small">${escapeHtml(p.facultyName)}</td>
+                        <td class="small d-flex justify-content-between align-items-center">
+                            <span>${escapeHtml(p.facultyName)}</span>
+                            <span class="badge rounded-pill bg-light text-muted border tabular-nums" style="font-size: 0.65rem">${lecturerCount}</span>
+                        </td>
                     </tr>`;
             }
 
@@ -459,16 +458,40 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
             }
 
             // Client-side search
-            document.getElementById('facultySearch')?.addEventListener('input', () => {
-                const q = (document.getElementById('facultySearch')?.value ?? '').toLowerCase();
+            const searchInput = document.getElementById('facultySearch');
+            const clearSearchBtn = document.getElementById('clearFacultySearch');
+
+            function performSearch() {
+                const q = (searchInput?.value ?? '').toLowerCase();
                 let vis = 0;
+                
+                clearSearchBtn?.classList.toggle('d-none', !q);
+
                 document.querySelectorAll('#facultyTableBody tr[data-id]').forEach(row => {
                     const match = !q || row.dataset.id.toLowerCase().includes(q) || (row.dataset.name ?? '').toLowerCase().includes(q);
                     row.style.display = match ? '' : 'none';
                     if (match) vis++;
                 });
+                
                 const vc = document.getElementById('visibleCount');
                 if (vc) vc.textContent = String(vis);
+            }
+
+            searchInput?.addEventListener('input', performSearch);
+
+            clearSearchBtn?.addEventListener('click', () => {
+                if (searchInput) {
+                    searchInput.value = '';
+                    performSearch();
+                    searchInput.focus();
+                }
+            });
+
+            searchInput?.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    searchInput.value = '';
+                    performSearch();
+                }
             });
 
         })();

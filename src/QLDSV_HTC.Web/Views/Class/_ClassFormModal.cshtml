@@ -17,42 +17,68 @@
         
         BodySection = @<text>
             <div class="row g-3">
+                <!-- Class ID -->
                 <div class="col-md-4">
-                    <label for="fldClassId" class="form-label fw-semibold">
+                    <label for="fldClassId" class="form-label fw-bold small text-muted text-uppercase mb-1">
                         Mã Lớp <span class="text-danger">*</span>
                     </label>
-                    <input type="text" class="form-control font-monospace border-primary-subtle" id="fldClassId"
-                           maxlength="20" placeholder="VD: D15CQCN01-N">
-                    <div class="invalid-feedback">Vui lòng nhập mã lớp.</div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-primary-subtle text-primary"><i class="bi bi-hash"></i></span>
+                        <input type="text" class="form-control font-monospace border-primary-subtle shadow-none" id="fldClassId"
+                               maxlength="20" placeholder="VD: D15CQCN01-N">
+                        <div class="invalid-feedback">Vui lòng nhập mã lớp.</div>
+                    </div>
                 </div>
+
+                <!-- Class Name -->
                 <div class="col-md-8">
-                    <label for="fldClassName" class="form-label fw-semibold">
+                    <label for="fldClassName" class="form-label fw-bold small text-muted text-uppercase mb-1">
                         Tên Lớp <span class="text-danger">*</span>
                     </label>
-                    <input type="text" class="form-control" id="fldClassName"
-                           maxlength="100" placeholder="VD: Công nghệ thông tin 01" disabled>
-                    <div class="invalid-feedback">Vui lòng nhập tên lớp.</div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-primary-subtle text-primary"><i class="bi bi-mortarboard"></i></span>
+                        <input type="text" class="form-control border-primary-subtle shadow-none" id="fldClassName"
+                               maxlength="100" placeholder="VD: Công nghệ thông tin 01" disabled>
+                        <div class="invalid-feedback">Vui lòng nhập tên lớp.</div>
+                    </div>
                 </div>
+
+                <!-- School Year -->
                 <div class="col-md-4">
-                    <label for="fldSchoolYear" class="form-label fw-semibold">
+                    <label for="fldSchoolYear" class="form-label fw-bold small text-muted text-uppercase mb-1">
                         Khóa Học <span class="text-danger">*</span>
                     </label>
-                    <input type="text" class="form-control" id="fldSchoolYear"
-                           maxlength="10" placeholder="VD: 2015" disabled>
-                    <div class="invalid-feedback">Vui lòng nhập khóa học.</div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-primary-subtle text-primary"><i class="bi bi-calendar-event"></i></span>
+                        <input type="text" class="form-control border-primary-subtle shadow-none tabular-nums" id="fldSchoolYear"
+                               maxlength="10" placeholder="VD: 2015" disabled>
+                        <div class="invalid-feedback">Vui lòng nhập khóa học.</div>
+                    </div>
                 </div>
+
+                <!-- Faculty selection -->
                 <div class="col-md-8">
-                    <label for="fldFacultyId" class="form-label fw-semibold">
+                    <label for="fldFacultyId" class="form-label fw-bold small text-muted text-uppercase mb-1">
                         Khoa <span class="text-danger">*</span>
                     </label>
-                    <select class="form-select" id="fldFacultyId" disabled>
-                        <option value="">— Chọn khoa —</option>
-                        @foreach (var f in Model.Faculties)
-                        {
-                            <option value="@f.Id?.Trim()">@f.Name (@f.Id?.Trim())</option>
-                        }
-                    </select>
-                    <div class="invalid-feedback">Vui lòng chọn khoa.</div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-primary-subtle text-primary"><i class="bi bi-building"></i></span>
+                        <select class="form-select border-primary-subtle shadow-none" id="fldFacultyId" disabled>
+                            <option value="">— Chọn khoa —</option>
+                            @foreach (var f in Model.Faculties)
+                            {
+                                <option value="@f.Id?.Trim()">@f.Name (@f.Id?.Trim())</option>
+                            }
+                        </select>
+                        <div class="invalid-feedback">Vui lòng chọn khoa.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="alert alert-light border shadow-sm p-3 rounded-3 mt-4 mb-0 d-flex align-items-start gap-3">
+                <i class="bi bi-info-circle-fill text-primary fs-4"></i>
+                <div class="small text-muted">
+                    <h6 class="text-dark fw-bold mb-1">Ghi chú</h6>
+                    Khi cập nhật lớp, hệ thống sẽ kiểm tra tính duy nhất của mã lớp. Bạn có thể xem danh sách lớp hiện có ở bảng bên dưới để tránh trùng lặp.
                 </div>
             </div>
         </text>,
@@ -63,14 +89,14 @@
                 <span>Danh sách lớp hiện có</span>
                 @if (hasFaculty) { <span class="badge bg-primary px-2 fw-normal" style="font-size:0.7rem">Khoa @Model.CurrentFacultyId?.Trim()</span> }
             </h6>
-            <div class="table-responsive rounded-3 border border-light-subtle shadow-sm" style="max-height:240px; overflow-y:auto">
+            <div class="table-responsive rounded-3 border border-light-subtle shadow-sm overflow-hidden" style="max-height:240px; overflow-y:auto">
                 <table class="table table-sm table-hover align-middle mb-0" id="miniClassTable">
                     <thead class="table-light sticky-top">
-                        <tr class="small text-muted">
-                            <th>Mã Lớp</th>
-                            <th>Tên Lớp</th>
-                            <th>Khóa</th>
-                            <th>Khoa</th>
+                        <tr class="text-uppercase small fw-bold text-muted border-bottom-0">
+                            <th class="ps-3"><i class="bi bi-hash text-primary me-1"></i> Mã Lớp</th>
+                            <th><i class="bi bi-mortarboard text-primary me-1"></i> Tên Lớp</th>
+                            <th class="text-center"><i class="bi bi-calendar-event text-primary me-1"></i> Khóa</th>
+                            <th class="text-center pe-3"><i class="bi bi-building text-primary me-1"></i> Khoa</th>
                         </tr>
                     </thead>
                     <tbody id="miniClassBody" class="small">
@@ -79,10 +105,20 @@
                             <tr class="mini-row transition-base" role="button"
                                 data-id="@cls.Id?.Trim()" data-name="@cls.Name"
                                 data-year="@cls.Year" data-faculty="@cls.FacultyId?.Trim()">
-                                <td class="fw-bold font-monospace text-primary">@cls.Id?.Trim()</td>
-                                <td>@cls.Name</td>
-                                <td>@cls.Year</td>
-                                <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle small px-2">@cls.FacultyId?.Trim()</span></td>
+                                <td class="ps-3 fw-bold font-monospace text-primary">
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill">
+                                        @cls.Id?.Trim()
+                                    </span>
+                                </td>
+                                <td class="fw-bold text-dark">@cls.Name</td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border tabular-nums rounded-pill px-2">@cls.Year</span>
+                                </td>
+                                <td class="text-center pe-3">
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 rounded-pill">
+                                        @cls.FacultyId?.Trim()
+                                    </span>
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -94,7 +130,7 @@
     ViewData["ModalId"] = "classFormModal";
     ViewData["ModalLabelId"] = "classFormModalLabel";
     ViewData["ModalTitle"] = "Nhập danh mục Lớp";
-    ViewData["ModalIcon"] = "bi-folder-plus";
+    ViewData["ModalIcon"] = "bi-mortarboard-fill";
     ViewData["FormId"] = "classForm";
     ViewData["AlertId"] = "formAlert";
 }

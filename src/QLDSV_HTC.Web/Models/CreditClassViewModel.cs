@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace QLDSV_HTC.Web.Models
 {
     public class CreditClassViewModel
@@ -38,27 +40,37 @@ namespace QLDSV_HTC.Web.Models
     {
         public int? OldCreditClassId { get; set; }
 
-        public int CreditClassId { get; set; }
+        [Required]
+        public int? CreditClassId { get; set; }
 
+        [Required]
         public string Year { get; set; } = string.Empty;
 
-        public int Semester { get; set; }
+        [Required]
+        public int? Semester { get; set; }
 
+        [Required]
         public string SubjectId { get; set; } = string.Empty;
 
-        public int Group { get; set; }
+        [Required]
+        public int? Group { get; set; }
 
+        [Required]
         public string LecturerId { get; set; } = string.Empty;
 
+        [Required]
         public string FacultyId { get; set; } = string.Empty;
 
-        public int MinStudents { get; set; }
+        [Required]
+        public int? MinStudents { get; set; }
 
-        public bool IsCancelled { get; set; }
+        [Required]
+        public bool? IsCancelled { get; set; }
     }
 
     public class CreditClassDeleteModel
     {
-        public int CreditClassId { get; set; }
+        [Required]
+        public int? CreditClassId { get; set; }
     }
 }

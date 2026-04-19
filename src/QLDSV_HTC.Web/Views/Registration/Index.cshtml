@@ -8,40 +8,32 @@
 }
 
 <div class="dashboard-container fade-in-up">
-
-    @* ── Tiêu đề ── *@
-    <div class="mb-4">
-        <h1 class="h3 fw-bold mb-1 text-gray-800">Đăng ký lớp tín chỉ</h1>
-        <p class="text-muted mb-0 small">
-            <i class="bi bi-clipboard-check me-1"></i>
-            Chọn Niên khóa và Học kỳ để xem các lớp đang mở, sau đó nhấn <strong>Đăng ký</strong> hoặc <strong>Rời lớp</strong>.
-        </p>
-    </div>
+    @* Registration header/title handled by TitleSection in _RegistrationTable *@
 
     @* ── Thông tin Sinh viên ── *@
-    <div class="card border-0 shadow-sm mb-4 rounded-3"
-         style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
-        <div class="card-body p-4 text-white">
-            <div class="row align-items-center g-3">
-                <div class="col-auto">
-                    <div class="d-flex align-items-center justify-content-center rounded-circle bg-white bg-opacity-25 fw-bold fs-4 shadow"
-                         style="width: 3.5rem; height: 3.5rem; color: #fff; letter-spacing: 1px;">
+    <div class="card border-0 shadow-lg mb-4 rounded-4 overflow-hidden animate__animated animate__fadeIn">
+        <div class="card-body p-0">
+            <div class="row g-0">
+                <div class="col-md-auto bg-primary bg-gradient d-flex flex-column align-items-center justify-content-center p-4 text-white" style="min-width: 180px;">
+                    <div class="d-flex align-items-center justify-content-center rounded-circle bg-white bg-opacity-25 fw-bold fs-2 mb-2 shadow-sm"
+                         style="width: 5rem; height: 5rem; letter-spacing: 2px; border: 3px solid rgba(255,255,255,0.3);">
                         @initials
                     </div>
+                    <div class="fw-bold text-uppercase small" style="letter-spacing: 1px;">Sinh viên</div>
                 </div>
-                <div class="col">
-                    <div class="row g-3">
+                <div class="col p-4 bg-white">
+                    <div class="row g-4">
                         <div class="col-6 col-md-4">
-                            <div class="opacity-75 small mb-1">Mã sinh viên</div>
-                            <div class="fw-bold font-monospace">@Model.StudentId</div>
+                            <div class="text-xs fw-bold text-uppercase text-muted mb-1">Mã sinh viên</div>
+                            <div class="fw-bold font-monospace text-primary fs-5">@Model.StudentId</div>
                         </div>
                         <div class="col-6 col-md-4">
-                            <div class="opacity-75 small mb-1">Họ và tên</div>
-                            <div class="fw-bold">@(string.IsNullOrWhiteSpace(Model.StudentFullName) ? "—" : Model.StudentFullName)</div>
+                            <div class="text-xs fw-bold text-uppercase text-muted mb-1">Họ và tên</div>
+                            <div class="fw-bold text-dark fs-5">@(string.IsNullOrWhiteSpace(Model.StudentFullName) ? "—" : Model.StudentFullName)</div>
                         </div>
                         <div class="col-6 col-md-4">
-                            <div class="opacity-75 small mb-1">Mã lớp học</div>
-                            <div class="fw-bold font-monospace">@(string.IsNullOrWhiteSpace(Model.StudentClass) ? "—" : Model.StudentClass)</div>
+                            <div class="text-xs fw-bold text-uppercase text-muted mb-1">Lớp học</div>
+                            <div class="fw-bold font-monospace text-dark fs-5">@(string.IsNullOrWhiteSpace(Model.StudentClass) ? "—" : Model.StudentClass)</div>
                         </div>
                     </div>
                 </div>
@@ -50,34 +42,44 @@
     </div>
 
     @* ── Bộ lọc (auto-filter, no button) ── *@
-    <div class="card border-0 shadow-sm mb-4 rounded-3">
+    <div class="card border-0 shadow-sm mb-4 rounded-4 bg-white overflow-hidden">
         <div class="card-body p-4">
-            <h6 class="fw-bold mb-3 text-body">
-                <i class="bi bi-funnel me-2 text-primary"></i>Lọc lớp tín chỉ
-            </h6>
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="icon-box-sm bg-primary-subtle text-primary rounded-circle">
+                    <i class="bi bi-funnel-fill"></i>
+                </div>
+                <h6 class="fw-bold mb-0 text-dark">Lọc lớp tín chỉ</h6>
+            </div>
+            
             <div class="row g-3 align-items-end">
                 <div class="col-sm-6 col-md-4 col-lg-3">
-                    <label for="selYear" class="form-label small fw-semibold">Niên khóa</label>
-                    <select id="selYear" class="form-select shadow-none">
-                        @foreach (var y in Model.Years)
-                        {
-                            <option value="@y" selected="@(y == Model.CurrentYear)">@y</option>
-                        }
-                    </select>
+                    <label for="selYear" class="form-label small fw-bold text-muted">Niên khóa</label>
+                    <div class="input-group input-group-merge shadow-none border rounded-3 overflow-hidden">
+                        <span class="input-group-text bg-light border-0"><i class="bi bi-calendar3 text-primary"></i></span>
+                        <select id="selYear" class="form-select border-0 bg-white shadow-none ps-0">
+                            @foreach (var y in Model.Years)
+                            {
+                                <option value="@y" selected="@(y == Model.CurrentYear)">@y</option>
+                            }
+                        </select>
+                    </div>
                 </div>
-                <div class="col-sm-6 col-md-3 col-lg-2">
-                    <label for="selSemester" class="form-label small fw-semibold">Học kỳ</label>
-                    <select id="selSemester" class="form-select shadow-none">
-                        @foreach (var s in Model.Semesters)
-                        {
-                            <option value="@s" selected="@(s == Model.CurrentSemester)">Học kỳ @s</option>
-                        }
-                    </select>
+                <div class="col-sm-6 col-md-4 col-lg-2">
+                    <label for="selSemester" class="form-label small fw-bold text-muted">Học kỳ</label>
+                    <div class="input-group input-group-merge shadow-none border rounded-3 overflow-hidden">
+                        <span class="input-group-text bg-light border-0"><i class="bi bi-clock-history text-primary"></i></span>
+                        <select id="selSemester" class="form-select border-0 bg-white shadow-none ps-0">
+                            @foreach (var s in Model.Semesters)
+                            {
+                                <option value="@s" selected="@(s == Model.CurrentSemester)">Học kỳ @s</option>
+                            }
+                        </select>
+                    </div>
                 </div>
-                <div class="col-sm-12 col-md-5 col-lg-4">
-                    <div id="filterStatus" class="d-flex align-items-center gap-2">
-                        <span class="spinner-border spinner-border-sm text-primary d-none" id="filterSpinner"></span>
-                        <span class="small text-muted" id="filterMessage"></span>
+                <div class="col-sm-12 col-md-4 col-lg-4">
+                    <div id="filterStatus" class="d-flex align-items-center gap-2 py-2">
+                        <div class="spinner-border spinner-border-sm text-primary d-none" id="filterSpinner" role="status"></div>
+                        <span class="small text-muted" id="filterMessage">Sẵn sàng lọc</span>
                     </div>
                 </div>
             </div>
@@ -99,7 +101,6 @@
     const URL_REGISTER    = '@RouteConstants.Registration.RegisterPath';
     const URL_UNREGISTER  = '@RouteConstants.Registration.UnregisterPath';
 
-    // Current school year/semester for past-blocking
     const CURRENT_YEAR     = '@Model.CurrentYear';
     const CURRENT_SEMESTER = @Model.CurrentSemester;
 
@@ -115,20 +116,17 @@
     let allData = [];
     let debounceTimer = null;
 
-    // ── Khởi tạo: disable past options & auto-filter on load ──────────
     disablePastOptions();
     selYear.addEventListener('change', () => { disablePastSemesters(); doFilter(); });
     selSemester.addEventListener('change', () => doFilter());
 
-    // Auto-filter on page load with current year/semester
     doFilter();
 
-    // ── Disable past year options in dropdown ─────────────────────────
     function disablePastOptions() {
         Array.from(selYear.options).forEach(opt => {
             if (opt.value && opt.value < CURRENT_YEAR) {
                 opt.disabled = true;
-                opt.textContent = opt.value + ' (quá khứ)';
+                opt.textContent = opt.value + ' (Quá khứ)';
             }
         });
         disablePastSemesters();
@@ -145,14 +143,12 @@
             }
         });
 
-        // If currently selected semester is disabled, bump to current
         const currentOpt = selSemester.options[selSemester.selectedIndex];
         if (currentOpt && currentOpt.disabled) {
             selSemester.value = CURRENT_SEMESTER.toString();
         }
     }
 
-    // ── Filter (AJAX) ─────────────────────────────────────────────────
     async function doFilter() {
         const year     = selYear.value;
         const semester = parseInt(selSemester.value);
@@ -174,7 +170,7 @@
 
             allData = json.data;
             renderRows(filterBySearch(allData));
-            setFilterStatus(`Đã tải ${allData.length} lớp`, 'text-success');
+            setFilterStatus(`Đã tải ${allData.length} lớp`, 'text-success fw-bold');
         } catch (err) {
             showMessage('Lỗi kết nối: ' + err.message, 'wifi-off');
             setFilterStatus('Lỗi kết nối', 'text-danger');
@@ -185,7 +181,7 @@
 
     function setLoading(loading) {
         filterSpinner.classList.toggle('d-none', !loading);
-        if (loading) filterMessage.textContent = 'Đang tải…';
+        if (loading) filterMessage.textContent = 'Đang tải dữ liệu…';
     }
 
     function setFilterStatus(msg, cls) {
@@ -193,12 +189,21 @@
         filterMessage.className = `small ${cls}`;
     }
 
-    // ── Tìm kiếm client-side (debounced) ─────────────────────────────
+    const btnClearSearch = document.getElementById('btnClearSearch');
+    
     searchInput.addEventListener('input', () => {
+        btnClearSearch.classList.toggle('d-none', !searchInput.value);
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
             if (allData.length > 0) renderRows(filterBySearch(allData));
         }, 200);
+    });
+
+    btnClearSearch.addEventListener('click', () => {
+        searchInput.value = '';
+        btnClearSearch.classList.add('d-none');
+        searchInput.focus();
+        if (allData.length > 0) renderRows(filterBySearch(allData));
     });
 
     function filterBySearch(data) {
@@ -211,27 +216,31 @@
         );
     }
 
-    // ── Render bảng ───────────────────────────────────────────────────
     function renderRows(data) {
         if (data.length === 0) {
-            showMessage('Không tìm thấy lớp tín chỉ phù hợp.', 'inbox');
+            showMessage('Không tìm thấy lớp tín chỉ phù hợp.', 'search');
             return;
         }
 
-        // Lấy danh sách các Mã môn học đã được đăng ký
         const registeredSubjectCodes = new Set(
             data.filter(x => x.isRegistered).map(x => x.subjectCode)
         );
 
         tbody.innerHTML = data.map(c => {
-            const ratio = c.minStudents > 0 ? c.registered / c.minStudents : 0;
-            const countClass = ratio >= 1 ? 'text-danger fw-bold' : ratio >= 0.7 ? 'text-warning fw-bold' : 'text-success fw-bold';
+            let statusBadge = '';
+            if (c.registered >= c.minStudents) {
+                statusBadge = '<span class="badge-status badge-success px-2 py-1 rounded-pill shadow-sm"><i class="bi bi-check-circle me-1"></i>Đủ SV</span>';
+            } else if (c.registered >= c.minStudents * 0.7) {
+                statusBadge = '<span class="badge-status badge-warning px-2 py-1 rounded-pill shadow-sm"><i class="bi bi-info-circle me-1"></i>Sắp đủ</span>';
+            } else {
+                statusBadge = '<span class="badge-status bg-light text-muted border px-2 py-1 rounded-pill shadow-sm">Đang mở</span>';
+            }
 
             let btn = '';
             if (c.isRegistered) {
-                btn = `<button class="btn btn-sm btn-outline-danger px-3 rounded-pill action-btn"
+                btn = `<button class="btn btn-sm btn-outline-danger px-3 rounded-pill action-btn hover-scale shadow-none"
                                data-id="${c.id}" data-action="unregister">
-                           <i class="bi bi-dash-circle me-1"></i>Rời lớp
+                           <i class="bi bi-dash-circle me-1"></i>Hủy ĐK
                        </button>`;
             } else {
                 const isDuplicateSubject = registeredSubjectCodes.has(c.subjectCode);
@@ -239,50 +248,61 @@
                 const styleAttr = isDuplicateSubject ? 'style="opacity: 0.5; cursor: not-allowed;"' : '';
                 const titleAttr = isDuplicateSubject ? 'title="Bạn đã đăng ký môn học này ở nhóm khác"' : 'title="Đăng ký lớp học này"';
 
-                btn = `<button class="btn btn-sm btn-outline-primary px-3 rounded-pill action-btn ${disabledAttr}"
+                btn = `<button class="btn btn-sm btn-primary px-3 rounded-pill action-btn hover-scale shadow-sm ${disabledAttr}"
                                data-id="${c.id}" data-action="register" ${disabledAttr} ${styleAttr} ${titleAttr}>
                            <i class="bi bi-plus-circle me-1"></i>Đăng ký
                        </button>`;
             }
 
             const regBadge = c.isRegistered
-                ? `<span class="badge bg-success-subtle text-success border border-success-subtle ms-2 small">Đã ĐK</span>`
+                ? `<span class="badge bg-success bg-opacity-10 text-success border border-success-subtle ms-2 small px-2 py-1" style="font-size: 0.65rem;">ĐÃ ĐK</span>`
                 : '';
 
-            return `<tr data-id="${c.id}">
+            return `<tr class="hover-row transition-base animate__animated animate__fadeIn" data-id="${c.id}">
                 <td class="ps-4">
-                    <span class="font-monospace fw-semibold text-primary small">${esc(c.subjectCode)}</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill shadow-sm font-monospace tabular-nums">
+                        ${esc(c.subjectCode)}
+                    </span>
                 </td>
-                <td class="fw-semibold">${esc(c.subjectName)}${regBadge}</td>
-                <td class="text-center">
-                    <span class="badge bg-info-subtle text-info border border-info-subtle px-2">${c.group}</span>
+                <td>
+                    <div class="fw-bold text-dark d-flex align-items-center">
+                        ${esc(c.subjectName)}${regBadge}
+                    </div>
                 </td>
-                <td class="text-muted small">${esc(c.lecturer)}</td>
                 <td class="text-center">
-                    <span class="${countClass}">${c.registered}</span>
-                    <span class="text-muted small"> / ${c.minStudents}</span>
+                    <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1 rounded-pill shadow-sm tabular-nums">${c.group}</span>
+                </td>
+                <td>
+                    <div class="text-dark fw-semibold small d-flex align-items-center">
+                        <i class="bi bi-person text-muted me-2"></i>${esc(c.lecturer)}
+                    </div>
+                </td>
+                <td class="text-center">
+                    <div class="d-flex flex-column align-items-center gap-1">
+                        <div class="fw-bold text-dark tabular-nums">${c.registered} / ${c.minStudents}</div>
+                        ${statusBadge}
+                    </div>
                 </td>
                 <td class="pe-4 text-center">${btn}</td>
             </tr>`;
         }).join('');
 
-        resultCount.textContent = data.length + ' lớp';
-        footerInfo.innerHTML = `<i class="bi bi-list-check me-1"></i>Hiển thị <strong>${data.length}</strong> / ${allData.length} lớp`;
+        resultCount.innerHTML = `<i class="bi bi-list-stars me-1"></i> ${data.length} lớp`;
+        footerInfo.innerHTML = `<i class="bi bi-collection-play me-1"></i>Hiển thị <strong class="text-primary">${data.length}</strong> / ${allData.length} lớp tín chỉ phù hợp`;
 
-        // Event delegation for action buttons
         tbody.querySelectorAll('.action-btn').forEach(btn => {
             btn.addEventListener('click', () => handleAction(btn));
         });
     }
 
-    // ── Xử lý Đăng ký / Rời lớp ──────────────────────────────────────
     async function handleAction(btn) {
         const id     = parseInt(btn.dataset.id);
         const action = btn.dataset.action;
         const url    = action === 'register' ? URL_REGISTER : URL_UNREGISTER;
 
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
 
         try {
             const res  = await fetch(url, {
@@ -308,31 +328,35 @@
             } else {
                 window.showToast(json.message, 'danger');
                 btn.disabled = false;
-                btn.innerHTML = action === 'register'
-                    ? '<i class="bi bi-plus-circle me-1"></i>Đăng ký'
-                    : '<i class="bi bi-dash-circle me-1"></i>Rời lớp';
+                btn.innerHTML = originalContent;
             }
         } catch (err) {
             window.showToast('Lỗi: ' + err.message, 'danger');
             btn.disabled = false;
+            btn.innerHTML = originalContent;
         }
     }
 
     function showMessage(msg, icon) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-5">
-            <div class="d-flex flex-column align-items-center gap-2">
-                <i class="bi bi-${icon} fs-1 opacity-25"></i>
-                <span>${msg}</span>
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-5 border-0">
+            <div class="animate__animated animate__fadeIn py-4">
+                <div class="icon-box-lg bg-light rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-${icon} fs-2 text-body-tertiary"></i>
+                </div>
+                <h6 class="text-dark fw-bold mb-1">${msg}</h6>
+                <p class="text-muted small">Hãy thử điều chỉnh bộ lọc hoặc tìm kiếm.</p>
             </div>
         </td></tr>`;
         resultCount.textContent = '0 lớp';
-        footerInfo.innerHTML = `<i class="bi bi-info-circle me-1"></i>${msg}`;
+        footerInfo.innerHTML = `<i class="bi bi-info-circle me-1 text-warning"></i> ${msg}`;
     }
 
     function esc(str) {
+        if (!str) return '';
         return String(str)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 })();
 </script>
 }
+

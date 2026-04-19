@@ -2,47 +2,105 @@
 @using QLDSV_HTC.Web.Models
 
 @{
+    // ── Prepare Title Section ──
+    ViewData["TitleSection"] = (Func<object, Microsoft.AspNetCore.Html.IHtmlContent>)(@<text>
+        <div class="d-flex align-items-center gap-2">
+            <div class="bg-primary bg-opacity-10 text-primary rounded-2 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <i class="bi bi-journal-check fs-5"></i>
+            </div>
+            <div>
+                <h5 class="mb-0 fw-bold text-dark">Đăng ký lớp tín chỉ</h5>
+                <div class="text-muted small">Đăng ký và quản lý các lớp học trong học kỳ</div>
+            </div>
+        </div>
+        <div class="ms-auto d-flex gap-2">
+            <div class="d-none d-md-flex align-items-center bg-info bg-opacity-10 text-info border border-info-subtle px-3 py-1 rounded-pill small">
+                <i class="bi bi-info-circle me-2"></i>
+                <span>Chỉ hiển thị các lớp đang mở đăng ký</span>
+            </div>
+        </div>
+    </text>);
+
     var tableModel = new GenericTableViewModel
     {
         FiltersSection = @<text>
-            <div class="input-group" style="max-width:360px">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="bi bi-search text-muted"></i>
-                </span>
-                <input type="text" id="searchInput" class="form-control border-start-0"
-                       placeholder="Tìm mã, tên môn học hoặc giảng viên…">
+            <div class="d-flex flex-wrap gap-3 align-items-center w-100">
+                <div class="glass-search flex-grow-1" style="max-width:480px">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="searchInput" class="search-input" 
+                           placeholder="Tìm mã, tên môn học hoặc giảng viên…">
+                    <button class="btn-clear-search d-none" type="button" id="btnClearSearch" title="Xóa tìm kiếm">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                </div>
+                
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <span class="text-muted small d-none d-lg-inline">Kết quả:</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill shadow-sm" id="resultCount">
+                        <i class="bi bi-funnel me-1"></i> Chưa lọc
+                    </span>
+                </div>
             </div>
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 ms-auto" id="resultCount">
-                Chưa lọc
-            </span>
         </text>,
 
         HeadSection = @<text>
-            <tr>
-                <th scope="col" class="ps-4" style="width:120px">Mã MH</th>
-                <th scope="col">Tên môn học</th>
-                <th scope="col" class="text-center" style="width:80px">Nhóm</th>
-                <th scope="col" style="width:200px">Giảng viên</th>
-                <th scope="col" class="text-center" style="width:120px">SV đã ĐK</th>
-                <th scope="col" class="text-center pe-4" style="width:140px">Thao tác</th>
+            <tr class="text-uppercase small fw-bold text-muted border-bottom-0">
+                <th scope="col" class="ps-4" style="width:140px">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-hash me-2 text-primary"></i>Mã MH
+                    </div>
+                </th>
+                <th scope="col">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-journal-text me-2 text-primary"></i>Tên môn học
+                    </div>
+                </th>
+                <th scope="col" class="text-center" style="width:100px">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="bi bi-collection me-2 text-primary"></i>Nhóm
+                    </div>
+                </th>
+                <th scope="col" style="width:200px">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-badge me-2 text-primary"></i>Giảng viên
+                    </div>
+                </th>
+                <th scope="col" class="text-center" style="width:140px">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="bi bi-people me-2 text-primary"></i>SV đã ĐK
+                    </div>
+                </th>
+                <th scope="col" class="text-center pe-4" style="width:150px">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="bi bi-lightning-charge me-2 text-primary"></i>Thao tác
+                    </div>
+                </th>
             </tr>
         </text>,
 
         BodySection = @<text>
             <tr id="emptyRow">
-                <td colspan="6" class="text-center text-muted py-5">
-                    <div class="d-flex flex-column align-items-center gap-2">
-                        <i class="bi bi-hourglass-split fs-1 opacity-25"></i>
-                        <span>Đang tải danh sách lớp tín chỉ...</span>
+                <td colspan="6" class="text-center text-muted py-5 border-0">
+                    <div class="animate__animated animate__fadeIn py-5">
+                        <div class="icon-box-xl bg-light text-primary opacity-25 mx-auto mb-3">
+                            <i class="bi bi-hourglass-split fs-1"></i>
+                        </div>
+                        <h5 class="text-dark fw-semibold">Đang tải danh sách...</h5>
+                        <p class="text-muted small">Vui lòng chọn Niên khóa và Học kỳ để xem các lớp tín chỉ.</p>
                     </div>
                 </td>
             </tr>
         </text>,
 
         FooterSection = @<text>
-            <span class="text-muted small" id="footerInfo">
-                <i class="bi bi-info-circle me-1"></i>Chọn niên khóa và học kỳ để lọc
-            </span>
+            <div class="d-flex align-items-center gap-2 px-3 py-1">
+                <div class="icon-box-xs bg-primary-subtle text-primary rounded-circle">
+                    <i class="bi bi-info-circle-fill" style="font-size: 0.75rem;"></i>
+                </div>
+                <span class="text-muted small fw-medium" id="footerInfo">
+                    Chọn niên khóa và học kỳ để lọc dữ liệu
+                </span>
+            </div>
         </text>
     };
 
@@ -51,3 +109,4 @@
 }
 
 @await Html.PartialAsync("_CardTableWrapper", tableModel, ViewData)
+

@@ -15,21 +15,37 @@
         
         BodySection = @<text>
             <div class="row g-3">
+                <!-- Faculty ID -->
                 <div class="col-md-4">
-                    <label for="fldFacultyId" class="form-label fw-semibold">
+                    <label for="fldFacultyId" class="form-label fw-bold small text-muted text-uppercase mb-1">
                         Mã Khoa <span class="text-danger">*</span>
                     </label>
-                    <input type="text" class="form-control font-monospace border-primary-subtle" id="fldFacultyId"
-                           maxlength="10" placeholder="VD: CNTT">
-                    <div class="invalid-feedback">Vui lòng nhập mã khoa.</div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-primary-subtle text-primary"><i class="bi bi-hash"></i></span>
+                        <input type="text" class="form-control font-monospace border-primary-subtle shadow-none" id="fldFacultyId"
+                               maxlength="10" placeholder="VD: CNTT">
+                        <div class="invalid-feedback">Vui lòng nhập mã khoa.</div>
+                    </div>
                 </div>
+
+                <!-- Faculty Name -->
                 <div class="col-md-8">
-                    <label for="fldFacultyName" class="form-label fw-semibold">
+                    <label for="fldFacultyName" class="form-label fw-bold small text-muted text-uppercase mb-1">
                         Tên Khoa <span class="text-danger">*</span>
                     </label>
-                    <input type="text" class="form-control" id="fldFacultyName"
-                           maxlength="50" placeholder="VD: Công nghệ thông tin" disabled>
-                    <div class="invalid-feedback">Vui lòng nhập tên khoa.</div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-primary-subtle text-primary"><i class="bi bi-building"></i></span>
+                        <input type="text" class="form-control border-primary-subtle shadow-none" id="fldFacultyName"
+                               maxlength="50" placeholder="VD: Công nghệ thông tin" disabled>
+                        <div class="invalid-feedback">Vui lòng nhập tên khoa.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="alert alert-light border shadow-sm p-3 rounded-3 mt-4 mb-0 d-flex align-items-start gap-3">
+                <i class="bi bi-info-circle-fill text-primary fs-4"></i>
+                <div class="small text-muted">
+                    <h6 class="text-dark fw-bold mb-1">Ghi chú</h6>
+                    Khi cập nhật khoa, hệ thống sẽ kiểm tra tính duy nhất của mã khoa. Mọi thay đổi sẽ ảnh hưởng đến việc phân quyền và quản lý lớp/giảng viên thuộc khoa này.
                 </div>
             </div>
         </text>,
@@ -39,12 +55,12 @@
                 <i class="bi bi-list-ul"></i>
                 <span>Danh sách khoa hiện có</span>
             </h6>
-            <div class="table-responsive rounded-3 border border-light-subtle shadow-sm" style="max-height:240px; overflow-y:auto">
+            <div class="table-responsive rounded-3 border border-light-subtle shadow-sm overflow-hidden" style="max-height:240px; overflow-y:auto">
                 <table class="table table-sm table-hover align-middle mb-0" id="miniFacultyTable">
                     <thead class="table-light sticky-top">
-                        <tr class="small text-muted">
-                            <th>Mã Khoa</th>
-                            <th>Tên Khoa</th>
+                        <tr class="text-uppercase small fw-bold text-muted border-bottom-0">
+                            <th class="ps-3 py-2"><i class="bi bi-hash text-primary me-1"></i> Mã Khoa</th>
+                            <th class="py-2"><i class="bi bi-building text-primary me-1"></i> Tên Khoa</th>
                         </tr>
                     </thead>
                     <tbody id="miniFacultyBody" class="small">
@@ -52,8 +68,15 @@
                         {
                             <tr class="mini-row transition-base" role="button"
                                 data-id="@f.Id?.Trim()" data-name="@f.Name" data-lecturer-count="@f.LecturerCount">
-                                <td class="fw-bold font-monospace text-primary">@f.Id?.Trim()</td>
-                                <td>@f.Name</td>
+                                <td class="ps-3">
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill font-monospace">
+                                        @f.Id?.Trim()
+                                    </span>
+                                </td>
+                                <td class="d-flex justify-content-between align-items-center py-2">
+                                    <span class="fw-bold text-dark">@f.Name</span>
+                                    <span class="badge rounded-pill bg-light text-muted border tabular-nums px-2" title="Số giảng viên">@f.LecturerCount <i class="bi bi-person-workspace ms-1"></i></span>
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -65,7 +88,7 @@
     ViewData["ModalId"] = "facultyFormModal";
     ViewData["ModalLabelId"] = "facultyFormModalLabel";
     ViewData["ModalTitle"] = "Nhập danh mục Khoa";
-    ViewData["ModalIcon"] = "bi-building-fill-add";
+    ViewData["ModalIcon"] = "bi-building-fill";
     ViewData["FormId"] = "facultyForm";
     ViewData["AlertId"] = "formAlert";
 }

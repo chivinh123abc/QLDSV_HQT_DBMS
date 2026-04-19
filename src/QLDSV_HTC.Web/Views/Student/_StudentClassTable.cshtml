@@ -7,36 +7,63 @@
     var tableModel = new GenericTableViewModel
     {
         FiltersSection = @<text>
-            <div class="input-group" style="max-width:340px">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="bi bi-search text-muted"></i>
-                </span>
-                <input type="text" id="classSearch" class="form-control border-start-0"
-                       placeholder="Tìm mã lớp hoặc tên lớp…">
+            <div class="d-flex flex-wrap gap-3 align-items-center w-100">
+                <div class="glass-search" style="width:340px">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="classSearch" class="search-input" 
+                           placeholder="Tìm mã lớp hoặc tên lớp…">
+                    <button class="btn-clear-search d-none" type="button" id="btnClearClassSearch">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                </div>
+                
+                @if (isPGV)
+                {
+                    <div class="input-group ms-md-2 shadow-sm rounded-pill overflow-hidden border-0" style="width:300px">
+                        <span class="input-group-text bg-white border-0 ps-3">
+                            <i class="bi bi-building text-primary opacity-75"></i>
+                        </span>
+                        <select id="facultyFilter" class="form-select border-0 shadow-none small fw-medium">
+                            <option value="">— Tất cả khoa —</option>
+                            @if (ViewData["Faculties"] is IEnumerable<FacultyViewModel> faculties)
+                            {
+                                @foreach (var f in faculties)
+                                {
+                                    <option value="@f.Id?.Trim()">@f.Name (@f.Id?.Trim())</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                }
             </div>
-            @if (isPGV)
-            {
-                <select id="facultyFilter" class="form-select" style="max-width:300px">
-                    <option value="">— Tất cả khoa —</option>
-                    @* Note: Faculties are passed via Index model, so we might need a better way if this partial is isolated. 
-                       But for now, we can assume the parent page handles the selector or we pass it in ViewData. *@
-                    @if (ViewData["Faculties"] is IEnumerable<FacultyViewModel> faculties)
-                    {
-                        @foreach (var f in faculties)
-                        {
-                            <option value="@f.Id?.Trim()">@f.Name (@f.Id?.Trim())</option>
-                        }
-                    }
-                </select>
-            }
         </text>,
         
         HeadSection = @<text>
             <tr>
-                <th scope="col" style="width: 160px">Mã lớp</th>
-                <th scope="col">Tên lớp</th>
-                <th scope="col" style="width: 120px">Khóa học</th>
-                <th scope="col" style="width: 100px">Khoa</th>
+                <th scope="col" class="ps-4" style="width: 160px">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-hash text-primary-emphasis opacity-50"></i>
+                        <span class="text-uppercase small fw-bold tracking-wider">Mã lớp</span>
+                    </div>
+                </th>
+                <th scope="col">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-mortarboard text-primary-emphasis opacity-50"></i>
+                        <span class="text-uppercase small fw-bold tracking-wider">Tên lớp</span>
+                    </div>
+                </th>
+                <th scope="col" style="width: 140px" class="text-center">
+                    <div class="d-flex align-items-center gap-2 justify-content-center">
+                        <i class="bi bi-calendar3 text-primary-emphasis opacity-50"></i>
+                        <span class="text-uppercase small fw-bold tracking-wider">Khóa học</span>
+                    </div>
+                </th>
+                <th scope="col" class="text-center" style="width: 140px">
+                    <div class="d-flex align-items-center gap-2 justify-content-center">
+                        <i class="bi bi-building text-primary-emphasis opacity-50"></i>
+                        <span class="text-uppercase small fw-bold tracking-wider">Khoa</span>
+                    </div>
+                </th>
             </tr>
         </text>,
         
@@ -44,20 +71,43 @@
             @if (!Model.Any())
             {
                 <tr>
-                    <td colspan="4" class="text-center text-muted py-4">Chưa có dữ liệu lớp.</td>
+                    <td colspan="4" class="text-center py-5 border-0">
+                        <div class="animate__animated animate__fadeIn py-5">
+                            <div class="icon-box-lg bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm">
+                                <i class="bi bi-inbox text-body-tertiary fs-1"></i>
+                            </div>
+                            <h5 class="text-dark fw-bold mb-2">Chưa có dữ liệu lớp</h5>
+                            <p class="text-muted small mx-auto" style="max-width: 320px;">
+                                Hệ thống chưa tìm thấy lớp học nào cho tiêu chí đã chọn.
+                            </p>
+                        </div>
+                    </td>
                 </tr>
             }
             else
             {
                 @foreach (var c in Model)
                 {
-                    <tr data-class-id="@c.Id?.Trim()" class="selectable-row" style="cursor: pointer;" 
+                    <tr data-class-id="@c.Id?.Trim()" class="selectable-row animate__animated animate__fadeIn transition-base" style="cursor: pointer;" 
                         data-faculty-id="@c.FacultyId?.Trim()">
-                        <td class="fw-semibold font-monospace text-primary">@c.Id?.Trim()</td>
-                        <td>@c.Name</td>
-                        <td>@c.Year</td>
+                        <td class="ps-4">
+                            <span class="fw-bold font-monospace text-primary bg-primary bg-opacity-10 px-2 py-1 rounded small border border-primary border-opacity-10 shadow-sm">
+                                @c.Id?.Trim()
+                            </span>
+                        </td>
                         <td>
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">
+                            <div class="d-flex align-items-center gap-2 fw-bold text-dark">
+                                <i class="bi bi-folder2-open text-primary-emphasis opacity-25"></i>
+                                <span>@c.Name</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10 px-3 py-1 rounded-pill shadow-sm tabular-nums">
+                                <i class="bi bi-calendar-event me-1 opacity-50"></i>@c.Year
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-10 px-3 py-1 rounded-pill shadow-sm">
                                 @c.FacultyId?.Trim()
                             </span>
                         </td>
@@ -67,9 +117,14 @@
         </text>,
         
         FooterSection = @<text>
-            <span class="text-muted small">
-                Chọn một dòng để xem danh sách sinh viên tương ứng.
-            </span>
+            <div class="d-flex align-items-center gap-2 px-3 py-1">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
+                    <i class="bi bi-info-circle-fill fs-xs"></i>
+                </div>
+                <span class="text-muted small fw-medium">
+                    Chọn một dòng để nạp danh sách sinh viên tương ứng phía dưới.
+                </span>
+            </div>
         </text>
     };
 
@@ -79,19 +134,21 @@
 
 <style>
     .selectable-row {
-        transition: all var(--transition-fast);
         border-left: 4px solid transparent;
     }
 
     .selectable-row:hover {
-        background-color: var(--color-secondary) !important;
+        background-color: rgba(var(--bs-primary-rgb), 0.03) !important;
         transform: translateX(4px);
     }
 
     .selectable-row.selected {
-        background-color: var(--color-primary-light) !important;
-        border-left-color: var(--color-primary);
-        font-weight: 600;
+        background-color: rgba(var(--bs-primary-rgb), 0.08) !important;
+        border-left-color: var(--bs-primary);
+    }
+    
+    .selectable-row.selected td {
+        color: var(--bs-primary) !important;
     }
 </style>
 
@@ -101,11 +158,16 @@
     document.addEventListener("DOMContentLoaded", function () {
         const rows = document.querySelectorAll("#classTable tbody tr.selectable-row");
         const searchInput = document.getElementById("classSearch");
+        const btnClear = document.getElementById("btnClearClassSearch");
         const facultyFilter = document.getElementById("facultyFilter");
 
         function performFiltering() {
             const searchText = searchInput.value.toLowerCase();
             const facultyId = facultyFilter ? facultyFilter.value : "";
+            
+            if (btnClear) {
+                btnClear.classList.toggle('d-none', !searchInput.value);
+            }
 
             rows.forEach(row => {
                 const classId = (row.dataset.classId || "").toLowerCase();
@@ -119,7 +181,24 @@
             });
         }
 
-        if (searchInput) searchInput.addEventListener("input", performFiltering);
+        if (searchInput) {
+            searchInput.addEventListener("input", performFiltering);
+            searchInput.addEventListener("keydown", function(e) {
+                if (e.key === "Escape") {
+                    this.value = "";
+                    performFiltering();
+                }
+            });
+        }
+        
+        if (btnClear) {
+            btnClear.addEventListener("click", function() {
+                searchInput.value = "";
+                performFiltering();
+                searchInput.focus();
+            });
+        }
+
         if (facultyFilter) facultyFilter.addEventListener("change", performFiltering);
 
         rows.forEach(row => {

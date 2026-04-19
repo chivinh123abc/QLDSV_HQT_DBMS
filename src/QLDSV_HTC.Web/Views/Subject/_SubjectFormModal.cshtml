@@ -19,38 +19,50 @@
             <div class="row g-3">
                 <!-- Subject ID -->
                 <div class="col-md-4">
-                    <label for="fldSubjectId" class="form-label fw-medium required">
+                    <label for="fldSubjectId" class="form-label fw-bold small text-muted text-uppercase mb-1">
                         Mã MH <span class="text-danger">*</span>
                     </label>
-                    <input type="text" class="form-control font-monospace border-primary-subtle" id="fldSubjectId" name="subjectId" required maxlength="10" placeholder="VD: CTDL" disabled>
-                    <div class="invalid-feedback">Vui lòng nhập mã môn học (≤ 10 ký tự).</div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-primary-subtle text-primary"><i class="bi bi-hash"></i></span>
+                        <input type="text" class="form-control font-monospace border-primary-subtle shadow-none" id="fldSubjectId" name="subjectId" required maxlength="10" placeholder="VD: CTDL" disabled>
+                        <div class="invalid-feedback">Vui lòng nhập mã môn học (≤ 10 ký tự).</div>
+                    </div>
                 </div>
                 
                 <!-- Subject Name -->
                 <div class="col-md-8">
-                    <label for="fldSubjectName" class="form-label fw-medium required">
+                    <label for="fldSubjectName" class="form-label fw-bold small text-muted text-uppercase mb-1">
                         Tên môn học <span class="text-danger">*</span>
                     </label>
-                    <input type="text" class="form-control border-primary-subtle" id="fldSubjectName" name="subjectName" required maxlength="50" placeholder="VD: Cấu trúc dữ liệu" disabled>
-                    <div class="invalid-feedback">Vui lòng nhập tên môn học (≤ 50 ký tự).</div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-primary-subtle text-primary"><i class="bi bi-journal-text"></i></span>
+                        <input type="text" class="form-control border-primary-subtle shadow-none" id="fldSubjectName" name="subjectName" required maxlength="50" placeholder="VD: Cấu trúc dữ liệu" disabled>
+                        <div class="invalid-feedback">Vui lòng nhập tên môn học (≤ 50 ký tự).</div>
+                    </div>
                 </div>
 
                 <!-- Theory Hours -->
                 <div class="col-md-6">
-                    <label for="fldTheoryHours" class="form-label fw-medium required">
+                    <label for="fldTheoryHours" class="form-label fw-bold small text-muted text-uppercase mb-1">
                         Số tiết Lý thuyết <span class="text-danger">*</span>
                     </label>
-                    <input type="number" class="form-control border-primary-subtle" id="fldTheoryHours" name="theoryHours" required min="0" max="255" disabled>
-                    <div class="invalid-feedback">Số tiết LT phải ≥ 0.</div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-primary-subtle text-primary"><i class="bi bi-person-video3"></i></span>
+                        <input type="number" class="form-control border-primary-subtle shadow-none" id="fldTheoryHours" name="theoryHours" required min="0" max="255" disabled>
+                        <div class="invalid-feedback">Số tiết LT phải ≥ 0.</div>
+                    </div>
                 </div>
 
                 <!-- Practice Hours -->
                 <div class="col-md-6">
-                    <label for="fldPracticeHours" class="form-label fw-medium required">
+                    <label for="fldPracticeHours" class="form-label fw-bold small text-muted text-uppercase mb-1">
                         Số tiết Thực hành <span class="text-danger">*</span>
                     </label>
-                    <input type="number" class="form-control border-primary-subtle" id="fldPracticeHours" name="practiceHours" required min="0" max="255" disabled>
-                    <div class="invalid-feedback">Số tiết TH phải ≥ 0.</div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-primary-subtle text-primary"><i class="bi bi-laptop"></i></span>
+                        <input type="number" class="form-control border-primary-subtle shadow-none" id="fldPracticeHours" name="practiceHours" required min="0" max="255" disabled>
+                        <div class="invalid-feedback">Số tiết TH phải ≥ 0.</div>
+                    </div>
                 </div>
             </div>
             <div class="alert alert-light border shadow-sm p-3 rounded-3 mt-4 mb-0 d-flex align-items-start gap-3">
@@ -67,14 +79,14 @@
                 <i class="bi bi-list-ul"></i>
                 <span>Danh sách Môn học hiện có</span>
             </h6>
-            <div class="table-responsive rounded-3 border border-light-subtle shadow-sm" style="max-height:240px; overflow-y:auto">
+            <div class="table-responsive rounded-3 border border-light-subtle shadow-sm overflow-hidden" style="max-height:240px; overflow-y:auto">
                 <table class="table table-sm table-hover align-middle mb-0" id="miniSubjectTable">
                     <thead class="table-light sticky-top">
-                        <tr class="small text-muted">
-                            <th>Mã MH</th>
-                            <th>Tên Môn Học</th>
-                            <th class="text-center">Số tiết LT</th>
-                            <th class="text-center">Số tiết TH</th>
+                        <tr class="text-uppercase small fw-bold text-muted border-bottom-0">
+                            <th class="ps-3"><i class="bi bi-hash text-primary me-1"></i> Mã MH</th>
+                            <th><i class="bi bi-journal-text text-primary me-1"></i> Tên Môn Học</th>
+                            <th class="text-center"><i class="bi bi-person-video3 text-primary me-1"></i> LT</th>
+                            <th class="text-center pe-3"><i class="bi bi-laptop text-primary me-1"></i> TH</th>
                         </tr>
                     </thead>
                     <tbody id="miniSubjectBody" class="small">
@@ -82,10 +94,14 @@
                         {
                             <tr class="mini-row transition-base" role="button"
                                 data-id="@s.Id" data-name="@s.Name" data-theory="@s.TheoryHours" data-practice="@s.PracticeHours">
-                                <td class="fw-bold font-monospace text-primary">@s.Id</td>
-                                <td>@s.Name</td>
-                                <td class="text-center">@s.TheoryHours</td>
-                                <td class="text-center">@s.PracticeHours</td>
+                                <td class="ps-3">
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill font-monospace tabular-nums">
+                                        @s.Id
+                                    </span>
+                                </td>
+                                <td class="fw-bold text-dark">@s.Name</td>
+                                <td class="text-center tabular-nums text-muted">@s.TheoryHours</td>
+                                <td class="text-center tabular-nums text-muted pe-3">@s.PracticeHours</td>
                             </tr>
                         }
                     </tbody>

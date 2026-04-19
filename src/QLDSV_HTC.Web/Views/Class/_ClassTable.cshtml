@@ -4,39 +4,103 @@
 @{
     var isPGV = (bool)(ViewData["isPGV"] ?? false);
     var hasFaculty = (bool)(ViewData["hasFaculty"] ?? false);
-    
+    var pageTitle = hasFaculty
+        ? $"Lớp — Khoa {Model.CurrentFacultyId}"
+        : "Danh sách Lớp toàn trường";
+
+    // ── Prepare Title Section ──
+    ViewData["TitleSection"] = (Func<object, Microsoft.AspNetCore.Html.IHtmlContent>)(@<text>
+        <div class="d-flex align-items-center gap-2">
+            <div class="bg-primary bg-opacity-10 text-primary rounded-2 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <i class="bi bi-mortarboard-fill fs-5"></i>
+            </div>
+            <div>
+                <h5 class="mb-0 fw-bold text-dark">@pageTitle</h5>
+                <div class="text-muted small">Quản lý danh mục lớp và sinh viên</div>
+            </div>
+        </div>
+        <div class="ms-auto d-flex gap-2">
+            @if (isPGV)
+            {
+                <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2 rounded-3 hover-scale px-3" 
+                        id="btnOpenClassForm" type="button" data-bs-toggle="modal" data-bs-target="#classFormModal">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    <span class="fw-semibold">Cập nhật Lớp</span>
+                </button>
+            }
+        </div>
+    </text>);
+
     var tableModel = new GenericTableViewModel
     {
         FiltersSection = @<text>
-            <div class="input-group" style="max-width:340px">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="bi bi-search text-muted"></i>
-                </span>
-                <input type="text" id="classSearch" class="form-control border-start-0"
-                       placeholder="Tìm mã lớp hoặc tên lớp…">
+            <div class="d-flex flex-wrap align-items-center gap-3 w-100">
+                <div class="glass-search" style="min-width: 350px;">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="classSearch" class="search-input" 
+                           placeholder="Tìm mã hoặc tên lớp…">
+                    <button class="clear-btn d-none" type="button" id="btnClearSearch" title="Xóa tìm kiếm">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                </div>
+
+                @if (!hasFaculty && Model.Faculties.Any())
+                {
+                    <div class="input-group input-group-sm shadow-sm rounded-3 overflow-hidden border" style="max-width:300px">
+                        <span class="input-group-text bg-white border-0"><i class="bi bi-filter text-primary"></i></span>
+                        <select id="facultyFilter" class="form-select border-0 shadow-none">
+                            <option value="">— Tất cả khoa —</option>
+                            @foreach (var f in Model.Faculties)
+                            {
+                                <option value="@f.Id?.Trim()">@f.Name (@f.Id?.Trim())</option>
+                            }
+                        </select>
+                    </div>
+                }
+
+                <div class="ms-auto text-muted small d-none d-md-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill shadow-sm border">
+                    <i class="bi bi-info-circle text-primary"></i>
+                    <span>
+                        Hiển thị <strong id="visibleCount" class="text-primary tabular-nums">@Model.Classes.Count()</strong> lớp
+                    </span>
+                </div>
             </div>
-            @if (!hasFaculty && Model.Faculties.Any())
-            {
-                <select id="facultyFilter" class="form-select" style="max-width:300px">
-                    <option value="">— Tất cả khoa —</option>
-                    @foreach (var f in Model.Faculties)
-                    {
-                        @* Trim fix for Faculty ID *@
-                        <option value="@f.Id?.Trim()">@f.Name (@f.Id?.Trim())</option>
-                    }
-                </select>
-            }
         </text>,
         
         HeadSection = @<text>
-            <tr>
-                <th scope="col" style="width:160px">Mã Lớp</th>
-                <th scope="col">Tên Lớp</th>
-                <th scope="col" style="width:120px">Khóa Học</th>
-                <th scope="col" style="width:100px">Khoa</th>
+            <tr class="text-uppercase small fw-bold text-muted border-bottom-0">
+                <th scope="col" style="width:160px" class="ps-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-hash text-primary"></i>
+                        <span>Mã Lớp</span>
+                    </div>
+                </th>
+                <th scope="col">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-mortarboard text-primary"></i>
+                        <span>Tên Lớp</span>
+                    </div>
+                </th>
+                <th scope="col" style="width:140px" class="text-center">
+                    <div class="d-flex align-items-center gap-2 justify-content-center">
+                        <i class="bi bi-calendar-event text-primary"></i>
+                        <span>Khóa Học</span>
+                    </div>
+                </th>
+                <th scope="col" style="width:140px" class="text-center">
+                    <div class="d-flex align-items-center gap-2 justify-content-center">
+                        <i class="bi bi-building text-primary"></i>
+                        <span>Khoa</span>
+                    </div>
+                </th>
                 @if (isPGV)
                 {
-                    <th scope="col" class="text-end" style="width:150px">Hành động</th>
+                    <th scope="col" class="text-end pe-4" style="width:120px">
+                        <div class="d-flex align-items-center justify-content-end">
+                            <i class="bi bi-lightning-charge text-primary me-2"></i>
+                            <span>Thao tác</span>
+                        </div>
+                    </th>
                 }
             </tr>
         </text>,
@@ -45,9 +109,16 @@
             @if (!Model.Classes.Any())
             {
                 <tr>
-                    <td colspan="5" class="text-center text-muted py-5">
-                        <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-                        Chưa có lớp nào.
+                    <td colspan="@(isPGV ? 5 : 4)" class="text-center py-5 border-0">
+                        <div class="animate__animated animate__fadeIn py-5">
+                            <div class="icon-box-lg bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3">
+                                <i class="bi bi-mortarboard text-body-tertiary fs-1"></i>
+                            </div>
+                            <h5 class="text-dark fw-bold mb-2">Không tìm thấy lớp nào</h5>
+                            <p class="text-muted small mx-auto" style="max-width: 300px;">
+                                Có vẻ như chưa có lớp học nào được tạo hoặc bộ lọc không khớp.
+                            </p>
+                        </div>
                     </td>
                 </tr>
             }
@@ -55,33 +126,60 @@
             {
                 @foreach (var cls in Model.Classes)
                 {
-                    <tr data-id="@cls.Id?.Trim()" data-name="@cls.Name"
+                    <tr class="hover-row transition-base animate__animated animate__fadeIn" 
+                        data-id="@cls.Id?.Trim()" data-name="@cls.Name"
                         data-year="@cls.Year" data-faculty="@cls.FacultyId?.Trim()"
                         data-faculty-filter="@cls.FacultyId?.Trim()"
                         data-student-count="@cls.StudentCount">
-                        <td class="fw-semibold font-monospace text-primary">@cls.Id?.Trim()</td>
-                        <td>@cls.Name</td>
-                        <td>@cls.Year</td>
+                        <td class="ps-4">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill shadow-sm font-monospace tabular-nums">
+                                @cls.Id?.Trim()
+                            </span>
+                        </td>
                         <td>
-                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">
+                            <div class="fw-bold text-dark mb-1">@cls.Name</div>
+                            @if(cls.StudentCount > 0)
+                            {
+                                <div class="small text-muted d-flex align-items-center gap-1 opacity-75">
+                                    <i class="bi bi-person-badge"></i>
+                                    <span>@cls.StudentCount sinh viên</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="small text-muted d-flex align-items-center gap-1 opacity-50 italic">
+                                    <i class="bi bi-person-x"></i>
+                                    <span>Chưa có sinh viên</span>
+                                </div>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark border tabular-nums rounded-pill px-3 py-1 shadow-sm">
+                                @cls.Year
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-3 py-1 rounded-pill shadow-sm">
                                 @cls.FacultyId?.Trim()
                             </span>
                         </td>
                         @if (isPGV)
                         {
-                            <td class="text-end">
-                                <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row shadow-sm hover-scale"
-                                        title="Sửa lớp này"
-                                        data-id="@cls.Id?.Trim()" data-name="@cls.Name"
-                                        data-year="@cls.Year" data-faculty="@cls.FacultyId?.Trim()">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger @(cls.StudentCount == 0 ? "btn-delete-row hover-scale" : "") shadow-sm"
-                                        title="@(cls.StudentCount > 0 ? $"Không thể xóa lớp đã có sinh viên ({cls.StudentCount} SV)" : "Xóa lớp này")"
-                                        data-id="@cls.Id?.Trim()" data-name="@cls.Name"
-                                        @(cls.StudentCount > 0 ? "disabled" : "")>
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-1">
+                                    <button class="btn btn-sm btn-outline-primary btn-edit-row shadow-none hover-scale rounded-3"
+                                            title="Sửa lớp"
+                                            data-id="@cls.Id?.Trim()" data-name="@cls.Name"
+                                            data-year="@cls.Year" data-faculty="@cls.FacultyId?.Trim()">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger shadow-none rounded-3 @(cls.StudentCount == 0 ? "btn-delete-row hover-scale" : "")"
+                                            title="@(cls.StudentCount > 0 ? $"Không thể xóa lớp đã có sinh viên ({cls.StudentCount} SV)" : "Xóa lớp")"
+                                            data-id="@cls.Id?.Trim()" data-name="@cls.Name"
+                                            @(cls.StudentCount > 0 ? "disabled" : "")>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
                             </td>
                         }
                     </tr>
@@ -90,11 +188,14 @@
         </text>,
         
         FooterSection = @<text>
-            <div class="d-flex align-items-center w-100">
-                <span class="text-muted small me-auto">
-                    Hiển thị <strong id="visibleCount">@Model.Classes.Count()</strong>
-                    / @Model.Pagination.TotalCount lớp
-                </span>
+            <div class="d-flex align-items-center justify-content-between w-100 px-3 py-1">
+                <div class="text-muted small d-flex align-items-center gap-2">
+                    <i class="bi bi-info-circle-fill text-primary opacity-75"></i>
+                    <span>
+                        Hiển thị <strong id="visibleCount" class="text-primary tabular-nums">@Model.Classes.Count()</strong>
+                        / <span class="tabular-nums">@Model.Pagination.TotalCount</span> lớp học
+                    </span>
+                </div>
                 
                 @await Html.PartialAsync("_PaginationControls", Model.Pagination)
             </div>

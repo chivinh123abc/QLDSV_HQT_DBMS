@@ -71,8 +71,8 @@ namespace QLDSV_HTC.Web.Controllers
                 {
                     SubjectId = input.SubjectId.Trim(),
                     SubjectName = input.SubjectName.Trim(),
-                    TheoryHours = input.TheoryHours.GetValueOrDefault(),
-                    PracticeHours = input.PracticeHours.GetValueOrDefault(),
+                    TheoryHours = input.TheoryHours!.Value,
+                    PracticeHours = input.PracticeHours!.Value,
                 });
                 return Ok(new { success = true, message = "Thêm môn học thành công." });
             }
@@ -97,8 +97,8 @@ namespace QLDSV_HTC.Web.Controllers
                     OldSubjectId = input.OldSubjectId?.Trim(),
                     SubjectId = input.SubjectId.Trim(),
                     SubjectName = input.SubjectName.Trim(),
-                    TheoryHours = input.TheoryHours.GetValueOrDefault(),
-                    PracticeHours = input.PracticeHours.GetValueOrDefault(),
+                    TheoryHours = input.TheoryHours!.Value,
+                    PracticeHours = input.PracticeHours!.Value,
                 });
                 return Ok(new { success = true, message = "Cập nhật môn học thành công." });
             }

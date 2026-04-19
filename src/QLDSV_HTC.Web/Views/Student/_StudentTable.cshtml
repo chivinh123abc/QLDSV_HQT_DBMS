@@ -1,0 +1,127 @@
+@using QLDSV_HTC.Domain.Constants
+@using QLDSV_HTC.Web.Models
+@model IEnumerable<StudentViewModel>
+
+@{
+    var isPGV = (bool)(ViewData["isPGV"] ?? false);
+    
+    var tableModel = new GenericTableViewModel
+    {
+        FiltersSection = @<text>
+            <div class="d-flex flex-wrap gap-3 align-items-center w-100">
+                <div class="glass-search" style="width:340px">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="studentSearch" class="search-input" 
+                           placeholder="Tìm MSV hoặc tên sinh viên…">
+                    <button class="btn-clear-search d-none" type="button" id="btnClearStudentSearch">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                </div>
+                
+                @if (isPGV)
+                {
+                    <div class="ms-auto">
+                        <button class="btn btn-primary shadow-sm d-flex align-items-center gap-2 px-4 py-2 rounded-pill hover-scale" 
+                                onclick="openStudentModalView()" id="btnActionStudent" disabled>
+                            <i class="bi bi-person-plus-fill"></i>
+                            <span>Cập nhật Sinh viên</span>
+                        </button>
+                    </div>
+                }
+            </div>
+        </text>,
+        
+        HeadSection = @<text>
+            <tr>
+                <th scope="col" class="ps-4" style="width: 150px">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-hash text-primary"></i>
+                        <span>Mã SV</span>
+                    </div>
+                </th>
+                <th scope="col">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-person text-primary"></i>
+                        <span>Họ và Tên</span>
+                    </div>
+                </th>
+                <th scope="col" class="text-center" style="width: 120px">
+                    <div class="d-flex align-items-center gap-2 justify-content-center">
+                        <i class="bi bi-gender-ambiguous text-primary"></i>
+                        <span>Phái</span>
+                    </div>
+                </th>
+                <th scope="col" style="width: 160px">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-calendar-event text-primary"></i>
+                        <span>Ngày sinh</span>
+                    </div>
+                </th>
+                <th scope="col">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-geo-alt text-primary"></i>
+                        <span>Địa chỉ</span>
+                    </div>
+                </th>
+                <th scope="col" class="text-center" style="width: 140px">
+                    <div class="d-flex align-items-center gap-2 justify-content-center">
+                        <i class="bi bi-shield-check text-primary"></i>
+                        <span>Trạng thái</span>
+                    </div>
+                </th>
+                @if (isPGV)
+                {
+                    <th scope="col" class="text-end pe-4" style="width: 120px">
+                        <i class="bi bi-gear-fill text-muted"></i>
+                    </th>
+                }
+            </tr>
+        </text>,
+        
+        BodySection = @<text>
+            <tr id="emptyStudentRow">
+                <td colspan="@(isPGV ? 7 : 6)" class="text-center text-muted py-5 border-0">
+                    <div class="animate__animated animate__fadeIn py-5">
+                        <div class="icon-box-xl bg-light text-primary opacity-25 mx-auto mb-3">
+                            <i class="bi bi-arrow-up-circle fs-1"></i>
+                        </div>
+                        <h6 class="fw-semibold text-dark">Vui lòng chọn 1 lớp ở bảng trên</h6>
+                        <p class="small text-muted mb-0">Dữ liệu sinh viên sẽ được nạp tự động khi bạn nhấn vào một hàng ở bảng trên.</p>
+                    </div>
+                </td>
+            </tr>
+        </text>,
+        
+        FooterSection = @<text>
+            <div class="d-flex align-items-center w-100" id="studentPaginationContainer" style="display: none !important;">
+                <div class="d-flex align-items-center gap-2 me-auto">
+                    <div class="icon-box-xs bg-primary-subtle text-primary rounded-circle">
+                        <i class="bi bi-info-circle-fill" style="font-size: 0.75rem;"></i>
+                    </div>
+                    <span class="text-muted small fw-medium" id="studentDisplayCount"></span>
+                </div>
+                <div id="studentPaginationControls"></div>
+            </div>
+        </text>
+    };
+
+    ViewData["TableId"] = "studentTable";
+    ViewData["TableBodyId"] = "studentTableBody";
+    
+    // Custom TitleSection
+    ViewData["TitleSection"] = (Func<object, Microsoft.AspNetCore.Html.IHtmlContent>)(@<text>
+        <h5 class="mb-0 text-success d-flex align-items-center">
+            <div class="icon-box-sm bg-success-subtle text-success me-2 rounded">
+                <i class="bi bi-person-lines-fill"></i>
+            </div>
+            <span>Danh sách sinh viên <span id="lblSelectedClass" class="fw-bold text-dark ms-1"></span></span>
+        </h5>
+    </text>);
+
+    ViewData["WrapperId"] = "studentsSection";
+    ViewData["WrapperStyle"] = "display: none;";
+}
+
+<div id="@ViewData["WrapperId"]" style="@ViewData["WrapperStyle"]" class="mt-4">
+    @await Html.PartialAsync("_CardTableWrapper", tableModel, ViewData)
+</div>

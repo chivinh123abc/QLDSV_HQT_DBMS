@@ -2,105 +2,200 @@
     ViewData["Title"] = "Nhập điểm môn học";
 }
 
-<div class="dashboard-container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Nhập điểm - Cập nhật kết quả thi</h1>
-    </div>
-
-    <!-- Filter/Search -->
-    <div class="qldsv-card border-0 shadow-sm mb-4 p-3 bg-light">
-        <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-search me-2"></i>Chọn thông tin Lớp tín chỉ</h6>
-        <form class="row g-3 align-items-end">
-            <div class="col-md-2">
-                <label class="form-label text-sm fw-medium">Niên khóa</label>
-                <select class="form-select form-select-sm">
-                    <option selected>2021-2022</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label text-sm fw-medium">Học kỳ</label>
-                <select class="form-select form-select-sm">
-                    <option selected>1</option>
-                    <option>2</option>
-                </select>
-            </div>
-            @* <div class="col-md-3">
-            <label class="form-label text-sm fw-medium">Lớp</label>
-            <select class="form-select form-select-sm">
-            <option selected>D15CQCN01-N</option>
-            </select>
-            </div> *@
-            <div class="col-md-3">
-                <label class="form-label text-sm fw-medium">Môn học</label>
-                <select class="form-select form-select-sm">
-                    <option selected>Cấu trúc dữ liệu và giải thuật</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label text-sm fw-medium">Nhóm</label>
-                <div class="d-flex gap-2">
-                    <select class="form-select form-select-sm">
-                        <option selected>1</option>
-                        <option>2</option>
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <button type="button" class="btn btn-sm btn-primary px-3 py-2">Tải dữ liệu</button>
-            </div>
-        </form>
-    </div>
-
-    <div class="qldsv-card border-0 shadow-sm">
-        <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-            <h6 class="m-0 fw-bold">Danh sách sinh viên nhóm 1 - Môn Cấu trúc dữ liệu và giải thuật</h6>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-info text-white"><i class="bi bi-printer me-1"></i> In Bảng
-                    Điểm Môn Học</button>
-                <button type="button" class="btn btn-sm btn-success"><i class="bi bi-save me-1"></i> Ghi Bảng
-                    Điểm</button>
-            </div>
+<div class="dashboard-container animate__animated animate__fadeIn">
+    @* ── Page Header ── *@
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1 text-gray-800">Quản lý & Nhập điểm</h1>
+            <p class="text-muted mb-0 small">
+                <i class="bi bi-info-circle me-1"></i>
+                Chọn lớp tín chỉ để nhập điểm chuyên cần, giữa kỳ và cuối kỳ cho sinh viên.
+            </p>
         </div>
-        <div class="table-responsive p-3">
-            <table class="table table-hover table-bordered align-middle mb-0 text-center">
-                <thead class="table-light">
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-info shadow-sm hover-scale d-flex align-items-center gap-2">
+                <i class="bi bi-printer"></i>
+                <span>In Bảng Điểm</span>
+            </button>
+            <button type="button" class="btn btn-primary shadow-sm hover-scale d-flex align-items-center gap-2">
+                <i class="bi bi-save"></i>
+                <span>Ghi Bảng Điểm</span>
+            </button>
+        </div>
+    </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light bg-opacity-50">
                     <tr>
-                        <th scope="col" width="60">STT</th>
-                        <th scope="col" width="120">Mã SV</th>
-                        <th scope="col" class="text-start">Họ và Tên</th>
-                        <th scope="col" width="100">Điểm CC (10%)</th>
-                        <th scope="col" width="100">Điểm GK (30%)</th>
-                        <th scope="col" width="100">Điểm CK (60%)</th>
-                        <th scope="col" width="100">Trung bình</th>
+                        <th class="ps-4" style="width: 80px;">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-hash text-primary"></i>
+                                <span>STT</span>
+                            </div>
+                        </th>
+                        <th style="width: 150px;">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-person-badge text-primary"></i>
+                                <span>Mã SV</span>
+                            </div>
+                        </th>
+                        <th>
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-person text-primary"></i>
+                                <span>Họ và Tên</span>
+                            </div>
+                        </th>
+                        <th class="text-center" style="width: 140px;">
+                            <div class="d-flex align-items-center gap-2 justify-content-center">
+                                <i class="bi bi-check-circle text-primary"></i>
+                                <span>Chuyên cần</span>
+                            </div>
+                        </th>
+                        <th class="text-center" style="width: 140px;">
+                            <div class="d-flex align-items-center gap-2 justify-content-center">
+                                <i class="bi bi-pencil-square text-primary"></i>
+                                <span>Giữa kỳ</span>
+                            </div>
+                        </th>
+                        <th class="text-center" style="width: 140px;">
+                            <div class="d-flex align-items-center gap-2 justify-content-center">
+                                <i class="bi bi-award text-primary"></i>
+                                <span>Cuối kỳ</span>
+                            </div>
+                        </th>
+                        <th class="text-center pe-4" style="width: 140px;">
+                            <div class="d-flex align-items-center gap-2 justify-content-center">
+                                <i class="bi bi-calculator text-primary"></i>
+                                <span>Điểm TB</span>
+                            </div>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td class="fw-medium">N15DCCN001</td>
-                        <td class="text-start">Nguyễn Văn A</td>
-                        <td><input type="number" class="form-control form-control-sm text-center" value="10" min="0"
-                                max="10" step="0.5"></td>
-                        <td><input type="number" class="form-control form-control-sm text-center" value="8" min="0"
-                                max="10" step="0.5"></td>
-                        <td><input type="number" class="form-control form-control-sm text-center" value="7.5" min="0"
-                                max="10" step="0.5"></td>
-                        <td><span class="fw-bold text-success">7.9</span></td>
+                    <tr class="hover-row transition-base">
+                        <td class="ps-4">
+                            <span class="text-muted small fw-bold">01</span>
+                        </td>
+                        <td>
+                            <span class="fw-bold font-monospace text-primary bg-primary-subtle px-2 py-1 rounded small border border-primary-subtle">
+                                N15DCCN001
+                            </span>
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-dark">Nguyễn Văn A</div>
+                            <div class="text-muted small">Lớp: D15CQCN01-N</div>
+                        </td>
+                        <td>
+                            <div class="input-group input-group-sm justify-content-center">
+                                <input type="number" class="form-control text-center shadow-none border-dashed" value="10" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
+                                <span class="input-group-text bg-transparent border-0 text-muted small">10%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group input-group-sm justify-content-center">
+                                <input type="number" class="form-control text-center shadow-none border-dashed" value="8" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
+                                <span class="input-group-text bg-transparent border-0 text-muted small">30%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group input-group-sm justify-content-center">
+                                <input type="number" class="form-control text-center shadow-none border-dashed" value="7.5" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
+                                <span class="input-group-text bg-transparent border-0 text-muted small">60%</span>
+                            </div>
+                        </td>
+                        <td class="text-center pe-4">
+                            <div class="d-flex flex-column align-items-center">
+                                <span class="fw-bold text-success fs-5">7.9</span>
+                                <span class="badge bg-success-subtle text-success small rounded-pill px-3 shadow-sm border border-success-subtle">Đạt</span>
+                            </div>
+                        </td>
                     </tr>
-                    <tr>
-                        <td>2</td>
-                        <td class="fw-medium">N15DCCN002</td>
-                        <td class="text-start">Trần Thị B</td>
-                        <td><input type="number" class="form-control form-control-sm text-center" value="9" min="0"
-                                max="10" step="0.5"></td>
-                        <td><input type="number" class="form-control form-control-sm text-center" value="9" min="0"
-                                max="10" step="0.5"></td>
-                        <td><input type="number" class="form-control form-control-sm text-center" value="8.5" min="0"
-                                max="10" step="0.5"></td>
-                        <td><span class="fw-bold text-success">8.7</span></td>
+                    <tr class="hover-row transition-base">
+                        <td class="ps-4">
+                            <span class="text-muted small fw-bold">02</span>
+                        </td>
+                        <td>
+                            <span class="fw-bold font-monospace text-primary bg-primary-subtle px-2 py-1 rounded small border border-primary-subtle">
+                                N15DCCN002
+                            </span>
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-dark">Trần Thị B</div>
+                            <div class="text-muted small">Lớp: D15CQCN01-N</div>
+                        </td>
+                        <td>
+                            <div class="input-group input-group-sm justify-content-center">
+                                <input type="number" class="form-control text-center shadow-none border-dashed" value="9" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
+                                <span class="input-group-text bg-transparent border-0 text-muted small">10%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group input-group-sm justify-content-center">
+                                <input type="number" class="form-control text-center shadow-none border-dashed" value="9" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
+                                <span class="input-group-text bg-transparent border-0 text-muted small">30%</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-group input-group-sm justify-content-center">
+                                <input type="number" class="form-control text-center shadow-none border-dashed" value="8.5" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
+                                <span class="input-group-text bg-transparent border-0 text-muted small">60%</span>
+                            </div>
+                        </td>
+                        <td class="text-center pe-4">
+                            <div class="d-flex flex-column align-items-center">
+                                <span class="fw-bold text-success fs-5">8.7</span>
+                                <span class="badge bg-success-subtle text-success small rounded-pill px-3 shadow-sm border border-success-subtle">Đạt</span>
+                            </div>
+                        </td>
                     </tr>
                 </tbody>
             </table>
         </div>
+        <div class="card-footer bg-white py-3 border-top-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Nhấn <strong>Ghi Bảng Điểm</strong> để lưu tất cả thay đổi.
+                </div>
+                <div class="pagination-placeholder">
+                    @* Pagination could go here if needed *@
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<style>
+    .border-dashed {
+        border-style: dashed !important;
+        border-color: #dee2e6 !important;
+    }
+    .border-dashed:focus {
+        border-style: solid !important;
+        border-color: #86b7fe !important;
+    }
+    .custom-input-group {
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+        transition: all 0.2s ease;
+    }
+    .custom-input-group:focus-within {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+    .custom-input-group .input-group-text, 
+    .custom-input-group .form-select {
+        border: none;
+    }
+    .text-xs { font-size: 0.7rem; }
+    
+    .icon-box {
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>

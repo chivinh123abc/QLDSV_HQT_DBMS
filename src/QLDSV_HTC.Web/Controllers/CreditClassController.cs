@@ -93,13 +93,13 @@ namespace QLDSV_HTC.Web.Controllers
                 var newId = await creditClassRepository.AddAsync(new CreditClassDto
                 {
                     Year = input.Year.Trim(),
-                    Semester = input.Semester,
+                    Semester = input.Semester!.Value,
                     SubjectId = input.SubjectId.Trim(),
-                    Group = input.Group,
+                    Group = input.Group!.Value,
                     LecturerId = input.LecturerId.Trim(),
                     FacultyId = input.FacultyId.Trim(),
-                    MinStudents = input.MinStudents,
-                    IsCancelled = input.IsCancelled
+                    MinStudents = input.MinStudents!.Value,
+                    IsCancelled = input.IsCancelled!.Value
                 });
                 return Ok(new { success = true, message = "Thêm lớp tín chỉ thành công.", newId = newId });
             }
@@ -120,15 +120,15 @@ namespace QLDSV_HTC.Web.Controllers
             {
                 await creditClassRepository.UpdateAsync(new CreditClassDto
                 {
-                    Id = input.CreditClassId,
+                    Id = input.CreditClassId!.Value,
                     Year = input.Year.Trim(),
-                    Semester = input.Semester,
+                    Semester = input.Semester!.Value,
                     SubjectId = input.SubjectId.Trim(),
-                    Group = input.Group,
+                    Group = input.Group!.Value,
                     LecturerId = input.LecturerId.Trim(),
                     FacultyId = input.FacultyId.Trim(),
-                    MinStudents = input.MinStudents,
-                    IsCancelled = input.IsCancelled
+                    MinStudents = input.MinStudents!.Value,
+                    IsCancelled = input.IsCancelled!.Value
                 });
                 return Ok(new { success = true, message = "Cập nhật lớp tín chỉ thành công." });
             }
@@ -147,7 +147,7 @@ namespace QLDSV_HTC.Web.Controllers
 
             try
             {
-                await creditClassRepository.DeleteAsync(input.CreditClassId);
+                await creditClassRepository.DeleteAsync(input.CreditClassId!.Value);
                 return Ok(new { success = true, message = "Xóa lớp tín chỉ thành công." });
             }
             catch (SqlException ex)
