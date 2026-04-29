@@ -60,5 +60,20 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                new SqlParameter(StoredProcedureConstants.GetClassGradesSummary.ClassId, classId)
            );
         }
+
+        public async Task<List<string>> GetSchoolYearsAsync()
+        {
+            var dt = await ExecuteQueryAsync(
+                $"SELECT DISTINCT {DbConstants.Columns.CreditClass.Year} FROM {DbConstants.Tables.CreditClass} ORDER BY {DbConstants.Columns.CreditClass.Year} DESC",
+                CommandType.Text
+            );
+
+            return [
+                .. dt.AsEnumerable()
+                .Select(r => r.Field<string>(DbConstants.Columns.CreditClass.Year))
+                .Where(y => !string.IsNullOrEmpty(y))
+                .Select(y => y!)
+            ];
+        }
     }
 }

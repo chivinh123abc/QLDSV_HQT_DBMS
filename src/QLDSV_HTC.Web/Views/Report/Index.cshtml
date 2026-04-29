@@ -2,21 +2,16 @@
     ViewData["Title"] = "Báo cáo - In ấn";
 }
 
-<!-- Select2 CSS for searchable dropdowns -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+@section Styles {
+    <!-- Select2 CSS for searchable dropdowns -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+}
 
 
 <div class="dashboard-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">Báo cáo & In ấn</h1>
-    </div>
-
-    <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
-        <i class="bi bi-info-circle-fill me-2 fs-4"></i>
-        <div>
-            Màn hình này hiện đang hiển thị tạm các chức năng in báo cáo theo yêu cầu của Đề Tài.
-        </div>
     </div>
 
     <div class="row g-4">
@@ -172,6 +167,16 @@
         const facultyOptions = `<option value="">-- Chọn Khoa --</option>@if(ViewBag.Faculties != null) { foreach(var f in ViewBag.Faculties) { <option value="@f.FacultyId">@f.FacultyName</option> } }`;
         const subjectOptions = `<option value="">-- Chọn Môn học --</option>@if(ViewBag.Subjects != null) { foreach(var s in ViewBag.Subjects) { <option value="@s.SubjectId">@s.SubjectName</option> } }`;
         const classOptions = `<option value="">-- Chọn Lớp --</option>@if(ViewBag.Classes != null) { foreach(var c in ViewBag.Classes) { <option value="@c.ClassId">@c.ClassId - @c.ClassName</option> } }`;
+
+        function escapeHtml(unsafe) {
+            return (unsafe || "")
+                .toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
         document.addEventListener('DOMContentLoaded', function () {
             const reportModal = document.getElementById('reportModal');
@@ -373,33 +378,37 @@
                             }
 
                             // Build HTML Table dynamically
-                            let html = '<div class="table-responsive shadow-sm border rounded"><table class="table table-bordered table-striped table-hover mb-0"><thead class="table-primary"><tr>';
+                            const htmlArr = ['<div class="table-responsive shadow-sm border rounded"><table class="table table-bordered table-striped table-hover mb-0"><thead class="table-primary"><tr>'];
                             const keys = Object.keys(data[0]);
                             
                             // Header
-                            html += '<th class="text-nowrap text-center align-middle bg-primary text-white" style="width: 50px;">STT</th>';
+                            htmlArr.push('<th class="text-nowrap text-center align-middle bg-primary text-white" style="width: 50px;">STT</th>');
                             keys.forEach(k => {
-                                // Since backend maps standard columns, any remaining dynamic columns (like Subjects) are spaced out
-                                const headerText = k.replace(/_/g, ' ');
-                                html += `<th class="text-nowrap text-center align-middle bg-primary text-white">${headerText}</th>`;
+                                const headerText = escapeHtml(k.replace(/_/g, ' '));
+                                htmlArr.push(`<th class="text-nowrap text-center align-middle bg-primary text-white">${headerText}</th>`);
                             });
-                            html += '</tr></thead><tbody>';
+                            htmlArr.push('</tr></thead><tbody>');
                             
                             // Rows
                             data.forEach((row, idx) => {
-                                html += '<tr>';
-                                html += `<td class="text-center align-middle fw-bold">${idx + 1}</td>`;
+                                htmlArr.push('<tr>');
+                                htmlArr.push(`<td class="text-center align-middle fw-bold">${idx + 1}</td>`);
                                 keys.forEach(k => {
-                                    let val = (row[k] === null || row[k] === undefined) ? '' : row[k];
+                                    let rawVal = (row[k] === null || row[k] === undefined) ? '' : row[k];
+                                    let displayVal = escapeHtml(rawVal);
+                                    
                                     // Make numbers bold
-                                    if (typeof val === 'number') val = `<strong>${val}</strong>`;
-                                    html += `<td class="text-nowrap align-middle ${typeof row[k] === 'number' ? 'text-end' : 'text-center'}">${val}</td>`;
+                                    if (typeof rawVal === 'number') {
+                                        displayVal = `<strong>${rawVal}</strong>`;
+                                    }
+                                    
+                                    htmlArr.push(`<td class="text-nowrap align-middle ${typeof row[k] === 'number' ? 'text-end' : 'text-center'}">${displayVal}</td>`);
                                 });
-                                html += '</tr>';
+                                htmlArr.push('</tr>');
                             });
                             
-                            html += '</tbody></table></div>';
-                            document.getElementById('reportHtmlContainer').innerHTML = html;
+                            htmlArr.push('</tbody></table></div>');
+                            document.getElementById('reportHtmlContainer').innerHTML = htmlArr.join('');
                         })
                         .catch(err => {
                             document.getElementById('reportLoader').style.display = 'none';

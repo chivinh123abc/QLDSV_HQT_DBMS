@@ -14,21 +14,22 @@ namespace QLDSV_HTC.Web.Controllers
         IClassRepository classRepository,
         ISubjectRepository subjectRepository) : Controller
     {
-        private IActionResult ConvertDataTableToJson(System.Data.DataTable dt)
+        private OkObjectResult ConvertDataTableToJson(System.Data.DataTable dt)
         {
-            var list = new List<Dictionary<string, object>>();
+            var list = new List<Dictionary<string, object?>>();
             foreach (System.Data.DataRow row in dt.Rows)
             {
-                var dict = new Dictionary<string, object>();
+                var dict = new Dictionary<string, object?>();
                 foreach (System.Data.DataColumn col in dt.Columns)
                 {
-                    string mappedKey = AppConstants.Reports.ColumnMap.GetValueOrDefault(col.ColumnName, col.ColumnName);
+                    string mappedKey = ReportConstants.ColumnMap.GetValueOrDefault(col.ColumnName, col.ColumnName);
                     dict[mappedKey] = row[col] == DBNull.Value ? null : row[col];
                 }
                 list.Add(dict);
             }
             return Ok(list);
         }
+
         [HttpGet]
         [Route(RouteConstants.Report.Index)]
         public async Task<IActionResult> Index()
@@ -36,7 +37,7 @@ namespace QLDSV_HTC.Web.Controllers
             ViewBag.Faculties = await facultyRepository.GetFacultiesAsync();
             ViewBag.Classes = await classRepository.GetClassListAsync();
             ViewBag.Subjects = await subjectRepository.GetSubjectListAsync();
-            ViewBag.SchoolYears = new List<string> { "2021-2022", "2022-2023", "2023-2024", "2024-2025", "2025-2026", "2026-2027" };
+            ViewBag.SchoolYears = await repository.GetSchoolYearsAsync();
             return View();
         }
 
@@ -91,6 +92,7 @@ namespace QLDSV_HTC.Web.Controllers
             Response.Headers.Append("Content-Disposition", $"inline; filename=\"DS_LTC_{facultyId}_{schoolYear}_HK{semester}.pdf\"");
             return File(ms.ToArray(), "application/pdf");
         }
+
         [HttpGet]
         [Route(RouteConstants.Report.GetRegisteredStudentsList)]
         public async Task<IActionResult> GetRegisteredStudentsList(string facultyName, string schoolYear, int semester, string subjectId, string subjectName, int group, [FromQuery] bool asJson = false)
