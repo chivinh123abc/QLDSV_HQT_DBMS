@@ -265,37 +265,38 @@
 
                 // Add overlay if it doesn't exist
                 if (!container.querySelector('.loading-overlay')) {
-                const overlay = document.createElement('div');
-                overlay.className = 'loading-overlay';
-                overlay.innerHTML = '<div class="loading-spinner-premium"></div><div class="mt-2 fw-medium text-primary">Đang nạp dữ liệu...</div>';
-                container.appendChild(overlay);
+                    const overlay = document.createElement('div');
+                    overlay.className = 'loading-overlay';
+                    overlay.innerHTML = '<div class="loading-spinner-premium"></div><div class="mt-2 fw-medium text-primary">Đang nạp dữ liệu...</div>';
+                    container.appendChild(overlay);
+                }
+
+                const pageSize = 10;
+                fetch(`@RouteConstants.Student.ListPath?classId=${encodeURIComponent(classId)}&page=${page}&pageSize=${pageSize}`)
+                    .then(res => res.json())
+                    .then(res => {
+                        container.classList.remove('container-loading');
+                        const overlay = container.querySelector('.loading-overlay');
+                        if (overlay) overlay.remove();
+
+                        if (res.success) {
+                            allStudentsForClass = res.data; // Store for modal use
+                            renderStudents(res.data);
+                            renderModalStudentList(res.data);
+                            renderStudentPagination(res.pagination, className);
+                        } else {
+                            window.showToast("Lỗi tải danh sách sinh viên: " + res.message, 'danger');
+                        }
+                    })
+                    .catch(err => {
+                        container.classList.remove('container-loading');
+                        const overlay = container.querySelector('.loading-overlay');
+                        if (overlay) overlay.remove();
+
+                        console.error("AJAX Error: ", err);
+                        window.showToast("Có lỗi xảy ra khi gọi API.", 'danger');
+                    });
             }
-
-            const pageSize = 10;
-            fetch(`@RouteConstants.Student.ListPath?classId=${encodeURIComponent(classId)}&page=${page}&pageSize=${pageSize}`)
-                .then(res => res.json())
-                .then(res => {
-                    container.classList.remove('container-loading');
-                    const overlay = container.querySelector('.loading-overlay');
-                    if (overlay) overlay.remove();
-
-                    if (res.success) {
-                        allStudentsForClass = res.data; // Store for modal use
-                        renderStudents(res.data);
-                        renderModalStudentList(res.data);
-                        renderStudentPagination(res.pagination, className);
-                    } else {
-                        window.showToast("Lỗi tải danh sách sinh viên: " + res.message, 'danger');
-                    }
-                })
-                .catch(err => {
-                    container.classList.remove('container-loading');
-                    const overlay = container.querySelector('.loading-overlay');
-                    if (overlay) overlay.remove();
-
-                    console.error("AJAX Error: ", err);
-                    window.showToast("Có lỗi xảy ra khi gọi API.", 'danger');
-                });
         };
 
         window.goToStudentPage = function (page, pageSize) {
@@ -445,10 +446,10 @@
                             <button class="btn btn-sm btn-outline-primary hover-scale shadow-none border-0" title="Sửa sinh viên" onclick='editStudent(${JSON.stringify(s).replace(/'/g, "&apos;")})'>
                                 <i class="bi bi-pencil-square"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger ${s.hasDependencies ? 'opacity-25' : 'hover-scale'} shadow-none border-0" 
+                            <button class="btn btn-sm ${s.hasDependencies ? 'btn-light text-muted border-0 opacity-50' : 'btn-outline-danger hover-scale shadow-none border-0'}" 
                                     title="${s.hasDependencies ? 'Không thể xóa sinh viên đã có dữ liệu liên quan' : 'Xóa sinh viên'}" 
                                     ${s.hasDependencies ? 'disabled' : `onclick="deleteStudent('${s.studentId}')"`}>
-                                <i class="bi bi-trash"></i>
+                                <i class="bi ${s.hasDependencies ? 'bi-trash-fill' : 'bi-trash'}"></i>
                             </button>
                         </div>
                     </td>` : ''}

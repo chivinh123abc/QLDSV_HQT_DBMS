@@ -187,12 +187,20 @@ namespace QLDSV_HTC.Web.Controllers
                     return Ok(new { success = true, message = "Không có thay đổi nào được thực hiện." });
                 }
 
-                var currentLoginName = User.FindFirst(AppConstants.SessionKeys.Username)?.Value;
-                bool isSelfUpdate = !string.IsNullOrEmpty(currentLoginName) && input.OldLoginName.Equals(currentLoginName, StringComparison.OrdinalIgnoreCase);
+                var currentLoginName = User.FindFirst(AppConstants.SessionKeys.Username)?.Value?.Trim();
+                var accounts = await accountRepository.GetAccountListAsync();
+                var targetAccount = accounts.FirstOrDefault(a => a.LoginName.Trim().Equals(input.OldLoginName.Trim(), StringComparison.OrdinalIgnoreCase));
+                
+                bool isSelfUpdate = targetAccount != null && !string.IsNullOrEmpty(currentLoginName) && 
+                                   targetAccount.UserName.Trim().Equals(currentLoginName, StringComparison.OrdinalIgnoreCase);
 
-                if (isSelfUpdate && (!string.IsNullOrWhiteSpace(input.NewLoginName) || !string.IsNullOrWhiteSpace(input.NewRole)))
+                var currentGroup = User.FindFirst(AppConstants.SessionKeys.Group)?.Value ?? string.Empty;
+                bool isKhoa = currentGroup.Equals(AppConstants.Groups.KHOA, StringComparison.OrdinalIgnoreCase);
+
+                if ((isSelfUpdate || isKhoa) && !string.IsNullOrWhiteSpace(input.NewRole))
                 {
-                    return BadRequest(new { success = false, message = "Bạn không thể tự đổi tên đăng nhập hoặc quyền của chính mình khi đang thao tác!" });
+                    string msg = isKhoa ? "Nhóm KHOA không có quyền thay đổi nhóm quyền." : "Bạn không thể tự đổi quyền của chính mình khi đang thao tác!";
+                    return BadRequest(new { success = false, message = msg });
                 }
 
                 await accountRepository.UpdateAccountAsync(new UpdateAccountDto
@@ -204,10 +212,10 @@ namespace QLDSV_HTC.Web.Controllers
                     NewRole = string.IsNullOrWhiteSpace(input.NewRole) ? null : input.NewRole.Trim(),
                 });
 
-                if (isSelfUpdate && !string.IsNullOrWhiteSpace(input.NewPassword))
+                if (isSelfUpdate && (!string.IsNullOrWhiteSpace(input.NewPassword) || !string.IsNullOrWhiteSpace(input.NewLoginName)))
                 {
                     await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                    return Ok(new { success = true, forceLogout = true, message = "Đổi mật khẩu thành công. Hệ thống sẽ đăng xuất để áp dụng thay đổi." });
+                    return Ok(new { success = true, forceLogout = true, message = "Cập nhật thành công. Hệ thống sẽ đăng xuất để áp dụng thay đổi." });
                 }
 
                 return Ok(new { success = true, message = "Cập nhật tài khoản thành công." });
@@ -232,9 +240,12 @@ namespace QLDSV_HTC.Web.Controllers
             if (string.IsNullOrWhiteSpace(input?.LoginName))
                 return BadRequest(new { success = false, message = "Tên đăng nhập không hợp lệ." });
 
-            var currentLoginName = User.FindFirst(AppConstants.SessionKeys.Username)?.Value;
-            if (!string.IsNullOrEmpty(currentLoginName) &&
-                input.LoginName.Trim().Equals(currentLoginName, StringComparison.OrdinalIgnoreCase))
+            var currentLoginName = User.FindFirst(AppConstants.SessionKeys.Username)?.Value?.Trim();
+            var accounts = await accountRepository.GetAccountListAsync();
+            var targetAccount = accounts.FirstOrDefault(a => a.LoginName.Trim().Equals(input.LoginName.Trim(), StringComparison.OrdinalIgnoreCase));
+
+            if (targetAccount != null && !string.IsNullOrEmpty(currentLoginName) &&
+                targetAccount.UserName.Trim().Equals(currentLoginName, StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest(new { success = false, message = "Bạn không thể tự xóa tài khoản của chính mình!" });
             }
