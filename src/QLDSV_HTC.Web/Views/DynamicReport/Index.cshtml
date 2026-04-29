@@ -1,0 +1,124 @@
+@{
+    ViewData["Title"] = "Báo cáo tuỳ chỉnh";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-2 text-gray-800">@ViewData["Title"]</h1>
+            <p class="text-muted">Tạo báo cáo động dựa trên dữ liệu hệ thống.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Configuration Panel -->
+        <div class="col-lg-4 col-md-5 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Cấu hình báo cáo</h6>
+                </div>
+                <div class="card-body">
+                    <form id="dynamicReportForm">
+                        @Html.AntiForgeryToken()
+                        <!-- Table Selection -->
+                        <div class="mb-3">
+                            <label for="tableNameSelect" class="form-label">Chọn bảng / View</label>
+                            <select class="form-select" id="tableNameSelect" required>
+                                <option value="">-- Đang tải dữ liệu --</option>
+                            </select>
+                        </div>
+
+                        <!-- Column Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">Chọn cột hiển thị</label>
+                            <div id="columnSelectionContainer" class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                                <p class="text-muted small mb-0">Vui lòng chọn bảng trước.</p>
+                            </div>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="mb-3">
+                            <label class="form-label d-flex justify-content-between align-items-center">
+                                Điều kiện lọc
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="addFilterBtn" disabled>
+                                    <i class="bi bi-plus"></i> Thêm
+                                </button>
+                            </label>
+                            <div id="filtersContainer">
+                                <!-- Filter rows will be appended here -->
+                            </div>
+                        </div>
+
+                        <hr />
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-primary" id="previewBtn" disabled>
+                                <i class="bi bi-table"></i> Xem trước dữ liệu
+                            </button>
+                            <button type="button" class="btn btn-success" id="generatePdfBtn" disabled>
+                                <i class="bi bi-file-pdf"></i> Xuất PDF
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="col-lg-8 col-md-7 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Xem trước dữ liệu</h6>
+                    <span class="badge bg-secondary" id="recordCountBadge">0 dòng</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 600px;">
+                        <table class="table table-bordered table-hover table-striped mb-0" id="previewTable">
+                            <thead class="table-light sticky-top" id="previewTableHead">
+                                <tr>
+                                    <th class="text-center text-muted">Chưa có dữ liệu</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewTableBody">
+                                <tr>
+                                    <td class="text-center text-muted py-4">Vui lòng chọn bảng và xem trước dữ liệu.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template for a filter row (hidden) -->
+<template id="filterRowTemplate">
+    <div class="filter-row border rounded p-2 mb-2 bg-light position-relative">
+        <button type="button" class="btn-close position-absolute top-0 end-0 m-1 remove-filter-btn" aria-label="Xóa"></button>
+        <div class="mb-2 pe-3">
+            <select class="form-select form-select-sm filter-column-select" required>
+                <option value="">-- Chọn cột --</option>
+            </select>
+        </div>
+        <div class="mb-2 pe-3">
+            <select class="form-select form-select-sm filter-operator-select" required>
+                <option value="0">Bằng (=)</option>
+                <option value="1">Không bằng (!=)</option>
+                <option value="2">Chứa</option>
+                <option value="3">Bắt đầu bằng</option>
+                <option value="4">Kết thúc bằng</option>
+                <option value="5">Lớn hơn (&gt;)</option>
+                <option value="6">Lớn hơn hoặc bằng (&gt;=)</option>
+                <option value="7">Nhỏ hơn (&lt;)</option>
+                <option value="8">Nhỏ hơn hoặc bằng (&lt;=)</option>
+            </select>
+        </div>
+        <div class="pe-3">
+            <input type="text" class="form-control form-control-sm filter-value-input" placeholder="Giá trị..." required />
+        </div>
+    </div>
+</template>
+
+@section Scripts {
+    <script src="~/js/dynamic-report.js" asp-append-version="true"></script>
+}
