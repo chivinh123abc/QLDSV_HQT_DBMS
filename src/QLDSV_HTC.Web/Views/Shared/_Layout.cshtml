@@ -16,6 +16,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @* <link rel="stylesheet" href="~/QLDSV_HTC.Web.styles.css" asp-append-version="true" /> *@
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 @{
     var isAuthenticated = User.Identity?.IsAuthenticated ?? false;

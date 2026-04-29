@@ -27,5 +27,53 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                 new SqlParameter(StoredProcedureConstants.GetCreditClassList.FacultyId, facultyId)
             );
         }
+
+        public async Task<DataTable> GetRegisteredStudentsListAsync(string schoolYear, int semester, string subjectId, int group)
+        {
+            return await ExecuteQueryAsync(
+                AppConstants.SpNames.GetRegisteredStudentsList,
+                CommandType.StoredProcedure,
+                new SqlParameter(StoredProcedureConstants.GetRegisteredStudentsList.SchoolYear, schoolYear),
+                new SqlParameter(StoredProcedureConstants.GetRegisteredStudentsList.Semester, semester),
+                new SqlParameter(StoredProcedureConstants.GetRegisteredStudentsList.SubjectId, subjectId),
+                new SqlParameter(StoredProcedureConstants.GetRegisteredStudentsList.Group, group)
+            );
+        }
+
+        public async Task<DataTable> GetSubjectGradesAsync(string schoolYear, int semester, string subjectId, int group)
+        {
+            return await ExecuteQueryAsync(
+                AppConstants.SpNames.GetSubjectGrades,
+                CommandType.StoredProcedure,
+                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.SchoolYear, schoolYear),
+                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.Semester, semester),
+                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.SubjectId, subjectId),
+                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.Group, group)
+            );
+        }
+
+        public async Task<DataTable> GetClassGradesSummaryAsync(string classId)
+        {
+            return await ExecuteQueryAsync(
+               AppConstants.SpNames.GetClassGradesSummary,
+               CommandType.StoredProcedure,
+               new SqlParameter(StoredProcedureConstants.GetClassGradesSummary.ClassId, classId)
+           );
+        }
+
+        public async Task<List<string>> GetSchoolYearsAsync()
+        {
+            var dt = await ExecuteQueryAsync(
+                $"SELECT DISTINCT {DbConstants.Columns.CreditClass.Year} FROM {DbConstants.Tables.CreditClass} ORDER BY {DbConstants.Columns.CreditClass.Year} DESC",
+                CommandType.Text
+            );
+
+            return [
+                .. dt.AsEnumerable()
+                .Select(r => r.Field<string>(DbConstants.Columns.CreditClass.Year))
+                .Where(y => !string.IsNullOrEmpty(y))
+                .Select(y => y!)
+            ];
+        }
     }
 }

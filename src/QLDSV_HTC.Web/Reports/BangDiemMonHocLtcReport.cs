@@ -3,42 +3,60 @@ using System.Drawing;
 
 namespace QLDSV_HTC.Web.Reports
 {
-    public class BangDiemReport : XtraReport
+    public class BangDiemMonHocLTCReport : XtraReport
     {
-        public BangDiemReport(string maSV)
+        public BangDiemMonHocLTCReport(string facultyName, string nienKhoa, int hocKy, string subjectName, int nhom)
         {
             PaperKind = DevExpress.Drawing.Printing.DXPaperKind.A4;
-            Landscape = false; // Portrait size
+            Landscape = false;
             Margins = new(50, 50, 50, 50);
 
             var detailBand = new DetailBand() { HeightF = 30f };
-            var reportHeaderBand = new ReportHeaderBand() { HeightF = 130f };
+            var reportHeaderBand = new ReportHeaderBand() { HeightF = 180f };
             var pageHeaderBand = new PageHeaderBand() { HeightF = 40f };
 
             Bands.AddRange([reportHeaderBand, pageHeaderBand, detailBand]);
 
             // ------- REPORT HEADER -------
+            XRLabel lblKHOA = new()
+            {
+                Text = $"KHOA: {facultyName.ToUpper()}",
+                Font = new("Times New Roman", 14, DevExpress.Drawing.DXFontStyle.Bold),
+                TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleCenter,
+                SizeF = new(727f, 30f),
+                LocationF = new(0f, 20f)
+            };
+
             XRLabel lblTitle = new()
             {
-                Text = "PHIẾU ĐIỂM SINH VIÊN",
+                Text = "BẢNG ĐIỂM HẾT MÔN",
                 Font = new("Times New Roman", 18, DevExpress.Drawing.DXFontStyle.Bold),
                 TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleCenter,
                 SizeF = new(727f, 40f),
-                LocationF = new(0f, 40f)
+                LocationF = new(0f, 60f)
             };
 
-            XRLabel lblMaSV = new()
+            XRLabel lblNKHK = new()
             {
-                Text = $"Mã sinh viên: {maSV}",
-                Font = new("Times New Roman", 13, DevExpress.Drawing.DXFontStyle.Regular),
+                Text = $"Niên khóa: {nienKhoa} - Học kỳ: {hocKy}",
+                Font = new("Times New Roman", 13, DevExpress.Drawing.DXFontStyle.Bold),
                 TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleCenter,
                 SizeF = new(727f, 30f),
-                LocationF = new(0f, 80f)
+                LocationF = new(0f, 100f)
             };
 
-            reportHeaderBand.Controls.AddRange([lblTitle, lblMaSV]);
+            XRLabel lblMhNhom = new()
+            {
+                Text = $"Môn học: {subjectName} - Nhóm: {nhom}",
+                Font = new("Times New Roman", 13, DevExpress.Drawing.DXFontStyle.Bold),
+                TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleCenter,
+                SizeF = new(727f, 30f),
+                LocationF = new(0f, 130f)
+            };
 
-            // ------- PAGE HEADER (Headers of the Table) -------
+            reportHeaderBand.Controls.AddRange([lblKHOA, lblTitle, lblNKHK, lblMhNhom]);
+
+            // ------- PAGE HEADER -------
             const DevExpress.XtraPrinting.BorderSide borderSideAll = DevExpress.XtraPrinting.BorderSide.All;
             var headerFont = new DevExpress.Drawing.DXFont("Times New Roman", 12, DevExpress.Drawing.DXFontStyle.Bold);
 
@@ -52,18 +70,19 @@ namespace QLDSV_HTC.Web.Reports
             };
 
             XRTableRow headerRow = new();
-
             headerRow.Cells.Add(new XRTableCell() { WidthF = 50f, Text = "STT" });
-            headerRow.Cells.Add(new XRTableCell() { WidthF = 250f, Text = "TÊN MÔN HỌC" });
+            headerRow.Cells.Add(new XRTableCell() { WidthF = 120f, Text = "MÃ SV" });
+            headerRow.Cells.Add(new XRTableCell() { WidthF = 120f, Text = "HỌ" });
+            headerRow.Cells.Add(new XRTableCell() { WidthF = 80f, Text = "TÊN" });
             headerRow.Cells.Add(new XRTableCell() { WidthF = 85f, Text = "ĐIỂM CC" });
             headerRow.Cells.Add(new XRTableCell() { WidthF = 85f, Text = "ĐIỂM GK" });
             headerRow.Cells.Add(new XRTableCell() { WidthF = 85f, Text = "ĐIỂM CK" });
-            headerRow.Cells.Add(new XRTableCell() { WidthF = 172f, Text = "ĐIỂM TỔNG" });
+            headerRow.Cells.Add(new XRTableCell() { WidthF = 102f, Text = "ĐIỂM HM" });
 
             headerTable.Rows.Add(headerRow);
             pageHeaderBand.Controls.Add(headerTable);
 
-            // ------- DETAIL BAND (Data source bindings) -------
+            // ------- DETAIL BAND -------
             var detailFont = new DevExpress.Drawing.DXFont("Times New Roman", 12, DevExpress.Drawing.DXFontStyle.Regular);
 
             XRTable detailTable = new()
@@ -75,7 +94,6 @@ namespace QLDSV_HTC.Web.Reports
             };
             XRTableRow detailRow = new();
 
-            // Setup STT auto-increment using sumRecordNumber()
             XRTableCell cellStt = new()
             {
                 WidthF = 50f,
@@ -83,13 +101,14 @@ namespace QLDSV_HTC.Web.Reports
             };
             cellStt.ExpressionBindings.Add(new("BeforePrint", "Text", "sumRecordNumber()"));
 
-            XRTableCell cellTenMh = new()
-            {
-                WidthF = 250f,
-                Padding = new(10, 5, 0, 0),
-                TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleLeft
-            };
-            cellTenMh.ExpressionBindings.Add(new("BeforePrint", "Text", "[TENMH]"));
+            XRTableCell cellMaSV = new() { WidthF = 120f };
+            cellMaSV.ExpressionBindings.Add(new("BeforePrint", "Text", "[MASV]"));
+
+            XRTableCell cellHo = new() { WidthF = 120f, TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleLeft, Padding = new(5, 0, 0, 0) };
+            cellHo.ExpressionBindings.Add(new("BeforePrint", "Text", "[HO]"));
+
+            XRTableCell cellTen = new() { WidthF = 80f, TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleLeft, Padding = new(5, 0, 0, 0) };
+            cellTen.ExpressionBindings.Add(new("BeforePrint", "Text", "[TEN]"));
 
             XRTableCell cellDiemCC = new() { WidthF = 85f };
             cellDiemCC.ExpressionBindings.Add(new("BeforePrint", "Text", "[DIEM_CC]"));
@@ -100,10 +119,10 @@ namespace QLDSV_HTC.Web.Reports
             XRTableCell cellDiemCK = new() { WidthF = 85f };
             cellDiemCK.ExpressionBindings.Add(new("BeforePrint", "Text", "[DIEM_CK]"));
 
-            XRTableCell cellDiem = new() { WidthF = 172f };
-            cellDiem.ExpressionBindings.Add(new("BeforePrint", "Text", "[DIEM]"));
+            XRTableCell cellDiemHM = new() { WidthF = 102f };
+            cellDiemHM.ExpressionBindings.Add(new("BeforePrint", "Text", "[DIEM_HET_MON]"));
 
-            detailRow.Cells.AddRange([cellStt, cellTenMh, cellDiemCC, cellDiemGK, cellDiemCK, cellDiem]);
+            detailRow.Cells.AddRange([cellStt, cellMaSV, cellHo, cellTen, cellDiemCC, cellDiemGK, cellDiemCK, cellDiemHM]);
             detailTable.Rows.Add(detailRow);
             detailBand.Controls.Add(detailTable);
         }
