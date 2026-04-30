@@ -1,7 +1,8 @@
 # Kế hoạch nâng cấp: Dynamic Reporting V2 (Bi & Analytics)
 
 ## 1. Phân tích yêu cầu
-- **Custom JOINs & Views**: Hỗ trợ 2 chế độ. Chế độ cơ bản (dùng các Views định nghĩa sẵn) và Chế độ nâng cao (cho phép người dùng tự do thêm JOIN).
+- **Custom JOINs & Views**: Hỗ trợ 2 chế độ. Chế độ cơ bản (dùng các Views định nghĩa sẵn) và Chế độ nâng cao (cho phép người dùng tự do thêm JOIN). - done
+
 - **GROUP BY & Aggregation**: Hỗ trợ các hàm thống kê `SUM`, `COUNT`, `AVG`, `MAX`, `MIN`. Nếu một báo cáo sử dụng hàm thống kê, các cột còn lại tự động đưa vào mệnh đề `GROUP BY`.
 - **Bảo mật & Hiệu năng**: Chỉ cho phép thực hiện JOIN trên các cặp bảng có quan hệ khoá chính - khoá ngoại hợp lệ (được khai báo trước thông qua Metadata Config) để ngăn chặn truy vấn Cartesian Product (làm treo server).
 

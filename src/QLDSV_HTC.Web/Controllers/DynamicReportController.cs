@@ -48,6 +48,27 @@ public class DynamicReportController(IDynamicReportRepository dynamicReportRepos
         }
     }
 
+    [HttpGet(RouteConstants.DynamicReport.GetRelations)]
+    public IActionResult GetRelations(string tableName)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { success = false, message = "Tên bảng không được để trống." });
+
+            if (TableRelationRegistry.Relations.TryGetValue(tableName, out var relations))
+            {
+                var targetTables = relations.Select(r => r.TargetTable).ToList();
+                return Ok(new { success = true, data = targetTables });
+            }
+            return Ok(new { success = true, data = new List<string>() });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
     [HttpPost(RouteConstants.DynamicReport.Preview)]
     public async Task<IActionResult> Preview([FromBody] DynamicQueryRequestDto request)
     {
@@ -69,7 +90,8 @@ public class DynamicReportController(IDynamicReportRepository dynamicReportRepos
                 rows.Add(dict);
             }
 
-            return Ok(new { success = true, data = rows });
+            var columnNames = dataTable.Columns.Cast<System.Data.DataColumn>().Select(c => c.ColumnName).ToList();
+            return Ok(new { success = true, columns = columnNames, data = rows });
         }
         catch (Exception ex)
         {
@@ -86,7 +108,7 @@ public class DynamicReportController(IDynamicReportRepository dynamicReportRepos
                 return BadRequest("Tên bảng không được để trống.");
 
             var dataTable = await dynamicReportRepository.GetReportDataAsync(request);
-
+            // Instantiate the report (ensure QLDSV_HTC.Web.Reports using directive is present)
             var report = new DynamicStandardReport(dataTable, request);
 
             await using var ms = new MemoryStream();

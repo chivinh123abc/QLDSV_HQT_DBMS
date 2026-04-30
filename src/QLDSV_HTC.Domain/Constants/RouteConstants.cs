@@ -176,12 +176,14 @@ namespace QLDSV_HTC.Domain.Constants
             public const string GetColumns = "columns";
             public const string Preview = "preview";
             public const string Generate = "generate";
+            public const string GetRelations = "relations";
 
             public const string DynamicReportPath = Prefix;
             public const string GetTablesPath = $"{Prefix}/{GetTables}";
             public const string GetColumnsPath = $"{Prefix}/{GetColumns}";
             public const string PreviewPath = $"{Prefix}/{Preview}";
             public const string GeneratePath = $"{Prefix}/{Generate}";
+            public const string GetRelationsPath = $"{Prefix}/{GetRelations}";
         }
     }
 }
