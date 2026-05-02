@@ -23,9 +23,9 @@ namespace QLDSV_HTC.Web.Services
                 new() { Title = "Lớp tín chỉ", Path = RouteConstants.CreditClass.CreditClassPath, Icon = "bi-clipboard-check", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] },
                 new() { Title = "Nhập điểm", Path = RouteConstants.Grade.GradePath, Icon = "bi-pencil-square", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] },
                 new() { Title = "Báo cáo / In ấn", Path = RouteConstants.Report.ReportPath, Icon = "bi-bar-chart-line", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] },
+                new() { Title = "Báo cáo tuỳ chỉnh", Path = RouteConstants.DynamicReport.DynamicReportPath, Icon = "bi-sliders", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] },
                 new() { Title = "Khoa", Path = RouteConstants.Faculty.FacultyPath, Icon = "bi-clipboard-check", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] },
                 new() { Title = "Tài khoản / Phân quyền", Path = RouteConstants.Account.ManagementPath, Icon = "bi-gear", Roles = [AppConstants.Groups.PGV, AppConstants.Groups.KHOA] }
-                // new() { Title = "Đăng ký tín chỉ", Path = RouteConstants.Registration.RegistrationPath, Icon = "bi-file-earmark-text", Roles = [AppConstants.Groups.PGV] }
             ];
         }
     }
