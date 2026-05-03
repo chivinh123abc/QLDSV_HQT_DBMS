@@ -3,102 +3,127 @@
     ViewData["Title"] = "Báo cáo động";
 }
 
-<div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">Cấu hình báo cáo</h5>
-                </div>
-                <div class="card-body">
-                    <form id="dynamicReportForm">
-                        <!-- Table Selection -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">1. Chọn bảng chính</label>
-                            <select id="tableNameSelect" class="form-select" required>
-                                <option value="">-- Đang tải danh sách bảng... --</option>
-                            </select>
-                        </div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/dynamic-report.css" asp-append-version="true" />
+}
 
-                        <!-- Joins -->
-                        <div class="mb-3" id="joinSelectionGroup" style="display: none;">
-                            <label class="form-label fw-bold d-flex justify-content-between align-items-center">
-                                2. Kết hợp bảng (JOIN)
-                                <button type="button" class="btn btn-sm btn-outline-info" id="addJoinBtn">
-                                    <i class="bi bi-plus"></i> Thêm bảng
+<div class="dr-page">
+    <div class="container-fluid mt-3">
+        <div class="row g-3">
+            <!-- ============ LEFT PANEL: Configuration ============ -->
+            <div class="col-lg-4 col-md-5">
+                <div class="dr-card dr-config-sidebar">
+                    <div class="dr-card-header">
+                        <h5><i class="bi bi-gear-fill me-2"></i>Cấu hình báo cáo</h5>
+                    </div>
+                    <div class="dr-card-body">
+                        <form id="dynamicReportForm" autocomplete="off">
+
+                            <!-- STEP 1: Table Selection -->
+                            <div class="mb-3">
+                                <div class="step-label">
+                                    <span class="step-num">1</span> Chọn bảng chính
+                                </div>
+                                <select id="tableNameSelect" class="form-select form-select-sm" required>
+                                    <option value="">-- Đang tải danh sách bảng... --</option>
+                                </select>
+                            </div>
+
+                            <!-- STEP 2: Joins -->
+                            <div class="mb-3" id="joinSelectionGroup" style="display: none;">
+                                <div class="step-label">
+                                    <span class="step-num">2</span> Kết hợp bảng (JOIN)
+                                    <button type="button" class="dr-btn-add ms-auto" id="addJoinBtn">
+                                        <i class="bi bi-plus-lg"></i> Thêm
+                                    </button>
+                                </div>
+                                <div id="joinsContainer"></div>
+                            </div>
+
+                            <!-- STEP 3: Column Selection -->
+                            <div class="mb-3">
+                                <div class="step-label">
+                                    <span class="step-num">3</span> Chọn cột hiển thị
+                                </div>
+                                <div id="columnSelectionContainer" class="column-scroll rounded p-2">
+                                    <p class="text-muted small mb-0 empty-state-text">Vui lòng chọn bảng trước.</p>
+                                </div>
+                                <div class="mt-2 d-flex gap-2 flex-wrap">
+                                    <button type="button" class="dr-btn-add" id="toggleAggregationBtn" disabled>
+                                        <i class="bi bi-calculator"></i> Thống kê (Group By)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- STEP 4: Aggregation -->
+                            <div class="mb-3" id="aggregationGroup" style="display: none;">
+                                <div class="step-label">
+                                    <span class="step-num">4</span> Cấu hình Thống kê
+                                </div>
+                                <div id="aggregationContainer" class="column-scroll rounded p-2 bg-light"></div>
+                            </div>
+
+                            <!-- STEP 5: Filters -->
+                            <div class="mb-3">
+                                <div class="step-label">
+                                    <span class="step-num">5</span> Điều kiện lọc (WHERE)
+                                    <button type="button" class="dr-btn-add ms-auto" id="addFilterBtn" disabled>
+                                        <i class="bi bi-plus-lg"></i> Thêm
+                                    </button>
+                                </div>
+                                <div id="filtersContainer"></div>
+                            </div>
+
+                            <hr class="dr-divider" />
+
+                            <!-- Action Buttons -->
+                            <div class="d-grid gap-2">
+                                <button type="button" class="dr-btn dr-btn-primary" id="previewBtn" disabled aria-live="polite">
+                                    <i class="bi bi-table"></i> <span id="previewBtnText">Xem trước dữ liệu</span>
                                 </button>
-                            </label>
-                            <div id="joinsContainer">
-                                <!-- Join rows will be appended here -->
-                            </div>
-                        </div>
-
-                        <!-- Column Selection -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">3. Chọn cột hiển thị</label>
-                            <div id="columnSelectionContainer" class="border rounded p-2 mb-2"
-                                style="max-height: 200px; overflow-y: auto;">
-                                <p class="text-muted small mb-0">Vui lòng chọn bảng trước.</p>
-                            </div>
-                            <div class="text-end">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleAggregationBtn" disabled>
-                                    <i class="bi bi-calculator"></i> Chế độ Thống kê (Group By)
+                                <button type="button" class="dr-btn dr-btn-success" id="generatePdfBtn" disabled aria-live="polite">
+                                    <i class="bi bi-file-earmark-pdf"></i> <span id="generatePdfBtnText">Xuất PDF</span>
                                 </button>
                             </div>
-                        </div>
-
-                        <!-- Aggregation Section -->
-                        <div class="mb-3" id="aggregationGroup" style="display: none;">
-                            <label class="form-label fw-bold">4. Cấu hình Thống kê</label>
-                            <div id="aggregationContainer" class="border rounded p-2 bg-light" style="max-height: 350px; overflow-y: auto;">
-                                <!-- Aggregation items will be rendered here -->
-                            </div>
-                        </div>
-
-                        <!-- Filters -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold d-flex justify-content-between align-items-center">
-                                5. Điều kiện lọc (WHERE)
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="addFilterBtn" disabled>
-                                    <i class="bi bi-plus"></i> Thêm điều kiện
-                                </button>
-                            </label>
-                            <div id="filtersContainer">
-                                <!-- Filter rows will be appended here -->
-                            </div>
-                        </div>
-
-                        <hr />
-                        <div class="d-grid gap-2">
-                            <button type="button" class="btn btn-primary" id="previewBtn" disabled>
-                                <i class="bi bi-table"></i> Xem trước dữ liệu
-                            </button>
-                            <button type="button" class="btn btn-success" id="generatePdfBtn" disabled>
-                                <i class="bi bi-file-pdf"></i> Xuất PDF
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-md-8">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Xem trước kết quả</h5>
-                    <span id="recordCountBadge" class="badge bg-secondary">0 dòng</span>
+            <!-- ============ RIGHT PANEL: SQL Preview + Results ============ -->
+            <div class="col-lg-8 col-md-7 d-flex flex-column gap-3">
+
+                <!-- SQL Preview (Always Visible) -->
+                <div class="sql-card" id="sqlPreviewCard">
+                    <div class="sql-header">
+                        <h6><i class="bi bi-braces me-1"></i> SQL PREVIEW</h6>
+                        <button type="button" class="btn btn-sm btn-outline-secondary text-light border-secondary copy-sql-btn" id="copySqlBtn"
+                            aria-label="Copy SQL">
+                            <i class="bi bi-clipboard" id="copySqlIcon"></i>
+                            <span id="copySqlBtnText" class="ms-2">Copy</span>
+                        </button>
+                    </div>
+                    <div class="sql-body">
+                        <pre class="mb-0"><code id="sqlPreviewCode" class="sql-placeholder">-- Cấu hình báo cáo để xem câu lệnh SQL tự động tạo tại đây...</code></pre>
+                    </div>
                 </div>
-                <div class="card-body p-0 overflow-auto" style="max-height: 800px;">
-                    <div id="previewResult" class="table-responsive">
-                        <table class="table table-hover table-striped table-bordered mb-0">
-                            <thead class="table-dark" id="previewTableHead">
+
+                <!-- Data Preview -->
+                <div class="dr-card flex-grow-1">
+                    <div class="dr-card-header">
+                        <h6><i class="bi bi-table me-2"></i>Kết quả xem trước</h6>
+                        <span id="recordCountBadge" class="dr-badge dr-badge-info">0 dòng</span>
+                    </div>
+                    <div class="preview-table-wrap">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead id="previewTableHead">
                                 <tr>
-                                    <th class="text-center text-muted small py-4">Kết quả sẽ hiển thị tại đây</th>
+                                    <th class="text-center py-4 table-placeholder-cell">
+                                        Kết quả sẽ hiển thị tại đây
+                                    </th>
                                 </tr>
                             </thead>
-                            <tbody id="previewTableBody">
-                                <!-- Data will be rendered here -->
-                            </tbody>
+                            <tbody id="previewTableBody"></tbody>
                         </table>
                     </div>
                 </div>
@@ -107,36 +132,38 @@
     </div>
 </div>
 
-<!-- Template for a join row (hidden) -->
+<!-- Template: Join Row -->
 <template id="joinRowTemplate">
-    <div class="join-row border rounded p-2 mb-2 bg-light position-relative">
-        <button type="button" class="btn-close position-absolute top-0 end-0 m-1 remove-join-btn"
-            aria-label="Xóa"></button>
+    <div class="dynamic-row join-row">
+        <button type="button" class="btn-remove remove-join-btn" aria-label="Xóa" title="Xóa bảng">
+            <i class="bi bi-x-lg"></i>
+        </button>
         <div class="mb-2">
             <select class="form-select form-select-sm join-table-select" required>
                 <option value="">-- Chọn bảng --</option>
             </select>
         </div>
-        <div class="pe-3">
+        <div>
             <select class="form-select form-select-sm join-type-select">
-                <option value="INNER JOIN">INNER JOIN (Lấy phần giao)</option>
-                <option value="LEFT JOIN">LEFT JOIN (Lấy hết bảng trái)</option>
+                <option value="INNER JOIN">INNER JOIN (Phần giao)</option>
+                <option value="LEFT JOIN">LEFT JOIN (Hết bảng trái)</option>
             </select>
         </div>
     </div>
 </template>
 
-<!-- Template for a filter row (hidden) -->
+<!-- Template: Filter Row -->
 <template id="filterRowTemplate">
-    <div class="filter-row border rounded p-2 mb-2 bg-light position-relative">
-        <button type="button" class="btn-close position-absolute top-0 end-0 m-1 remove-filter-btn"
-            aria-label="Xóa"></button>
-        <div class="mb-2 pe-3">
+    <div class="dynamic-row filter-row">
+        <button type="button" class="btn-remove remove-filter-btn" aria-label="Xóa" title="Xóa điều kiện">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="mb-2">
             <select class="form-select form-select-sm filter-column-select" required>
                 <option value="">-- Chọn cột --</option>
             </select>
         </div>
-        <div class="mb-2 pe-3">
+        <div class="mb-2">
             <select class="form-select form-select-sm filter-operator-select" required>
                 <option value="0">Bằng (=)</option>
                 <option value="1">Không bằng (!=)</option>
@@ -147,9 +174,15 @@
                 <option value="6">Lớn hơn hoặc bằng (&gt;=)</option>
                 <option value="7">Nhỏ hơn (&lt;)</option>
                 <option value="8">Nhỏ hơn hoặc bằng (&lt;=)</option>
+                <option value="9">Trống (IS NULL)</option>
+                <option value="10">Không trống (IS NOT NULL)</option>
+                <option value="11">Thuộc danh sách (IN)</option>
+                <option value="12">Không thuộc DS (NOT IN)</option>
+                <option value="13">Trong khoảng (BETWEEN)</option>
+                <option value="14">Không chứa (NOT LIKE)</option>
             </select>
         </div>
-        <div class="pe-3">
+        <div>
             <input type="text" class="form-control form-control-sm filter-value-input" placeholder="Giá trị..."
                 required />
         </div>
@@ -157,5 +190,6 @@
 </template>
 
 @section Scripts {
-    <script src="~/js/dynamic-report.js" asp-append-version="true"></script>
+    <script type="module" src="~/js/dynamic-report/index.js" asp-append-version="true"></script>
 }
+

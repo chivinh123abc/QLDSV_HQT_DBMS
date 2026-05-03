@@ -15,7 +15,7 @@ public static class TableRelationRegistry
     /// Note: To keep it simple, we define unidirectional relationships here,
     /// but the system will treat them bi-directionally if needed by registering both ways.
     /// </summary>
-    public static readonly Dictionary<string, List<TableRelation>> Relations = new(System.StringComparer.OrdinalIgnoreCase)
+    private static readonly Dictionary<string, List<TableRelation>> Relations = new(StringComparer.OrdinalIgnoreCase)
     {
         {
             "SINHVIEN", new List<TableRelation>
@@ -77,12 +77,24 @@ public static class TableRelationRegistry
     {
         if (Relations.TryGetValue(sourceTable, out var validTargets))
         {
-            var relation = validTargets.Find(r => r.TargetTable.Equals(targetTable, System.StringComparison.OrdinalIgnoreCase));
+            var relation = validTargets.Find(r => r.TargetTable.Equals(targetTable, StringComparison.OrdinalIgnoreCase));
             if (relation != null)
             {
                 return relation.JoinCondition;
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// Gets all target tables that the given source table can join with.
+    /// </summary>
+    public static List<string> GetRelationsForTable(string sourceTable)
+    {
+        if (Relations.TryGetValue(sourceTable, out var relations))
+        {
+            return relations.ConvertAll(r => r.TargetTable);
+        }
+        return [];
     }
 }

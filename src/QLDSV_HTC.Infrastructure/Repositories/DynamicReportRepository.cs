@@ -1,7 +1,9 @@
 using System.Data;
+using System.Text;
 using Microsoft.Data.SqlClient;
 using QLDSV_HTC.Application.DTOs;
 using QLDSV_HTC.Application.Interfaces;
+using QLDSV_HTC.Domain.Constants;
 using QLDSV_HTC.Domain.Enums;
 
 namespace QLDSV_HTC.Infrastructure.Repositories;
@@ -37,30 +39,76 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
         return columns;
     }
 
+    public async Task<(DataTable Data, string Sql)> GetPreviewDataAsync(DynamicQueryRequestDto request)
+    {
+        var (sql, parameters) = BuildDynamicQuery(request, isPagination: true);
+        var dataTable = await ExecuteQueryAsync(sql, CommandType.Text, parameters);
+        return (dataTable, sql);
+    }
+
+    public Task<string> GetSqlPreviewAsync(DynamicQueryRequestDto request)
+    {
+        var (sql, _) = BuildDynamicQuery(request, isPagination: true);
+        return Task.FromResult(sql);
+    }
+
+    public async Task<DataTable> GetReportDataAsync(DynamicQueryRequestDto request)
+    {
+        var (sql, parameters) = BuildDynamicQuery(request, isPagination: false);
+        return await ExecuteQueryAsync(sql, CommandType.Text, parameters);
+    }
+
+    #region Query Builder Logic
+
     private static (string Sql, SqlParameter[] Parameters) BuildDynamicQuery(DynamicQueryRequestDto request, bool isPagination)
     {
         var parameters = new List<SqlParameter>();
         string safeTableName = request.TableName.Replace("]", "]]");
 
         // 1. Build Select Clause
-        string columns = "*";
-        var groupByColumns = new List<string>(); // Columns that need to be in GROUP BY
-        bool hasAggregates = request.AdvancedSelectColumns?.Any(c =>
-            !string.IsNullOrEmpty(c.Aggregate) && !c.Aggregate.Equals("None", StringComparison.OrdinalIgnoreCase)) == true;
+        string selectClause = BuildSelectClause(request, out var groupByColumns, out var orderByColumn);
+
+        // 2. Build FROM & JOINs
+        var sqlBuilder = new StringBuilder();
+        sqlBuilder.Append(DbConstants.SqlKeywords.Select).Append(' ').Append(selectClause)
+                  .Append(" \n").Append(DbConstants.SqlKeywords.From).Append(" [dbo].[").Append(safeTableName).Append(']');
+        ApplyJoins(sqlBuilder, request, safeTableName);
+
+        // 3. Build Where Clause
+        ApplyFilters(sqlBuilder, request, safeTableName, parameters);
+
+        // 4. Build GROUP BY & HAVING
+        ApplyGroupingAndHaving(sqlBuilder, request, groupByColumns, parameters);
+
+        // 5. Build Pagination
+        if (isPagination)
+        {
+            ApplyPagination(sqlBuilder, request, orderByColumn);
+        }
+
+        return (sqlBuilder.ToString(), parameters.ToArray());
+    }
+
+    private static string BuildSelectClause(DynamicQueryRequestDto request, out List<string> groupByColumns, out string orderByColumn)
+    {
+        groupByColumns = [];
+        orderByColumn = "(SELECT NULL)";
+        string safeTableName = request.TableName.Replace("]", "]]");
 
         if (request.AdvancedSelectColumns?.Count > 0)
         {
             var uniqueKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var selectedColumns = new List<string>();
+            bool hasAggregates = request.AdvancedSelectColumns.Any(c => c.Aggregate != AggregateType.None);
+
             foreach (var c in request.AdvancedSelectColumns)
             {
                 string colName = c.ColumnName.Replace("]", "]]");
                 string safeColTable = c.TableName.Replace("]", "]]");
                 string qualifiedCol = $"[{safeColTable}].[{colName}]";
 
-                bool isRaw = string.IsNullOrEmpty(c.Aggregate) || c.Aggregate.Equals("None", StringComparison.OrdinalIgnoreCase);
-                string aggFunc = isRaw ? "NONE" : c.Aggregate.ToUpper();
-                
+                bool isRaw = c.Aggregate == AggregateType.None;
+                string aggFunc = isRaw ? "NONE" : c.Aggregate.ToString().ToUpper();
                 string aggAlias;
                 if (!string.IsNullOrWhiteSpace(c.AliasName))
                 {
@@ -71,197 +119,192 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
                     aggAlias = isRaw ? colName : $"{aggFunc}_{colName}";
                 }
 
-                // Unique key includes table, column, function, and alias to allow multiple different aggregations
                 string uniqueKey = $"{qualifiedCol}_{aggFunc}_{aggAlias}";
                 if (!uniqueKeys.Add(uniqueKey)) continue;
 
                 if (isRaw)
                 {
                     selectedColumns.Add($"{qualifiedCol} AS [{aggAlias}]");
-                    if (hasAggregates)
-                        groupByColumns.Add(qualifiedCol);
+                    if (hasAggregates) groupByColumns.Add(qualifiedCol);
                 }
                 else
                 {
                     selectedColumns.Add($"{aggFunc}({qualifiedCol}) AS [{aggAlias}]");
                 }
+
+                if (orderByColumn == "(SELECT NULL)") orderByColumn = $"[{aggAlias}]";
             }
-            columns = string.Join(", ", selectedColumns);
-        }
-        else if (request.SelectColumns?.Count > 0)
-        {
-            columns = string.Join(", ", request.SelectColumns.Select(c => $"[{safeTableName}].[{c.Replace("]", "]]")}]"));
+            return string.Join(", ", selectedColumns);
         }
 
-        // 2. Build FROM & JOINs
-        var sqlBuilder = new System.Text.StringBuilder();
-        sqlBuilder.Append($"SELECT {columns} FROM [dbo].[{safeTableName}]");
-
-        if (request.Joins?.Count > 0)
+        if (request.SelectColumns?.Count > 0)
         {
-            var joinedTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { safeTableName };
-
-            foreach (var join in request.Joins)
-            {
-                string joinSafeTable = join.JoinTable.Replace("]", "]]");
-
-                // Find a valid join condition from any already joined table to this new table
-                string? joinCondition = null;
-                foreach (var existingTable in joinedTables)
-                {
-                    joinCondition = QLDSV_HTC.Domain.Constants.TableRelationRegistry.GetJoinCondition(existingTable, joinSafeTable);
-                    if (joinCondition == null)
-                        joinCondition = QLDSV_HTC.Domain.Constants.TableRelationRegistry.GetJoinCondition(joinSafeTable, existingTable);
-
-                    if (joinCondition != null) break;
-                }
-
-                if (joinCondition != null)
-                {
-                    sqlBuilder.Append($" {join.JoinType} [dbo].[{joinSafeTable}] ON {joinCondition}");
-                    joinedTables.Add(joinSafeTable);
-                }
-            }
+            orderByColumn = $"[{safeTableName}].[{request.SelectColumns[0].Replace("]", "]]")}]";
+            return string.Join(", ", request.SelectColumns.Select(c => $"[{safeTableName}].[{c.Replace("]", "]]")}]"));
         }
 
-        // 3. Build Where Clause
-        if (request.Filters?.Count > 0)
+        return "*";
+    }
+
+    private static void ApplyJoins(StringBuilder sqlBuilder, DynamicQueryRequestDto request, string mainTable)
+    {
+        if (request.Joins == null || request.Joins.Count == 0) return;
+
+        var joinedTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { mainTable };
+        foreach (var join in request.Joins)
         {
-            var whereClauses = new List<string>();
-            for (int i = 0; i < request.Filters.Count; i++)
+            string joinSafeTable = join.JoinTable.Replace("]", "]]");
+            string safeJoinType = join.JoinType.Trim().ToUpperInvariant();
+
+            if (safeJoinType != DbConstants.SqlKeywords.InnerJoin &&
+                safeJoinType != DbConstants.SqlKeywords.LeftJoin &&
+                safeJoinType != DbConstants.SqlKeywords.RightJoin)
             {
-                var filter = request.Filters[i];
-                string paramName = $"@p{i}";
-                string clause = "";
-
-                string safeColName = filter.ColumnName.Replace("]", "]]");
-                string safeTableForFilter = string.IsNullOrEmpty(filter.TableName) ? safeTableName : filter.TableName.Replace("]", "]]");
-                string fullyQualifiedCol = $"[{safeTableForFilter}].[{safeColName}]";
-
-                switch (filter.Operator)
-                {
-                    case FilterOperator.Equals:
-                        clause = $"{fullyQualifiedCol} = {paramName}";
-                        parameters.Add(new SqlParameter(paramName, filter.Value));
-                        break;
-                    case FilterOperator.NotEquals:
-                        clause = $"{fullyQualifiedCol} <> {paramName}";
-                        parameters.Add(new SqlParameter(paramName, filter.Value));
-                        break;
-                    case FilterOperator.Contains:
-                        clause = $"CAST({fullyQualifiedCol} AS NVARCHAR(MAX)) LIKE {paramName}";
-                        parameters.Add(new SqlParameter(paramName, $"%{filter.Value}%"));
-                        break;
-                    case FilterOperator.StartsWith:
-                        clause = $"CAST({fullyQualifiedCol} AS NVARCHAR(MAX)) LIKE {paramName}";
-                        parameters.Add(new SqlParameter(paramName, $"{filter.Value}%"));
-                        break;
-                    case FilterOperator.EndsWith:
-                        clause = $"CAST({fullyQualifiedCol} AS NVARCHAR(MAX)) LIKE {paramName}";
-                        parameters.Add(new SqlParameter(paramName, $"%{filter.Value}"));
-                        break;
-                    case FilterOperator.GreaterThan:
-                        clause = $"{fullyQualifiedCol} > {paramName}";
-                        parameters.Add(new SqlParameter(paramName, filter.Value));
-                        break;
-                    case FilterOperator.GreaterThanOrEqual:
-                        clause = $"{fullyQualifiedCol} >= {paramName}";
-                        parameters.Add(new SqlParameter(paramName, filter.Value));
-                        break;
-                    case FilterOperator.LessThan:
-                        clause = $"{fullyQualifiedCol} < {paramName}";
-                        parameters.Add(new SqlParameter(paramName, filter.Value));
-                        break;
-                    case FilterOperator.LessThanOrEqual:
-                        clause = $"{fullyQualifiedCol} <= {paramName}";
-                        parameters.Add(new SqlParameter(paramName, filter.Value));
-                        break;
-                }
-
-                if (!string.IsNullOrEmpty(clause))
-                {
-                    whereClauses.Add(clause);
-                }
+                throw new ArgumentException($"Invalid JoinType: {safeJoinType}");
             }
 
-            if (whereClauses.Count > 0)
+            string? joinCondition = null;
+            foreach (var existingTable in joinedTables)
             {
-                sqlBuilder.Append(" WHERE ").Append(string.Join(" AND ", whereClauses));
+                joinCondition = TableRelationRegistry.GetJoinCondition(existingTable, joinSafeTable)
+                              ?? TableRelationRegistry.GetJoinCondition(joinSafeTable, existingTable);
+                if (joinCondition != null) break;
+            }
+
+            if (joinCondition != null)
+            {
+                sqlBuilder.Append('\n').Append(safeJoinType).Append(" [dbo].[").Append(joinSafeTable).Append("] ON ").Append(joinCondition);
+                joinedTables.Add(joinSafeTable);
             }
         }
+    }
 
-        // 4. Build GROUP BY Clause (if aggregates are used)
-        if (groupByColumns.Count > 0)
+    private static void ApplyFilters(StringBuilder sqlBuilder, DynamicQueryRequestDto request, string mainTable, List<SqlParameter> parameters)
+    {
+        if (request.Filters == null || request.Filters.Count == 0) return;
+
+        var whereClauses = new List<string>();
+        for (int i = 0; i < request.Filters.Count; i++)
         {
-            sqlBuilder.Append(" GROUP BY ").Append(string.Join(", ", groupByColumns));
+            var filter = request.Filters[i];
+            string paramName = $"@p{i}";
+            string safeColName = filter.ColumnName.Replace("]", "]]");
+            string safeTable = string.IsNullOrEmpty(filter.TableName) ? mainTable : filter.TableName.Replace("]", "]]");
+            string fullyQualifiedCol = $"[{safeTable}].[{safeColName}]";
 
-            // 4.5 Build HAVING Clause (Integrated into AdvancedSelectColumns)
-            var havingClauses = new List<string>();
-            int hpIndex = 0;
-            foreach (var c in request.AdvancedSelectColumns)
+            string clause = filter.Operator switch
             {
-                if (!c.HavingOperator.HasValue || string.IsNullOrEmpty(c.HavingValue)) continue;
-                if (string.IsNullOrEmpty(c.Aggregate) || c.Aggregate.Equals("None", StringComparison.OrdinalIgnoreCase)) continue;
+                FilterOperator.Equals => $"{fullyQualifiedCol} = {paramName}",
+                FilterOperator.NotEquals => $"{fullyQualifiedCol} <> {paramName}",
+                FilterOperator.Contains => $"{DbConstants.SqlKeywords.Cast}({fullyQualifiedCol} {DbConstants.SqlKeywords.As} NVARCHAR(MAX)) {DbConstants.SqlKeywords.Like} {paramName}",
+                FilterOperator.StartsWith => $"{DbConstants.SqlKeywords.Cast}({fullyQualifiedCol} {DbConstants.SqlKeywords.As} NVARCHAR(MAX)) {DbConstants.SqlKeywords.Like} {paramName}",
+                FilterOperator.EndsWith => $"{DbConstants.SqlKeywords.Cast}({fullyQualifiedCol} {DbConstants.SqlKeywords.As} NVARCHAR(MAX)) {DbConstants.SqlKeywords.Like} {paramName}",
+                FilterOperator.GreaterThan => $"{fullyQualifiedCol} > {paramName}",
+                FilterOperator.GreaterThanOrEqual => $"{fullyQualifiedCol} >= {paramName}",
+                FilterOperator.LessThan => $"{fullyQualifiedCol} < {paramName}",
+                FilterOperator.LessThanOrEqual => $"{fullyQualifiedCol} <= {paramName}",
+                FilterOperator.IsNull => $"{fullyQualifiedCol} {DbConstants.SqlKeywords.IsNull}",
+                FilterOperator.IsNotNull => $"{fullyQualifiedCol} {DbConstants.SqlKeywords.IsNotNull}",
+                FilterOperator.NotLike => $"{DbConstants.SqlKeywords.Cast}({fullyQualifiedCol} {DbConstants.SqlKeywords.As} NVARCHAR(MAX)) {DbConstants.SqlKeywords.NotLike} {paramName}",
+                FilterOperator.In => BuildInClause(fullyQualifiedCol, paramName, filter.Value, parameters, false),
+                FilterOperator.NotIn => BuildInClause(fullyQualifiedCol, paramName, filter.Value, parameters, true),
+                FilterOperator.Between => BuildBetweenClause(fullyQualifiedCol, paramName, filter.Value, parameters),
+                _ => ""
+            };
 
-                string paramName = $"@hp{hpIndex++}";
-                string safeColName = c.ColumnName.Replace("]", "]]");
-                string safeTable = c.TableName.Replace("]", "]]");
-                string aggFunc = c.Aggregate.ToUpper();
-                string functionalCol = $"{aggFunc}([{safeTable}].[{safeColName}])";
-
-                string clause = c.HavingOperator.Value switch
+            if (!string.IsNullOrEmpty(clause))
+            {
+                whereClauses.Add(clause);
+                if (filter.Operator != FilterOperator.In && filter.Operator != FilterOperator.NotIn &&
+                    filter.Operator != FilterOperator.Between && filter.Operator != FilterOperator.IsNull &&
+                    filter.Operator != FilterOperator.IsNotNull)
                 {
-                    FilterOperator.Equals => $"{functionalCol} = {paramName}",
-                    FilterOperator.NotEquals => $"{functionalCol} <> {paramName}",
-                    FilterOperator.GreaterThan => $"{functionalCol} > {paramName}",
-                    FilterOperator.GreaterThanOrEqual => $"{functionalCol} >= {paramName}",
-                    FilterOperator.LessThan => $"{functionalCol} < {paramName}",
-                    FilterOperator.LessThanOrEqual => $"{functionalCol} <= {paramName}",
-                    FilterOperator.Contains => $"CAST({functionalCol} AS NVARCHAR(MAX)) LIKE {paramName}",
-                    FilterOperator.StartsWith => $"CAST({functionalCol} AS NVARCHAR(MAX)) LIKE {paramName}",
-                    FilterOperator.EndsWith => $"CAST({functionalCol} AS NVARCHAR(MAX)) LIKE {paramName}",
-                    _ => ""
-                };
-
-                if (!string.IsNullOrEmpty(clause))
-                {
-                    havingClauses.Add(clause);
-                    object val = c.HavingValue;
-                    if (c.HavingOperator == FilterOperator.Contains) val = $"%{c.HavingValue}%";
-                    else if (c.HavingOperator == FilterOperator.StartsWith) val = $"{c.HavingValue}%";
-                    else if (c.HavingOperator == FilterOperator.EndsWith) val = $"%{c.HavingValue}";
-
+                    object val = filter.Value;
+                    if (filter.Operator == FilterOperator.Contains || filter.Operator == FilterOperator.NotLike) val = $"%{filter.Value}%";
+                    else if (filter.Operator == FilterOperator.StartsWith) val = $"{filter.Value}%";
+                    else if (filter.Operator == FilterOperator.EndsWith) val = $"%{filter.Value}";
                     parameters.Add(new SqlParameter(paramName, val));
                 }
             }
+        }
 
-            if (havingClauses.Count > 0)
+        if (whereClauses.Count > 0)
+            sqlBuilder.Append('\n').Append(DbConstants.SqlKeywords.Where).Append(' ').AppendJoin($"\n  {DbConstants.SqlKeywords.And} ", whereClauses);
+    }
+
+    private static string BuildInClause(string column, string paramBase, string value, List<SqlParameter> parameters, bool isNot)
+    {
+        var values = value.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim()).ToArray();
+        var paramNames = new List<string>();
+        for (int j = 0; j < values.Length; j++)
+        {
+            string pName = $"{paramBase}_i{j}";
+            paramNames.Add(pName);
+            parameters.Add(new SqlParameter(pName, values[j]));
+        }
+        return $"{column} {(isNot ? DbConstants.SqlKeywords.NotIn : DbConstants.SqlKeywords.In)} ({string.Join(", ", paramNames)})";
+    }
+
+    private static string BuildBetweenClause(string column, string paramBase, string value, List<SqlParameter> parameters)
+    {
+        var values = value.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim()).ToArray();
+        if (values.Length < 2) return "";
+        string p1 = $"{paramBase}_b1", p2 = $"{paramBase}_b2";
+        parameters.Add(new SqlParameter(p1, values[0]));
+        parameters.Add(new SqlParameter(p2, values[1]));
+        return $"{column} {DbConstants.SqlKeywords.Between} {p1} {DbConstants.SqlKeywords.And} {p2}";
+    }
+
+    private static void ApplyGroupingAndHaving(StringBuilder sqlBuilder, DynamicQueryRequestDto request, List<string> groupByColumns, List<SqlParameter> parameters)
+    {
+        if (groupByColumns.Count == 0) return;
+
+        sqlBuilder.Append('\n').Append(DbConstants.SqlKeywords.GroupBy).Append(' ').AppendJoin(", ", groupByColumns);
+
+        if (request.AdvancedSelectColumns == null) return;
+
+        var havingClauses = new List<string>();
+        int hpIndex = 0;
+        foreach (var c in request.AdvancedSelectColumns)
+        {
+            if (!c.HavingOperator.HasValue || string.IsNullOrEmpty(c.HavingValue) || c.Aggregate == AggregateType.None) continue;
+
+            string paramName = $"@hp{hpIndex++}";
+            string functionalCol = $"{c.Aggregate.ToString().ToUpper()}([{c.TableName.Replace("]", "]]")}].[{c.ColumnName.Replace("]", "]]")}])";
+
+            string clause = c.HavingOperator.Value switch
             {
-                sqlBuilder.Append(" HAVING ").Append(string.Join(" AND ", havingClauses));
+                FilterOperator.Equals => $"{functionalCol} = {paramName}",
+                FilterOperator.NotEquals => $"{functionalCol} <> {paramName}",
+                FilterOperator.GreaterThan => $"{functionalCol} > {paramName}",
+                FilterOperator.GreaterThanOrEqual => $"{functionalCol} >= {paramName}",
+                FilterOperator.LessThan => $"{functionalCol} < {paramName}",
+                FilterOperator.LessThanOrEqual => $"{functionalCol} <= {paramName}",
+                FilterOperator.IsNull => $"{functionalCol} {DbConstants.SqlKeywords.IsNull}",
+                FilterOperator.IsNotNull => $"{functionalCol} {DbConstants.SqlKeywords.IsNotNull}",
+                _ => ""
+            };
+
+            if (!string.IsNullOrEmpty(clause))
+            {
+                havingClauses.Add(clause);
+                if (c.HavingOperator != FilterOperator.IsNull && c.HavingOperator != FilterOperator.IsNotNull)
+                    parameters.Add(new SqlParameter(paramName, c.HavingValue));
             }
         }
 
-        // 5. Build Pagination Clause
-        if (isPagination)
-        {
-            // Note: SQL Server OFFSET/FETCH requires an ORDER BY clause. 
-            // We use ORDER BY 1 (the first column in SELECT) as a generic fallback.
-            int offset = Math.Max(0, request.PageNumber - 1) * Math.Max(1, request.PageSize);
-            sqlBuilder.Append($" ORDER BY 1 OFFSET {offset} ROWS FETCH NEXT {Math.Max(1, request.PageSize)} ROWS ONLY");
-        }
-
-        return (sqlBuilder.ToString(), parameters.ToArray());
+        if (havingClauses.Count > 0)
+            sqlBuilder.Append('\n').Append(DbConstants.SqlKeywords.Having).Append(' ').AppendJoin($"\n   {DbConstants.SqlKeywords.And} ", havingClauses);
     }
 
-    public async Task<DataTable> GetPreviewDataAsync(DynamicQueryRequestDto request)
+    private static void ApplyPagination(StringBuilder sqlBuilder, DynamicQueryRequestDto request, string orderByColumn)
     {
-        var (sql, parameters) = BuildDynamicQuery(request, isPagination: true);
-        return await ExecuteQueryAsync(sql, CommandType.Text, parameters);
+        int offset = Math.Max(0, request.PageNumber - 1) * Math.Max(1, request.PageSize);
+        sqlBuilder.Append('\n').Append(DbConstants.SqlKeywords.OrderBy).Append(' ').Append(orderByColumn)
+                  .Append(" \n").Append(DbConstants.SqlKeywords.Offset).Append(' ').Append(offset)
+                  .Append(" ROWS \n").Append(DbConstants.SqlKeywords.FetchNext).Append(' ').Append(Math.Max(1, request.PageSize))
+                  .Append(' ').Append(DbConstants.SqlKeywords.RowsOnly);
     }
 
-    public async Task<DataTable> GetReportDataAsync(DynamicQueryRequestDto request)
-    {
-        var (sql, parameters) = BuildDynamicQuery(request, isPagination: false);
-        return await ExecuteQueryAsync(sql, CommandType.Text, parameters);
-    }
+    #endregion
 }

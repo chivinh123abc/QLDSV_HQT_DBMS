@@ -7,9 +7,10 @@ namespace QLDSV_HTC.Web.Reports
 {
     public class DynamicStandardReport : XtraReport
     {
+        const int LandscapeThreshold = 6;
         public DynamicStandardReport(DataTable dt, DynamicQueryRequestDto request)
         {
-            if (dt.Columns.Count > 6)
+            if (dt.Columns.Count > LandscapeThreshold)
             {
                 PaperKind = DevExpress.Drawing.Printing.DXPaperKind.A3;
                 Landscape = true;
@@ -34,7 +35,7 @@ namespace QLDSV_HTC.Web.Reports
             XRLabel lblTitle = new()
             {
                 Text = $"BÁO CÁO TÙY CHỈNH: {request.TableName.ToUpper()}",
-                Font = new("Times New Roman", 18, DevExpress.Drawing.DXFontStyle.Bold),
+                Font = new("Arial", 18, DevExpress.Drawing.DXFontStyle.Bold),
                 TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleCenter,
                 SizeF = new(totalWidth, 40f),
                 LocationF = new(0f, 20f)
@@ -44,7 +45,7 @@ namespace QLDSV_HTC.Web.Reports
 
             // ------- PAGE HEADER DYNAMIC -------
             const DevExpress.XtraPrinting.BorderSide borderSideAll = DevExpress.XtraPrinting.BorderSide.All;
-            var headerFont = new DevExpress.Drawing.DXFont("Times New Roman", 11, DevExpress.Drawing.DXFontStyle.Bold);
+            var headerFont = new DevExpress.Drawing.DXFont("Arial", 11, DevExpress.Drawing.DXFontStyle.Bold);
 
             XRTable headerTable = new()
             {
@@ -73,7 +74,7 @@ namespace QLDSV_HTC.Web.Reports
             pageHeaderBand.Controls.Add(headerTable);
 
             // ------- DETAIL BAND DYNAMIC -------
-            var detailFont = new DevExpress.Drawing.DXFont("Times New Roman", 11, DevExpress.Drawing.DXFontStyle.Regular);
+            var detailFont = new DevExpress.Drawing.DXFont("Arial", 11, DevExpress.Drawing.DXFontStyle.Regular);
 
             XRTable detailTable = new()
             {

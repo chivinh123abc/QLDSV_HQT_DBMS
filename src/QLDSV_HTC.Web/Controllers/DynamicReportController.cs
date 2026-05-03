@@ -4,6 +4,7 @@ using QLDSV_HTC.Application.DTOs;
 using QLDSV_HTC.Application.Interfaces;
 using QLDSV_HTC.Domain.Constants;
 using QLDSV_HTC.Web.Reports;
+using System.Data;
 
 namespace QLDSV_HTC.Web.Controllers;
 
@@ -11,92 +12,93 @@ namespace QLDSV_HTC.Web.Controllers;
 [Authorize]
 public class DynamicReportController(IDynamicReportRepository dynamicReportRepository) : Controller
 {
-    [HttpGet(RouteConstants.DynamicReport.Index)]
-    public IActionResult Index()
+    private async Task<bool> IsTableAllowedAsync(string tableName)
     {
-        return View();
+        if (string.IsNullOrWhiteSpace(tableName)) return false;
+        var allowedTables = await dynamicReportRepository.GetAllowedTablesAsync();
+        return allowedTables.Contains(tableName, StringComparer.OrdinalIgnoreCase);
     }
+
+    [HttpGet(RouteConstants.DynamicReport.Index)]
+    public IActionResult Index() => View();
 
     [HttpGet(RouteConstants.DynamicReport.GetTables)]
     public async Task<IActionResult> GetTables()
     {
-        try
+        return await ExecuteAsync(async () =>
         {
             var tables = await dynamicReportRepository.GetAllowedTablesAsync();
             return Ok(new { success = true, data = tables });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { success = false, message = ex.Message });
-        }
+        }, "lấy danh sách bảng");
     }
 
     [HttpGet(RouteConstants.DynamicReport.GetColumns)]
     public async Task<IActionResult> GetColumns(string tableName)
     {
-        try
+        return await ExecuteAsync(async () =>
         {
-            if (string.IsNullOrWhiteSpace(tableName))
-                return BadRequest(new { success = false, message = "Tên bảng không được để trống." });
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            if (!await IsTableAllowedAsync(tableName))
+                return BadRequest(new { success = false, message = "Tên bảng không hợp lệ." });
 
             var columns = await dynamicReportRepository.GetTableColumnsAsync(tableName);
             return Ok(new { success = true, data = columns });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { success = false, message = ex.Message });
-        }
+        }, "lấy danh sách cột");
     }
 
     [HttpGet(RouteConstants.DynamicReport.GetRelations)]
-    public IActionResult GetRelations(string tableName)
+    public async Task<IActionResult> GetRelationsAsync(string tableName)
     {
-        try
+        return await ExecuteAsync(async () =>
         {
-            if (string.IsNullOrWhiteSpace(tableName))
-                return BadRequest(new { success = false, message = "Tên bảng không được để trống." });
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (TableRelationRegistry.Relations.TryGetValue(tableName, out var relations))
-            {
-                var targetTables = relations.Select(r => r.TargetTable).ToList();
-                return Ok(new { success = true, data = targetTables });
-            }
-            return Ok(new { success = true, data = new List<string>() });
-        }
-        catch (Exception ex)
+            if (!await IsTableAllowedAsync(tableName))
+                return BadRequest(new { success = false, message = "Tên bảng không hợp lệ." });
+
+            var targetTables = TableRelationRegistry.GetRelationsForTable(tableName);
+            return Ok(new { success = true, data = targetTables });
+        }, "lấy quan hệ bảng");
+    }
+
+    [HttpPost(RouteConstants.DynamicReport.GetSql)]
+    public async Task<IActionResult> GetSql([FromBody] DynamicQueryRequestDto request)
+    {
+        return await ExecuteAsync(async () =>
         {
-            return BadRequest(new { success = false, message = ex.Message });
-        }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            if (!await IsTableAllowedAsync(request.TableName))
+                return BadRequest(new { success = false, message = "Tên bảng không hợp lệ." });
+
+            var sql = await dynamicReportRepository.GetSqlPreviewAsync(request);
+            return Ok(new { success = true, sql });
+        }, "tạo SQL preview");
     }
 
     [HttpPost(RouteConstants.DynamicReport.Preview)]
     public async Task<IActionResult> Preview([FromBody] DynamicQueryRequestDto request)
     {
-        try
+        return await ExecuteAsync(async () =>
         {
-            if (string.IsNullOrWhiteSpace(request.TableName))
-                return BadRequest(new { success = false, message = "Tên bảng không được để trống." });
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var dataTable = await dynamicReportRepository.GetPreviewDataAsync(request);
+            if (!await IsTableAllowedAsync(request.TableName))
+                return BadRequest(new { success = false, message = "Tên bảng không hợp lệ." });
 
-            var rows = new List<Dictionary<string, object?>>();
-            foreach (System.Data.DataRow row in dataTable.Rows)
+            var (dataTable, rawSql) = await dynamicReportRepository.GetPreviewDataAsync(request);
+
+            var result = new
             {
-                var dict = new Dictionary<string, object?>();
-                foreach (System.Data.DataColumn col in dataTable.Columns)
-                {
-                    dict[col.ColumnName] = row[col] == DBNull.Value ? null : row[col];
-                }
-                rows.Add(dict);
-            }
+                success = true,
+                columns = dataTable.Columns.Cast<DataColumn>().Select(c => c.ColumnName).ToList(),
+                data = MapDataTableToList(dataTable),
+                sql = rawSql
+            };
 
-            var columnNames = dataTable.Columns.Cast<System.Data.DataColumn>().Select(c => c.ColumnName).ToList();
-            return Ok(new { success = true, columns = columnNames, data = rows });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { success = false, message = ex.Message });
-        }
+            return Ok(result);
+        }, "tạo preview dữ liệu");
     }
 
     [HttpPost(RouteConstants.DynamicReport.Generate)]
@@ -104,21 +106,63 @@ public class DynamicReportController(IDynamicReportRepository dynamicReportRepos
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.TableName))
-                return BadRequest("Tên bảng không được để trống.");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            if (!await IsTableAllowedAsync(request.TableName))
+                return BadRequest("Tên bảng không hợp lệ.");
 
             var dataTable = await dynamicReportRepository.GetReportDataAsync(request);
-            // Instantiate the report (ensure QLDSV_HTC.Web.Reports using directive is present)
             var report = new DynamicStandardReport(dataTable, request);
 
             await using var ms = new MemoryStream();
             await report.ExportToPdfAsync(ms);
-            Response.Headers.Append("Content-Disposition", $"inline; filename=\"DynamicReport_{request.TableName}_{DateTime.Now:yyyyMMddHHmmss}.pdf\"");
+
+            var fileName = $"DynamicReport_{request.TableName}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+            Response.Headers.Append("Content-Disposition", $"inline; filename=\"{fileName}\"");
             return File(ms.ToArray(), "application/pdf");
         }
-        catch (Exception ex)
+        catch (ArgumentException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest($"Dữ liệu không hợp lệ: {ex.Message}");
+        }
+        catch (Exception)
+        {
+            return BadRequest("Đã xảy ra lỗi khi tạo báo cáo.");
         }
     }
+
+    #region Helpers
+
+    private async Task<IActionResult> ExecuteAsync(Func<Task<IActionResult>> action, string actionName)
+    {
+        try
+        {
+            return await action();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { success = false, message = $"Dữ liệu không hợp lệ: {ex.Message}" });
+        }
+        catch (Exception)
+        {
+            return BadRequest(new { success = false, message = $"Đã xảy ra lỗi khi {actionName}." });
+        }
+    }
+
+    private static List<Dictionary<string, object?>> MapDataTableToList(DataTable dt)
+    {
+        var rows = new List<Dictionary<string, object?>>();
+        foreach (DataRow row in dt.Rows)
+        {
+            var dict = new Dictionary<string, object?>();
+            foreach (DataColumn col in dt.Columns)
+            {
+                dict[col.ColumnName] = row[col] == DBNull.Value ? null : row[col];
+            }
+            rows.Add(dict);
+        }
+        return rows;
+    }
+
+    #endregion
 }
