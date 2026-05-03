@@ -34,7 +34,9 @@ namespace QLDSV_HTC.Web.Reports
             // ------- REPORT HEADER -------
             XRLabel lblTitle = new()
             {
-                Text = $"BÁO CÁO TÙY CHỈNH: {request.TableName.ToUpper()}",
+                Text = !string.IsNullOrWhiteSpace(request.ReportTitle) 
+                    ? request.ReportTitle.ToUpper()
+                    : $"BÁO CÁO TÙY CHỈNH: {request.TableName.ToUpper()}",
                 Font = new("Arial", 18, DevExpress.Drawing.DXFontStyle.Bold),
                 TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleCenter,
                 SizeF = new(totalWidth, 40f),

@@ -4,6 +4,16 @@ public class DynamicQueryRequestDto
 {
     public string TableName { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Custom title for the report. Defaults to table name if empty.
+    /// </summary>
+    public string? ReportTitle { get; set; }
+
+    /// <summary>
+    /// Custom file name for the PDF export. Defaults to auto-generated if empty.
+    /// </summary>
+    public string? FileName { get; set; }
+
     // For backward compatibility or simple queries
     public List<string> SelectColumns { get; set; } = [];
 

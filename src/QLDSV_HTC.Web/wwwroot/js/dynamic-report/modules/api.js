@@ -64,6 +64,18 @@ export const ApiService = {
             throw new Error(errorText || 'Lỗi tạo báo cáo PDF');
         }
         
-        return await response.blob();
+        const blob = await response.blob();
+        let filename = `Report_${payload.TableName}_${Date.now()}.pdf`;
+        
+        const contentDisposition = response.headers.get('Content-Disposition');
+        if (contentDisposition && contentDisposition.includes('filename=')) {
+            const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+            const matches = filenameRegex.exec(contentDisposition);
+            if (matches != null && matches[1]) { 
+                filename = matches[1].replace(/['"]/g, '');
+            }
+        }
+        
+        return { blob, filename };
     }
 };

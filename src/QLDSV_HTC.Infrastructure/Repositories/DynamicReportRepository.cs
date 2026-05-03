@@ -13,7 +13,14 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
 {
     public async Task<IEnumerable<string>> GetAllowedTablesAsync()
     {
-        const string query = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE IN ('BASE TABLE', 'VIEW') AND TABLE_NAME NOT LIKE 'SPRING_%' AND TABLE_NAME NOT LIKE 'sys%' ORDER BY TABLE_NAME";
+        const string query = @"
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_TYPE IN ('BASE TABLE', 'VIEW') 
+              AND TABLE_NAME NOT LIKE 'SPRING_%' 
+              AND TABLE_NAME NOT LIKE 'sys%'
+              AND HAS_PERMS_BY_NAME('[dbo].[' + TABLE_NAME + ']', 'OBJECT', 'SELECT') = 1
+            ORDER BY TABLE_NAME";
         var dt = await ExecuteQueryAsync(query, CommandType.Text);
 
         var tables = new List<string>();
@@ -105,7 +112,9 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
             {
                 string colName = c.ColumnName.Replace("]", "]]");
                 string safeColTable = c.TableName.Replace("]", "]]");
-                string qualifiedCol = $"[{safeColTable}].[{colName}]";
+                string qualifiedCol = string.IsNullOrWhiteSpace(c.Expression) 
+                    ? $"[{safeColTable}].[{colName}]" 
+                    : c.Expression; // We trust Expression from backend validation, but front-end should only allow safe constructs.
 
                 bool isRaw = c.Aggregate == AggregateType.None;
                 string aggFunc = isRaw ? "NONE" : c.Aggregate.ToString().ToUpper();
@@ -119,13 +128,31 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
                     aggAlias = isRaw ? colName : $"{aggFunc}_{colName}";
                 }
 
+                // If it's a computed column (has Expression), we MUST have an alias, and we don't apply GROUP BY to it directly unless wrapped properly, 
+                // but usually computed columns are raw.
+                if (!string.IsNullOrWhiteSpace(c.Expression) && string.IsNullOrWhiteSpace(c.AliasName))
+                {
+                    aggAlias = "ComputedColumn"; // Fallback alias
+                }
+
                 string uniqueKey = $"{qualifiedCol}_{aggFunc}_{aggAlias}";
                 if (!uniqueKeys.Add(uniqueKey)) continue;
 
                 if (isRaw)
                 {
                     selectedColumns.Add($"{qualifiedCol} AS [{aggAlias}]");
-                    if (hasAggregates) groupByColumns.Add(qualifiedCol);
+                    if (hasAggregates) 
+                    {
+                        if (string.IsNullOrWhiteSpace(c.Expression))
+                        {
+                            groupByColumns.Add(qualifiedCol);
+                        }
+                        else 
+                        {
+                            // If expression is used with aggregates, it must be part of GROUP BY
+                            groupByColumns.Add(qualifiedCol); 
+                        }
+                    }
                 }
                 else
                 {
@@ -158,7 +185,8 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
 
             if (safeJoinType != DbConstants.SqlKeywords.InnerJoin &&
                 safeJoinType != DbConstants.SqlKeywords.LeftJoin &&
-                safeJoinType != DbConstants.SqlKeywords.RightJoin)
+                safeJoinType != DbConstants.SqlKeywords.RightJoin &&
+                safeJoinType != DbConstants.SqlKeywords.FullOuterJoin)
             {
                 throw new ArgumentException($"Invalid JoinType: {safeJoinType}");
             }

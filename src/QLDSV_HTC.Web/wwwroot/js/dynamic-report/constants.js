@@ -27,6 +27,20 @@ export const SELECTORS = {
     generatePdfBtnText: '#generatePdfBtnText',
     joinRowTemplate: '#joinRowTemplate',
     filterRowTemplate: '#filterRowTemplate',
+    // New fields
+    addComputedColumnBtn: '#addComputedColumnBtn',
+    computedColumnModal: '#computedColumnModal',
+    computedColumnForm: '#computedColumnForm',
+    computedCol1: '#computedCol1',
+    computedOp: '#computedOp',
+    computedCol2: '#computedCol2',
+    computedLiteral: '#computedLiteral',
+    computedAlias: '#computedAlias',
+    reportTitleInput: '#reportTitleInput',
+    fileNameInput: '#fileNameInput',
+    fileNamePreview: '#fileNamePreview',
+    selectedColumnsOrderContainer: '#selectedColumnsOrderContainer',
+    sortableColumns: '#sortableColumns',
 };
 
 export const API_ENDPOINTS = {

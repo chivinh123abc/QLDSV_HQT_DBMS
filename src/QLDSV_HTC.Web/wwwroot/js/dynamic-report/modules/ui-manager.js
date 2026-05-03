@@ -55,14 +55,14 @@ export const UIManager = {
             return;
         }
 
-        const html = tables.map(table => {
+        let html = tables.map(table => {
             const cols = columnsByTable[table];
             const allSelected = cols.length > 0 && cols.every(col => isSelected(table, col));
             
             const colsHtml = cols.map((col, index) => {
                 const id = `col_${table}_${index}`;
                 const checked = isSelected(table, col);
-                const selectedCol = selectedColumns.find(c => c.TableName === table && c.ColumnName === col);
+                const selectedCol = selectedColumns.find(c => c.TableName === table && c.ColumnName === col && !c.IsComputed);
                 const aliasVal = selectedCol ? selectedCol.AliasName : '';
                 
                 return `
@@ -91,7 +91,52 @@ export const UIManager = {
             `;
         }).join('');
 
+        const computedCols = selectedColumns.filter(c => c.IsComputed);
+        if (computedCols.length > 0) {
+            html += `
+                <div class="table-group-label d-flex justify-content-between align-items-center mt-3 text-warning border-warning">
+                    <span><i class="bi bi-calculator me-1"></i> Cột tính toán</span>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    ${computedCols.map(c => {
+                        const realIndex = selectedColumns.indexOf(c);
+                        return `
+                        <div class="col-chip pe-2 border-warning d-flex align-items-center">
+                            <span class="text-truncate text-warning ms-2 me-2" style="max-width:200px;" title="${escapeHtml(c.Expression)}">
+                                ${escapeHtml(c.AliasName)}
+                            </span>
+                            <button type="button" class="btn btn-sm btn-link text-warning p-0 me-2 edit-computed-col-btn" 
+                                data-real-index="${realIndex}" title="Sửa">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-link text-danger p-0 delete-computed-col-btn" 
+                                data-expression="${escapeHtml(c.Expression)}" data-alias="${escapeHtml(c.AliasName)}" title="Xóa">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    `}).join('')}
+                </div>
+            `;
+        }
+
         DOM.columnSelectionContainer.innerHTML = html;
+
+        if (DOM.sortableColumns && DOM.selectedColumnsOrderContainer) {
+            if (selectedColumns.length === 0) {
+                DOM.selectedColumnsOrderContainer.style.display = 'none';
+            } else {
+                DOM.selectedColumnsOrderContainer.style.display = 'block';
+                DOM.sortableColumns.innerHTML = selectedColumns.map((col, index) => {
+                    const label = col.IsComputed ? col.AliasName : `${col.TableName}.${col.ColumnName}`;
+                    const badgeClass = col.IsComputed ? 'border-warning text-dark' : 'border-secondary text-dark';
+                    return `
+                        <div class="badge bg-light p-2 sortable-item ${badgeClass}" draggable="true" data-index="${index}" style="cursor: move; user-select: none;">
+                            <i class="bi bi-grip-vertical text-muted me-1"></i>${escapeHtml(label)}
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
     },
 
     renderAggregation(selectedColumns, isEnabled) {
@@ -104,7 +149,28 @@ export const UIManager = {
         
         let html = '<div class="small text-muted mb-3"><i class="bi bi-info-circle-fill text-primary"></i> Các cột không chọn hàm thống kê sẽ tự động được gom nhóm (GROUP BY).</div>';
         
+        // Dropdown to add aggregation
+        const availableColsOptions = selectedColumns.map((c, i) => {
+            const label = c.IsComputed ? c.AliasName : `${c.TableName}.${c.ColumnName}`;
+            return `<option value="${i}">${escapeHtml(label)}</option>`;
+        }).join('');
+
+        html += `
+            <div class="d-flex gap-2 mb-3">
+                <select class="form-select form-select-sm" id="newAggColumnSelect">
+                    <option value="">-- Chọn cột để thống kê --</option>
+                    ${availableColsOptions}
+                </select>
+                <button type="button" class="btn btn-sm btn-primary" id="addNewAggBtn">
+                    <i class="bi bi-plus"></i> Thêm
+                </button>
+            </div>
+            <div id="aggItemsContainer">
+        `;
+
         html += selectedColumns.map((col, index) => {
+            if (!col.ShowInAgg) return ''; // Only render if explicitly shown
+
             const hasAgg = col.Aggregate !== 'None';
             
             const aggOptions = AGGREGATE_FUNCTIONS.map(o => 
@@ -118,8 +184,9 @@ export const UIManager = {
             return `
                 <div class="agg-item" data-index="${index}">
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="small fw-bold text-primary text-truncate" title="${col.TableName}.${col.ColumnName}">
-                            ${col.ColumnName} <span class="badge bg-secondary ms-1 fw-normal">${col.TableName}</span>
+                        <span class="small fw-bold ${col.IsComputed ? 'text-warning' : 'text-primary'} text-truncate" title="${col.IsComputed ? escapeHtml(col.Expression) : `${col.TableName}.${col.ColumnName}`}">
+                            ${col.IsComputed ? escapeHtml(col.AliasName) : col.ColumnName} 
+                            ${!col.IsComputed ? `<span class="badge bg-secondary ms-1 fw-normal">${col.TableName}</span>` : `<span class="badge bg-warning text-dark ms-1 fw-normal">Computed</span>`}
                         </span>
                         <div class="btn-group btn-group-sm">
                             <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 add-extra-agg-btn" title="Nhân bản">
@@ -152,6 +219,7 @@ export const UIManager = {
             `;
         }).join('');
 
+        html += '</div>';
         DOM.aggregationContainer.innerHTML = html;
     },
 
@@ -178,6 +246,7 @@ export const UIManager = {
 
     updateButtonStates(state, hasSelectedColumns) {
         const hasTable = !!state.tableName;
+        if (DOM.addComputedColumnBtn) DOM.addComputedColumnBtn.disabled = !hasTable;
         DOM.addFilterBtn.disabled = !hasTable;
         DOM.toggleAggregationBtn.disabled = !hasSelectedColumns;
         DOM.previewBtn.disabled = !(hasTable && hasSelectedColumns);

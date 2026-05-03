@@ -117,7 +117,11 @@ public class DynamicReportController(IDynamicReportRepository dynamicReportRepos
             await using var ms = new MemoryStream();
             await report.ExportToPdfAsync(ms);
 
-            var fileName = $"DynamicReport_{request.TableName}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
+            var baseName = !string.IsNullOrWhiteSpace(request.FileName)
+                ? SanitizeFileName(request.FileName)
+                : $"DynamicReport_{request.TableName}_{DateTime.Now:yyyyMMddHHmmss}";
+            var fileName = $"{baseName}.pdf";
+            
             Response.Headers.Append("Content-Disposition", $"inline; filename=\"{fileName}\"");
             return File(ms.ToArray(), "application/pdf");
         }
@@ -132,6 +136,13 @@ public class DynamicReportController(IDynamicReportRepository dynamicReportRepos
     }
 
     #region Helpers
+
+    private static string SanitizeFileName(string fileName)
+    {
+        var invalids = Path.GetInvalidFileNameChars();
+        var newName = string.Join("_", fileName.Split(invalids, StringSplitOptions.RemoveEmptyEntries)).TrimEnd('.');
+        return string.IsNullOrWhiteSpace(newName) ? "DynamicReport" : newName;
+    }
 
     private async Task<IActionResult> ExecuteAsync(Func<Task<IActionResult>> action, string actionName)
     {

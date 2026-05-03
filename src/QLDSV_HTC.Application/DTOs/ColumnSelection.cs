@@ -8,6 +8,12 @@ public class ColumnSelection
     public string TableName { get; set; } = string.Empty;
     public string ColumnName { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Optional SQL expression (e.g., "HO + ' ' + TEN").
+    /// When set, overrides ColumnName for the SELECT clause.
+    /// </summary>
+    public string? Expression { get; set; }
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public AggregateType Aggregate { get; set; } = AggregateType.None;
 
