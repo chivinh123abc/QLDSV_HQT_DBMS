@@ -134,7 +134,7 @@ namespace QLDSV_HTC.Web.Controllers
 
             if (asJson) return ConvertDataTableToJson(ds);
 
-            var report = new BangDiemMonHocLTCReport(facultyName, schoolYear, semester, subjectName, group)
+            var report = new BangDiemMonHocLtcReport(facultyName, schoolYear, semester, subjectName, group)
             {
                 DataSource = ds
             };
