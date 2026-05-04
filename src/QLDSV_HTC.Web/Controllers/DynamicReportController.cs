@@ -121,7 +121,7 @@ public class DynamicReportController(IDynamicReportRepository dynamicReportRepos
                 ? SanitizeFileName(request.FileName)
                 : $"DynamicReport_{request.TableName}_{DateTime.Now:yyyyMMddHHmmss}";
             var fileName = $"{baseName}.pdf";
-            
+
             Response.Headers.Append("Content-Disposition", $"inline; filename=\"{fileName}\"");
             return File(ms.ToArray(), "application/pdf");
         }

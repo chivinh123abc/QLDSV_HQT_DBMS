@@ -112,8 +112,8 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
             {
                 string colName = c.ColumnName.Replace("]", "]]");
                 string safeColTable = c.TableName.Replace("]", "]]");
-                string qualifiedCol = string.IsNullOrWhiteSpace(c.Expression) 
-                    ? $"[{safeColTable}].[{colName}]" 
+                string qualifiedCol = string.IsNullOrWhiteSpace(c.Expression)
+                    ? $"[{safeColTable}].[{colName}]"
                     : c.Expression; // We trust Expression from backend validation, but front-end should only allow safe constructs.
 
                 bool isRaw = c.Aggregate == AggregateType.None;
@@ -141,16 +141,16 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
                 if (isRaw)
                 {
                     selectedColumns.Add($"{qualifiedCol} AS [{aggAlias}]");
-                    if (hasAggregates) 
+                    if (hasAggregates)
                     {
                         if (string.IsNullOrWhiteSpace(c.Expression))
                         {
                             groupByColumns.Add(qualifiedCol);
                         }
-                        else 
+                        else
                         {
                             // If expression is used with aggregates, it must be part of GROUP BY
-                            groupByColumns.Add(qualifiedCol); 
+                            groupByColumns.Add(qualifiedCol);
                         }
                     }
                 }

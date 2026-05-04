@@ -411,3 +411,75 @@
     letter-spacing: 0;
     color: var(--dr-text-muted);
 }
+
+/* Computed Column Parts UI */
+.dr-page .computed-part-row {
+    position: relative;
+    background: var(--dr-surface);
+    border: 1px solid var(--dr-border);
+    border-radius: 12px;
+    padding: 18px 16px 16px 16px;
+    margin-bottom: 12px;
+    transition: all .2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,.02);
+}
+.dr-page .computed-part-row:hover {
+    border-color: var(--dr-primary-light);
+    box-shadow: 0 4px 10px rgba(0,0,0,.05);
+    background: var(--dr-primary-bg);
+}
+.dr-page .computed-part-row .remove-part-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--dr-border);
+    background: #fff;
+    color: var(--dr-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .65rem;
+    cursor: pointer;
+    transition: all .2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 5;
+}
+.dr-page .computed-part-row .remove-part-btn:hover {
+    background: var(--dr-danger);
+    color: #fff;
+    border-color: var(--dr-danger);
+    transform: scale(1.1);
+}
+.dr-page .computed-part-row label {
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--dr-text-muted);
+    margin-bottom: 4px;
+}
+.dr-page .computed-part-row select, 
+.dr-page .computed-part-row input {
+    border-radius: 8px;
+}
+
+/* Modal Styling Enhancements */
+.modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: var(--dr-shadow-lg);
+}
+.modal-header {
+    background: var(--dr-surface-alt);
+    border-bottom: 1px solid var(--dr-border);
+    border-radius: 16px 16px 0 0;
+    padding: 16px 24px;
+}
+.modal-body {
+    padding: 24px;
+}
+.modal-footer {
+    border-top: 1px solid var(--dr-border);
+    padding: 16px 24px;
+}

@@ -38,24 +38,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         openComputedColumnModal();
     });
 
+    DOM.addPartBtn?.addEventListener('click', () => {
+        addComputedPartRow();
+    });
+
     function openComputedColumnModal(editIndexStr = null) {
         if (!State.tableName) {
             UIManager.showAlert('Vui lòng chọn bảng chính trước.', 'warning');
             return;
         }
         
-        [DOM.computedCol1, DOM.computedCol2].forEach(select => {
-            select.innerHTML = '<option value="">-- Chọn cột --</option>';
-            Object.keys(State.columnsByTable).forEach(table => {
-                const group = document.createElement('optgroup');
-                group.label = `Bảng: ${table}`;
-                State.columnsByTable[table].forEach(col => {
-                    group.appendChild(new Option(col, `[${table}].[${col}]`));
-                });
-                select.appendChild(group);
-            });
-        });
+        // Reset base part
+        DOM.computedCol1.innerHTML = '<option value="">-- Chọn cột --</option>';
+        populateColumnSelect(DOM.computedCol1);
         
+        DOM.dynamicPartsContainer.innerHTML = '';
         DOM.computedColumnForm?.reset();
         
         if (editIndexStr !== null && editIndexStr !== undefined) {
@@ -64,11 +61,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             const col = State.selectedColumns[idx];
             if (col) {
                 const parts = col.ComputedParts || {};
-                DOM.computedCol1.value = parts.col1 || '';
-                DOM.computedOp.value = parts.op || '+';
-                DOM.computedCol2.value = parts.col2 || '';
-                DOM.computedLiteral.value = parts.literal || '';
+                DOM.computedCol1.value = parts.baseCol || '';
+                DOM.computedLiteral1.value = parts.baseLiteral || '';
                 DOM.computedAlias.value = col.AliasName || '';
+                
+                // Rebuild dynamic rows
+                if (parts.dynamicParts && Array.isArray(parts.dynamicParts)) {
+                    parts.dynamicParts.forEach(p => {
+                        addComputedPartRow(p);
+                    });
+                }
             }
         } else {
             delete DOM.computedColumnForm.dataset.editIndex;
@@ -78,30 +80,70 @@ document.addEventListener('DOMContentLoaded', async () => {
         modal.show();
     }
 
+    function populateColumnSelect(select) {
+        Object.keys(State.columnsByTable).forEach(table => {
+            const group = document.createElement('optgroup');
+            group.label = `Bảng: ${table}`;
+            State.columnsByTable[table].forEach(col => {
+                group.appendChild(new Option(col, `[${table}].[${col}]`));
+            });
+            select.appendChild(group);
+        });
+    }
+
+    function addComputedPartRow(data = null) {
+        const clone = DOM.computedPartTemplate.content.cloneNode(true);
+        const row = clone.querySelector('.computed-part-row');
+        const colSelect = row.querySelector('.part-col-select');
+        const opSelect = row.querySelector('.part-op-select');
+        const litInput = row.querySelector('.part-lit-input');
+        
+        populateColumnSelect(colSelect);
+        
+        if (data) {
+            opSelect.value = data.op || '+';
+            colSelect.value = data.col || '';
+            litInput.value = data.lit || '';
+        }
+        
+        row.querySelector('.remove-part-btn').addEventListener('click', () => {
+            row.remove();
+        });
+        
+        DOM.dynamicPartsContainer.appendChild(row);
+    }
+
     DOM.computedColumnForm?.addEventListener('submit', (e) => {
         e.preventDefault();
         
-        const col1 = DOM.computedCol1.value;
-        const op = DOM.computedOp.value;
-        const col2 = DOM.computedCol2.value;
-        const literal = DOM.computedLiteral.value;
+        const baseCol = DOM.computedCol1.value;
+        const baseLit = DOM.computedLiteral1.value;
         const alias = DOM.computedAlias.value.trim();
         const editIndexStr = DOM.computedColumnForm.dataset.editIndex;
         
-        if (!col1 && !literal) {
-            UIManager.showAlert('Cần chọn ít nhất Cột 1 hoặc nhập giá trị cố định.', 'warning');
+        if (!baseCol && !baseLit) {
+            UIManager.showAlert('Cần chọn Cột hoặc nhập giá trị bắt đầu.', 'warning');
             return;
         }
         
-        let expression = '';
-        if (col1) expression += col1;
-        else expression += literal;
+        // Collect dynamic parts
+        const dynamicParts = [];
+        const rows = DOM.dynamicPartsContainer.querySelectorAll('.computed-part-row');
         
-        if (op && (col2 || literal)) {
-            expression += ` ${op} `;
-            if (col2) expression += col2;
-            else expression += literal;
-        }
+        let expression = baseCol || baseLit;
+        
+        rows.forEach(row => {
+            const op = row.querySelector('.part-op-select').value;
+            const col = row.querySelector('.part-col-select').value;
+            const lit = row.querySelector('.part-lit-input').value;
+            
+            if (op && (col || lit)) {
+                dynamicParts.push({ op, col, lit });
+                expression = `(${expression}) ${op} ${col || lit}`;
+            }
+        });
+        
+        const parts = { baseCol, baseLiteral: baseLit, dynamicParts };
         
         if (editIndexStr) {
             const idx = parseInt(editIndexStr);
@@ -109,11 +151,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 State.selectedColumns[idx].Expression = expression;
                 State.selectedColumns[idx].AliasName = alias;
                 State.selectedColumns[idx].ColumnName = alias;
-                State.selectedColumns[idx].ComputedParts = { col1, op, col2, literal };
+                State.selectedColumns[idx].ComputedParts = parts;
             }
             delete DOM.computedColumnForm.dataset.editIndex;
         } else {
-            State.addComputedColumn(expression, alias, { col1, op, col2, literal });
+            State.addComputedColumn(expression, alias, parts);
         }
         
         UIManager.renderColumns(State.columnsByTable, State.selectedColumns);
@@ -122,7 +164,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const modal = bootstrap.Modal.getInstance(DOM.computedColumnModal);
         if (modal) modal.hide();
-        e.target.reset();
     });
 
     DOM.copySqlBtn.addEventListener('click', async () => {

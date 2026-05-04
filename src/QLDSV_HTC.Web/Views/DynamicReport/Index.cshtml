@@ -228,51 +228,91 @@
 
 <!-- Modal: Computed Column -->
 <div class="modal fade" id="computedColumnModal" tabindex="-1" aria-labelledby="computedColumnModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form id="computedColumnForm">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="computedColumnModalLabel">Thêm cột tính toán</h5>
+                    <h5 class="modal-title" id="computedColumnModalLabel">Cấu hình cột tính toán</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Cột 1</label>
-                        <select class="form-select form-select-sm" id="computedCol1" required>
-                            <option value="">-- Chọn cột --</option>
-                        </select>
+                    <!-- Base Part (Part 1) -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-primary mb-2">Phần 1 (Bắt đầu)</label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label x-small text-muted">Chọn cột</label>
+                                <select class="form-select form-select-sm base-col-select" id="computedCol1">
+                                    <option value="">-- Chọn cột --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label x-small text-muted">Hoặc giá trị cố định</label>
+                                <input type="text" class="form-control form-control-sm" id="computedLiteral1" placeholder="VD: 0.5, 'A'..." />
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Phép toán / Toán tử</label>
-                        <select class="form-select form-select-sm" id="computedOp" required>
-                            <option value="+">Cộng (+)</option>
-                            <option value="-">Trừ (-)</option>
-                            <option value="*">Nhân (*)</option>
-                            <option value="/">Chia (/)</option>
-                            <option value="+ ' ' +">Ghép chuỗi có khoảng trắng</option>
-                            <option value="+ '-' +">Ghép chuỗi có dấu gạch ngang</option>
-                        </select>
+
+                    <div id="dynamicPartsContainer" class="mb-3">
+                        <!-- Dynamic rows will be added here -->
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Cột 2 / Giá trị</label>
-                        <select class="form-select form-select-sm" id="computedCol2">
-                            <option value="">-- Chọn cột (hoặc nhập giá trị ở dưới) --</option>
-                        </select>
-                        <input type="text" class="form-control form-control-sm mt-2" id="computedLiteral" placeholder="Hoặc nhập giá trị cố định (VD: 10, 'A')" />
+
+                    <div class="mb-4">
+                        <button type="button" class="dr-btn-add w-100 py-2 border-dashed" id="addPartBtn">
+                            <i class="bi bi-plus-circle-fill me-2"></i> Thêm bước tính toán tiếp theo
+                        </button>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Tên hiển thị (Bắt buộc)</label>
-                        <input type="text" class="form-control form-control-sm" id="computedAlias" required placeholder="VD: HOVATEN" />
+
+                    <div class="mb-1 pt-4 border-top">
+                        <label class="form-label small fw-bold">Tên hiển thị (Alias)</label>
+                        <input type="text" class="form-control form-control-sm" id="computedAlias" required placeholder="VD: DIEM_TONG_KET" />
+                    </div>
+                    <div class="form-text x-small text-muted mt-2">
+                        <i class="bi bi-info-circle me-1"></i> Biểu thức sẽ được tính tuần tự: <code>((Phần 1 [Op] Phần 2) [Op] Phần 3)...</code>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary btn-sm">Thêm cột</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-link btn-sm text-decoration-none text-muted" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="dr-btn dr-btn-primary px-4">
+                        <i class="bi bi-check-lg"></i> Lưu cấu hình
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Template: Computed Part Row -->
+<template id="computedPartTemplate">
+    <div class="computed-part-row">
+        <div class="remove-part-btn" title="Xóa bước này">
+            <i class="bi bi-x-lg"></i>
+        </div>
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label x-small text-muted">Toán tử</label>
+                <select class="form-select form-select-sm border-primary part-op-select" required>
+                    <option value="+">Cộng (+)</option>
+                    <option value="-">Trừ (-)</option>
+                    <option value="*">Nhân (*)</option>
+                    <option value="/">Chia (/)</option>
+                    <option value="+ ' ' +">Ghép ' '</option>
+                    <option value="+ '-' +">Ghép '-'</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label x-small text-muted">Cột dữ liệu</label>
+                <select class="form-select form-select-sm part-col-select">
+                    <option value="">-- Chọn cột --</option>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label x-small text-muted">Hoặc giá trị cố định</label>
+                <input type="text" class="form-control form-control-sm part-lit-input" placeholder="Giá trị..." />
+            </div>
+        </div>
+    </div>
+</template>
 
 @section Scripts {
     <script type="module" src="~/js/dynamic-report/index.js" asp-append-version="true"></script>
