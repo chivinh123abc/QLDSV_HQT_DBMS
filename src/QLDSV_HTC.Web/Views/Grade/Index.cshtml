@@ -1,5 +1,7 @@
 @{
     ViewData["Title"] = "Nhập điểm môn học";
+    var currentYear = DateTime.Now.Year;
+    var defaultYear = $"{currentYear}-{currentYear + 1}";
 }
 
 <div class="dashboard-container animate__animated animate__fadeIn">
@@ -13,19 +15,76 @@
             </p>
         </div>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-info shadow-sm hover-scale d-flex align-items-center gap-2">
-                <i class="bi bi-printer"></i>
-                <span>In Bảng Điểm</span>
-            </button>
-            <button type="button" class="btn btn-primary shadow-sm hover-scale d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-primary shadow-sm hover-scale d-flex align-items-center gap-2" id="btnSaveGrades">
                 <i class="bi bi-save"></i>
                 <span>Ghi Bảng Điểm</span>
             </button>
         </div>
     </div>
 
+    @* ── Filter Section ── *@
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <form id="filterForm" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-dark small">Niên Khóa</label>
+                    <select class="form-select border-0 bg-light" id="filterYear">
+                        <option value="">-- Tất cả Niên khóa --</option>
+                        @if (ViewBag.SchoolYears != null)
+                        {
+                            foreach (var year in ViewBag.SchoolYears)
+                            {
+                                <option value="@year">@year</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-dark small">Học Kỳ</label>
+                    <select class="form-select border-0 bg-light" id="filterSemester">
+                        <option value="0">-- Tất cả Học kỳ --</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold text-dark small">Môn Học</label>
+                    <select class="form-select border-0 bg-light" id="filterSubject">
+                        <option value="">-- Tất cả Môn học --</option>
+                        @if (ViewBag.Subjects != null)
+                        {
+                            foreach (var subject in ViewBag.Subjects)
+                            {
+                                <option value="@subject.SubjectId">@subject.SubjectName</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold text-dark small">Nhóm</label>
+                    <input type="number" class="form-control border-0 bg-light" id="filterGroup" value="0" min="0" placeholder="Tất cả nhóm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-dark small">Mã Sinh Viên</label>
+                    <input type="text" class="form-control border-0 bg-light" id="filterStudentId" placeholder="VD: N20DCCN..." />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold text-dark small">Tên Sinh Viên</label>
+                    <input type="text" class="form-control border-0 bg-light" id="filterStudentName" placeholder="VD: Nguyễn Văn A..." />
+                </div>
+                <div class="col-12 mt-3">
+                    <button type="button" class="btn btn-outline-primary" id="btnLoadStudents">
+                        <i class="bi bi-search me-1"></i> Tải danh sách
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0" id="gradesTable">
                 <thead class="bg-light bg-opacity-50">
                     <tr>
                         <th class="ps-4" style="width: 80px;">
@@ -72,94 +131,16 @@
                         </th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr class="hover-row transition-base">
-                        <td class="ps-4">
-                            <span class="text-muted small fw-bold">01</span>
-                        </td>
-                        <td>
-                            <span class="fw-bold font-monospace text-primary bg-primary-subtle px-2 py-1 rounded small border border-primary-subtle">
-                                N15DCCN001
-                            </span>
-                        </td>
-                        <td>
-                            <div class="fw-semibold text-dark">Nguyễn Văn A</div>
-                            <div class="text-muted small">Lớp: D15CQCN01-N</div>
-                        </td>
-                        <td>
-                            <div class="input-group input-group-sm justify-content-center">
-                                <input type="number" class="form-control text-center shadow-none border-dashed" value="10" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
-                                <span class="input-group-text bg-transparent border-0 text-muted small">10%</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-group input-group-sm justify-content-center">
-                                <input type="number" class="form-control text-center shadow-none border-dashed" value="8" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
-                                <span class="input-group-text bg-transparent border-0 text-muted small">30%</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-group input-group-sm justify-content-center">
-                                <input type="number" class="form-control text-center shadow-none border-dashed" value="7.5" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
-                                <span class="input-group-text bg-transparent border-0 text-muted small">60%</span>
-                            </div>
-                        </td>
-                        <td class="text-center pe-4">
-                            <div class="d-flex flex-column align-items-center">
-                                <span class="fw-bold text-success fs-5">7.9</span>
-                                <span class="badge bg-success-subtle text-success small rounded-pill px-3 shadow-sm border border-success-subtle">Đạt</span>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr class="hover-row transition-base">
-                        <td class="ps-4">
-                            <span class="text-muted small fw-bold">02</span>
-                        </td>
-                        <td>
-                            <span class="fw-bold font-monospace text-primary bg-primary-subtle px-2 py-1 rounded small border border-primary-subtle">
-                                N15DCCN002
-                            </span>
-                        </td>
-                        <td>
-                            <div class="fw-semibold text-dark">Trần Thị B</div>
-                            <div class="text-muted small">Lớp: D15CQCN01-N</div>
-                        </td>
-                        <td>
-                            <div class="input-group input-group-sm justify-content-center">
-                                <input type="number" class="form-control text-center shadow-none border-dashed" value="9" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
-                                <span class="input-group-text bg-transparent border-0 text-muted small">10%</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-group input-group-sm justify-content-center">
-                                <input type="number" class="form-control text-center shadow-none border-dashed" value="9" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
-                                <span class="input-group-text bg-transparent border-0 text-muted small">30%</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-group input-group-sm justify-content-center">
-                                <input type="number" class="form-control text-center shadow-none border-dashed" value="8.5" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
-                                <span class="input-group-text bg-transparent border-0 text-muted small">60%</span>
-                            </div>
-                        </td>
-                        <td class="text-center pe-4">
-                            <div class="d-flex flex-column align-items-center">
-                                <span class="fw-bold text-success fs-5">8.7</span>
-                                <span class="badge bg-success-subtle text-success small rounded-pill px-3 shadow-sm border border-success-subtle">Đạt</span>
-                            </div>
-                        </td>
-                    </tr>
+                <tbody id="gradesTbody">
+                    <!-- Data will be loaded here via JS -->
                 </tbody>
             </table>
         </div>
         <div class="card-footer bg-white py-3 border-top-0">
             <div class="d-flex justify-content-between align-items-center">
-                <div class="text-muted small">
+                <div class="text-muted small" id="statusMessage">
                     <i class="bi bi-info-circle me-1"></i>
-                    Nhấn <strong>Ghi Bảng Điểm</strong> để lưu tất cả thay đổi.
-                </div>
-                <div class="pagination-placeholder">
-                    @* Pagination could go here if needed *@
+                    Vui lòng chọn bộ lọc và nhấn Tải danh sách.
                 </div>
             </div>
         </div>
@@ -171,26 +152,33 @@
         border-style: dashed !important;
         border-color: #dee2e6 !important;
     }
+
     .border-dashed:focus {
         border-style: solid !important;
         border-color: #86b7fe !important;
     }
+
     .custom-input-group {
         border-radius: 8px;
         overflow: hidden;
         border: 1px solid #e0e0e0;
         transition: all 0.2s ease;
     }
+
     .custom-input-group:focus-within {
         border-color: var(--bs-primary);
         box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
     }
-    .custom-input-group .input-group-text, 
+
+    .custom-input-group .input-group-text,
     .custom-input-group .form-select {
         border: none;
     }
-    .text-xs { font-size: 0.7rem; }
-    
+
+    .text-xs {
+        font-size: 0.7rem;
+    }
+
     .icon-box {
         width: 42px;
         height: 42px;
@@ -199,3 +187,7 @@
         justify-content: center;
     }
 </style>
+
+@section Scripts {
+    <script src="~/js/pages/grade/index.js"></script>
+}

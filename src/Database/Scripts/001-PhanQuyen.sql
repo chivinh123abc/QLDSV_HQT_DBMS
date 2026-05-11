@@ -1,5 +1,4 @@
 USE [QLDSV_HTC]
-GO
 
 -- ========================================================
 -- 1. NHÓM PGV: TOÀN QUYỀN TRÊN DATABASE
@@ -27,6 +26,8 @@ GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachLop TO [KHOA];
 GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachSinhVien TO [KHOA];
 
 GRANT EXECUTE ON OBJECT::dbo.sp_PhanTrangDong TO [KHOA];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_CapNhatDiem TO [KHOA];
 
 GRANT VIEW DEFINITION TO [KHOA];
 
