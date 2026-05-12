@@ -1,0 +1,423 @@
+﻿diff --git a/src/Database/Scripts/001-PhanQuyen.sql b/src/Database/Scripts/001-PhanQuyen.sql
+index 1cb6535..2e010f1 100644
+--- a/src/Database/Scripts/001-PhanQuyen.sql
++++ b/src/Database/Scripts/001-PhanQuyen.sql
+@@ -1,5 +1,4 @@
+ USE [QLDSV_HTC]
+-GO
+ 
+ -- ========================================================
+ -- 1. NH├ôM PGV: TO├ÇN QUYß╗ÇN TR├èN DATABASE
+@@ -90,5 +89,9 @@ GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachLopTinChi_SinhVien TO [SV];
+ 
+ GRANT EXECUTE ON OBJECT::dbo.sp_DangKyLopTinChi TO [SV];
+ 
++GRANT EXECUTE ON OBJECT::dbo.sp_HuyDangKyLopTinChi TO [SV];
++GO
++GRANT EXECUTE ON OBJECT::dbo.sp_DangKyLopTinChi TO [SV];
++
+ GRANT EXECUTE ON OBJECT::dbo.sp_HuyDangKyLopTinChi TO [SV];
+ GO
+\ No newline at end of file
+diff --git a/src/Database/StoredProcedures/011-sp_CRUD_SinhVien.sql b/src/Database/StoredProcedures/011-sp_CRUD_SinhVien.sql
+index 365e510..cdea1f1 100644
+--- a/src/Database/StoredProcedures/011-sp_CRUD_SinhVien.sql
++++ b/src/Database/StoredProcedures/011-sp_CRUD_SinhVien.sql
+@@ -1,5 +1,4 @@
+ USE [QLDSV_HTC]
+-GO
+ 
+ -- =============================================
+ -- Description: Lß║╖p danh s├ích sinh vi├¬n
+@@ -48,7 +47,6 @@ BEGIN
+ END
+ GO
+ 
+-
+ -- =============================================
+ -- Description: Th├¬m mß╗¢i sinh vi├¬n
+ -- =============================================
+@@ -92,7 +90,6 @@ BEGIN
+ END
+ GO
+ 
+-
+ -- =============================================
+ -- Description: Cß║¡p nhß║¡t th├┤ng tin sinh vi├¬n
+ -- =============================================
+@@ -152,7 +149,6 @@ BEGIN
+ END
+ GO
+ 
+-
+ -- =============================================
+ -- Description: X├│a sinh vi├¬n
+ -- =============================================
+@@ -181,4 +177,4 @@ BEGIN
+         END
+     END CATCH
+ END
+-GO
++GO
+\ No newline at end of file
+diff --git a/src/QLDSV_HTC.Domain/Constants/AppConstants.cs b/src/QLDSV_HTC.Domain/Constants/AppConstants.cs
+index 8fc013a..59f108c 100644
+--- a/src/QLDSV_HTC.Domain/Constants/AppConstants.cs
++++ b/src/QLDSV_HTC.Domain/Constants/AppConstants.cs
+@@ -85,4 +85,6 @@ namespace QLDSV_HTC.Domain.Constants
+             public const string IsoDate = "yyyy-MM-dd";
+         }
+     }
++}
++    }
+ }
+diff --git a/src/QLDSV_HTC.Web/Controllers/AccountController.cs b/src/QLDSV_HTC.Web/Controllers/AccountController.cs
+index 2cf9948..df3a7c6 100644
+--- a/src/QLDSV_HTC.Web/Controllers/AccountController.cs
++++ b/src/QLDSV_HTC.Web/Controllers/AccountController.cs
+@@ -190,8 +190,8 @@ namespace QLDSV_HTC.Web.Controllers
+                 var currentLoginName = User.FindFirst(AppConstants.SessionKeys.Username)?.Value?.Trim();
+                 var accounts = await accountRepository.GetAccountListAsync();
+                 var targetAccount = accounts.FirstOrDefault(a => a.LoginName.Trim().Equals(input.OldLoginName.Trim(), StringComparison.OrdinalIgnoreCase));
+-                
+-                bool isSelfUpdate = targetAccount != null && !string.IsNullOrEmpty(currentLoginName) && 
++
++                bool isSelfUpdate = targetAccount != null && !string.IsNullOrEmpty(currentLoginName) &&
+                                    targetAccount.UserName.Trim().Equals(currentLoginName, StringComparison.OrdinalIgnoreCase);
+ 
+                 var currentGroup = User.FindFirst(AppConstants.SessionKeys.Group)?.Value ?? string.Empty;
+diff --git a/src/QLDSV_HTC.Web/Views/Grade/Index.cshtml b/src/QLDSV_HTC.Web/Views/Grade/Index.cshtml
+index c5c05ed..06f977a 100644
+--- a/src/QLDSV_HTC.Web/Views/Grade/Index.cshtml
++++ b/src/QLDSV_HTC.Web/Views/Grade/Index.cshtml
+@@ -24,173 +24,190 @@
+         </div>
+     </div>
+ 
+-        <div class="table-responsive">
+-            <table class="table table-hover align-middle mb-0">
+-                <thead class="bg-light bg-opacity-50">
+-                    <tr>
+-                        <th class="ps-4" style="width: 80px;">
+-                            <div class="d-flex align-items-center gap-2">
+-                                <i class="bi bi-hash text-primary"></i>
+-                                <span>STT</span>
+-                            </div>
+-                        </th>
+-                        <th style="width: 150px;">
+-                            <div class="d-flex align-items-center gap-2">
+-                                <i class="bi bi-person-badge text-primary"></i>
+-                                <span>M├ú SV</span>
+-                            </div>
+-                        </th>
+-                        <th>
+-                            <div class="d-flex align-items-center gap-2">
+-                                <i class="bi bi-person text-primary"></i>
+-                                <span>Hß╗ì v├á T├¬n</span>
+-                            </div>
+-                        </th>
+-                        <th class="text-center" style="width: 140px;">
+-                            <div class="d-flex align-items-center gap-2 justify-content-center">
+-                                <i class="bi bi-check-circle text-primary"></i>
+-                                <span>Chuy├¬n cß║ºn</span>
+-                            </div>
+-                        </th>
+-                        <th class="text-center" style="width: 140px;">
+-                            <div class="d-flex align-items-center gap-2 justify-content-center">
+-                                <i class="bi bi-pencil-square text-primary"></i>
+-                                <span>Giß╗»a kß╗│</span>
+-                            </div>
+-                        </th>
+-                        <th class="text-center" style="width: 140px;">
+-                            <div class="d-flex align-items-center gap-2 justify-content-center">
+-                                <i class="bi bi-award text-primary"></i>
+-                                <span>Cuß╗æi kß╗│</span>
+-                            </div>
+-                        </th>
+-                        <th class="text-center pe-4" style="width: 140px;">
+-                            <div class="d-flex align-items-center gap-2 justify-content-center">
+-                                <i class="bi bi-calculator text-primary"></i>
+-                                <span>─Éiß╗âm TB</span>
+-                            </div>
+-                        </th>
+-                    </tr>
+-                </thead>
+-                <tbody>
+-                    <tr class="hover-row transition-base">
+-                        <td class="ps-4">
+-                            <span class="text-muted small fw-bold">01</span>
+-                        </td>
+-                        <td>
+-                            <span class="fw-bold font-monospace text-primary bg-primary-subtle px-2 py-1 rounded small border border-primary-subtle">
+-                                N15DCCN001
+-                            </span>
+-                        </td>
+-                        <td>
+-                            <div class="fw-semibold text-dark">Nguyß╗àn V─ân A</div>
+-                            <div class="text-muted small">Lß╗¢p: D15CQCN01-N</div>
+-                        </td>
+-                        <td>
+-                            <div class="input-group input-group-sm justify-content-center">
+-                                <input type="number" class="form-control text-center shadow-none border-dashed" value="10" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
+-                                <span class="input-group-text bg-transparent border-0 text-muted small">10%</span>
+-                            </div>
+-                        </td>
+-                        <td>
+-                            <div class="input-group input-group-sm justify-content-center">
+-                                <input type="number" class="form-control text-center shadow-none border-dashed" value="8" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
+-                                <span class="input-group-text bg-transparent border-0 text-muted small">30%</span>
+-                            </div>
+-                        </td>
+-                        <td>
+-                            <div class="input-group input-group-sm justify-content-center">
+-                                <input type="number" class="form-control text-center shadow-none border-dashed" value="7.5" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
+-                                <span class="input-group-text bg-transparent border-0 text-muted small">60%</span>
+-                            </div>
+-                        </td>
+-                        <td class="text-center pe-4">
+-                            <div class="d-flex flex-column align-items-center">
+-                                <span class="fw-bold text-success fs-5">7.9</span>
+-                                <span class="badge bg-success-subtle text-success small rounded-pill px-3 shadow-sm border border-success-subtle">─Éß║ít</span>
+-                            </div>
+-                        </td>
+-                    </tr>
+-                    <tr class="hover-row transition-base">
+-                        <td class="ps-4">
+-                            <span class="text-muted small fw-bold">02</span>
+-                        </td>
+-                        <td>
+-                            <span class="fw-bold font-monospace text-primary bg-primary-subtle px-2 py-1 rounded small border border-primary-subtle">
+-                                N15DCCN002
+-                            </span>
+-                        </td>
+-                        <td>
+-                            <div class="fw-semibold text-dark">Trß║ºn Thß╗ï B</div>
+-                            <div class="text-muted small">Lß╗¢p: D15CQCN01-N</div>
+-                        </td>
+-                        <td>
+-                            <div class="input-group input-group-sm justify-content-center">
+-                                <input type="number" class="form-control text-center shadow-none border-dashed" value="9" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
+-                                <span class="input-group-text bg-transparent border-0 text-muted small">10%</span>
+-                            </div>
+-                        </td>
+-                        <td>
+-                            <div class="input-group input-group-sm justify-content-center">
+-                                <input type="number" class="form-control text-center shadow-none border-dashed" value="9" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
+-                                <span class="input-group-text bg-transparent border-0 text-muted small">30%</span>
+-                            </div>
+-                        </td>
+-                        <td>
+-                            <div class="input-group input-group-sm justify-content-center">
+-                                <input type="number" class="form-control text-center shadow-none border-dashed" value="8.5" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
+-                                <span class="input-group-text bg-transparent border-0 text-muted small">60%</span>
+-                            </div>
+-                        </td>
+-                        <td class="text-center pe-4">
+-                            <div class="d-flex flex-column align-items-center">
+-                                <span class="fw-bold text-success fs-5">8.7</span>
+-                                <span class="badge bg-success-subtle text-success small rounded-pill px-3 shadow-sm border border-success-subtle">─Éß║ít</span>
+-                            </div>
+-                        </td>
+-                    </tr>
+-                </tbody>
+-            </table>
+-        </div>
+-        <div class="card-footer bg-white py-3 border-top-0">
+-            <div class="d-flex justify-content-between align-items-center">
+-                <div class="text-muted small">
+-                    <i class="bi bi-info-circle me-1"></i>
+-                    Nhß║Ñn <strong>Ghi Bß║úng ─Éiß╗âm</strong> ─æß╗â l╞░u tß║Ñt cß║ú thay ─æß╗òi.
+-                </div>
+-                <div class="pagination-placeholder">
+-                    @* Pagination could go here if needed *@
+-                </div>
++    <div class="table-responsive">
++        <table class="table table-hover align-middle mb-0">
++            <thead class="bg-light bg-opacity-50">
++                <tr>
++                    <th class="ps-4" style="width: 80px;">
++                        <div class="d-flex align-items-center gap-2">
++                            <i class="bi bi-hash text-primary"></i>
++                            <span>STT</span>
++                        </div>
++                    </th>
++                    <th style="width: 150px;">
++                        <div class="d-flex align-items-center gap-2">
++                            <i class="bi bi-person-badge text-primary"></i>
++                            <span>M├ú SV</span>
++                        </div>
++                    </th>
++                    <th>
++                        <div class="d-flex align-items-center gap-2">
++                            <i class="bi bi-person text-primary"></i>
++                            <span>Hß╗ì v├á T├¬n</span>
++                        </div>
++                    </th>
++                    <th class="text-center" style="width: 140px;">
++                        <div class="d-flex align-items-center gap-2 justify-content-center">
++                            <i class="bi bi-check-circle text-primary"></i>
++                            <span>Chuy├¬n cß║ºn</span>
++                        </div>
++                    </th>
++                    <th class="text-center" style="width: 140px;">
++                        <div class="d-flex align-items-center gap-2 justify-content-center">
++                            <i class="bi bi-pencil-square text-primary"></i>
++                            <span>Giß╗»a kß╗│</span>
++                        </div>
++                    </th>
++                    <th class="text-center" style="width: 140px;">
++                        <div class="d-flex align-items-center gap-2 justify-content-center">
++                            <i class="bi bi-award text-primary"></i>
++                            <span>Cuß╗æi kß╗│</span>
++                        </div>
++                    </th>
++                    <th class="text-center pe-4" style="width: 140px;">
++                        <div class="d-flex align-items-center gap-2 justify-content-center">
++                            <i class="bi bi-calculator text-primary"></i>
++                            <span>─Éiß╗âm TB</span>
++                        </div>
++                    </th>
++                </tr>
++            </thead>
++            <tbody>
++                <tr class="hover-row transition-base">
++                    <td class="ps-4">
++                        <span class="text-muted small fw-bold">01</span>
++                    </td>
++                    <td>
++                        <span
++                            class="fw-bold font-monospace text-primary bg-primary-subtle px-2 py-1 rounded small border border-primary-subtle">
++                            N15DCCN001
++                        </span>
++                    </td>
++                    <td>
++                        <div class="fw-semibold text-dark">Nguyß╗àn V─ân A</div>
++                        <div class="text-muted small">Lß╗¢p: D15CQCN01-N</div>
++                    </td>
++                    <td>
++                        <div class="input-group input-group-sm justify-content-center">
++                            <input type="number" class="form-control text-center shadow-none border-dashed" value="10"
++                                min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
++                            <span class="input-group-text bg-transparent border-0 text-muted small">10%</span>
++                        </div>
++                    </td>
++                    <td>
++                        <div class="input-group input-group-sm justify-content-center">
++                            <input type="number" class="form-control text-center shadow-none border-dashed" value="8"
++                                min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
++                            <span class="input-group-text bg-transparent border-0 text-muted small">30%</span>
++                        </div>
++                    </td>
++                    <td>
++                        <div class="input-group input-group-sm justify-content-center">
++                            <input type="number" class="form-control text-center shadow-none border-dashed" value="7.5"
++                                min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
++                            <span class="input-group-text bg-transparent border-0 text-muted small">60%</span>
++                        </div>
++                    </td>
++                    <td class="text-center pe-4">
++                        <div class="d-flex flex-column align-items-center">
++                            <span class="fw-bold text-success fs-5">7.9</span>
++                            <span
++                                class="badge bg-success-subtle text-success small rounded-pill px-3 shadow-sm border border-success-subtle">─Éß║ít</span>
++                        </div>
++                    </td>
++                </tr>
++                <tr class="hover-row transition-base">
++                    <td class="ps-4">
++                        <span class="text-muted small fw-bold">02</span>
++                    </td>
++                    <td>
++                        <span
++                            class="fw-bold font-monospace text-primary bg-primary-subtle px-2 py-1 rounded small border border-primary-subtle">
++                            N15DCCN002
++                        </span>
++                    </td>
++                    <td>
++                        <div class="fw-semibold text-dark">Trß║ºn Thß╗ï B</div>
++                        <div class="text-muted small">Lß╗¢p: D15CQCN01-N</div>
++                    </td>
++                    <td>
++                        <div class="input-group input-group-sm justify-content-center">
++                            <input type="number" class="form-control text-center shadow-none border-dashed" value="9"
++                                min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
++                            <span class="input-group-text bg-transparent border-0 text-muted small">10%</span>
++                        </div>
++                    </td>
++                    <td>
++                        <div class="input-group input-group-sm justify-content-center">
++                            <input type="number" class="form-control text-center shadow-none border-dashed" value="9"
++                                min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
++                            <span class="input-group-text bg-transparent border-0 text-muted small">30%</span>
++                        </div>
++                    </td>
++                    <td>
++                        <div class="input-group input-group-sm justify-content-center">
++                            <input type="number" class="form-control text-center shadow-none border-dashed" value="8.5"
++                                min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
++                            <span class="input-group-text bg-transparent border-0 text-muted small">60%</span>
++                        </div>
++                    </td>
++                    <td class="text-center pe-4">
++                        <div class="d-flex flex-column align-items-center">
++                            <span class="fw-bold text-success fs-5">8.7</span>
++                            <span
++                                class="badge bg-success-subtle text-success small rounded-pill px-3 shadow-sm border border-success-subtle">─Éß║ít</span>
++                        </div>
++                    </td>
++                </tr>
++            </tbody>
++        </table>
++    </div>
++    <div class="card-footer bg-white py-3 border-top-0">
++        <div class="d-flex justify-content-between align-items-center">
++            <div class="text-muted small">
++                <i class="bi bi-info-circle me-1"></i>
++                Nhß║Ñn <strong>Ghi Bß║úng ─Éiß╗âm</strong> ─æß╗â l╞░u tß║Ñt cß║ú thay ─æß╗òi.
++            </div>
++            <div class="pagination-placeholder">
++                @* Pagination could go here if needed *@
+             </div>
+         </div>
+     </div>
+ </div>
++</div>
+ 
+ <style>
+     .border-dashed {
+         border-style: dashed !important;
+         border-color: #dee2e6 !important;
+     }
++
+     .border-dashed:focus {
+         border-style: solid !important;
+         border-color: #86b7fe !important;
+     }
++
+     .custom-input-group {
+         border-radius: 8px;
+         overflow: hidden;
+         border: 1px solid #e0e0e0;
+         transition: all 0.2s ease;
+     }
++
+     .custom-input-group:focus-within {
+         border-color: var(--bs-primary);
+         box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+     }
+-    .custom-input-group .input-group-text, 
++
++    .custom-input-group .input-group-text,
+     .custom-input-group .form-select {
+         border: none;
+     }
+-    .text-xs { font-size: 0.7rem; }
+-    
++
++    .text-xs {
++        font-size: 0.7rem;
++    }
++
+     .icon-box {
+         width: 42px;
+         height: 42px;
