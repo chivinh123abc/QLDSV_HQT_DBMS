@@ -3,10 +3,10 @@
  * @description Main entry point. Initializes state, UI, and event listeners.
  */
 
-import { ApiService } from './modules/api.js';
-import { State } from './modules/state-manager.js';
-import { UIManager, initDom } from './modules/ui-manager.js';
-import { highlightSql, getFilterPlaceholder, getAntiForgeryToken } from './modules/helpers.js';
+import { ApiService } from './modules/api.js?v=3';
+import { State } from './modules/state-manager.js?v=3';
+import { UIManager, initDom } from './modules/ui-manager.js?v=3';
+import { highlightSql, getFilterPlaceholder, getAntiForgeryToken } from './modules/helpers.js?v=3';
 
 let sqlPreviewTimer = null;
 
@@ -47,14 +47,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             UIManager.showAlert('Vui lòng chọn bảng chính trước.', 'warning');
             return;
         }
-        
+
         // Reset base part
         DOM.computedCol1.innerHTML = '<option value="">-- Chọn cột --</option>';
         populateColumnSelect(DOM.computedCol1);
-        
+
         DOM.dynamicPartsContainer.innerHTML = '';
         DOM.computedColumnForm?.reset();
-        
+
         if (editIndexStr !== null && editIndexStr !== undefined) {
             DOM.computedColumnForm.dataset.editIndex = editIndexStr;
             const idx = parseInt(editIndexStr);
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 DOM.computedCol1.value = parts.baseCol || '';
                 DOM.computedLiteral1.value = parts.baseLiteral || '';
                 DOM.computedAlias.value = col.AliasName || '';
-                
+
                 // Rebuild dynamic rows
                 if (parts.dynamicParts && Array.isArray(parts.dynamicParts)) {
                     parts.dynamicParts.forEach(p => {
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             delete DOM.computedColumnForm.dataset.editIndex;
         }
-        
+
         const modal = bootstrap.Modal.getOrCreateInstance(DOM.computedColumnModal);
         modal.show();
     }
@@ -97,54 +97,54 @@ document.addEventListener('DOMContentLoaded', async () => {
         const colSelect = row.querySelector('.part-col-select');
         const opSelect = row.querySelector('.part-op-select');
         const litInput = row.querySelector('.part-lit-input');
-        
+
         populateColumnSelect(colSelect);
-        
+
         if (data) {
             opSelect.value = data.op || '+';
             colSelect.value = data.col || '';
             litInput.value = data.lit || '';
         }
-        
+
         row.querySelector('.remove-part-btn').addEventListener('click', () => {
             row.remove();
         });
-        
+
         DOM.dynamicPartsContainer.appendChild(row);
     }
 
     DOM.computedColumnForm?.addEventListener('submit', (e) => {
         e.preventDefault();
-        
+
         const baseCol = DOM.computedCol1.value;
         const baseLit = DOM.computedLiteral1.value;
         const alias = DOM.computedAlias.value.trim();
         const editIndexStr = DOM.computedColumnForm.dataset.editIndex;
-        
+
         if (!baseCol && !baseLit) {
             UIManager.showAlert('Cần chọn Cột hoặc nhập giá trị bắt đầu.', 'warning');
             return;
         }
-        
+
         // Collect dynamic parts
         const dynamicParts = [];
         const rows = DOM.dynamicPartsContainer.querySelectorAll('.computed-part-row');
-        
+
         let expression = baseCol || baseLit;
-        
+
         rows.forEach(row => {
             const op = row.querySelector('.part-op-select').value;
             const col = row.querySelector('.part-col-select').value;
             const lit = row.querySelector('.part-lit-input').value;
-            
+
             if (op && (col || lit)) {
                 dynamicParts.push({ op, col, lit });
                 expression = `(${expression}) ${op} ${col || lit}`;
             }
         });
-        
+
         const parts = { baseCol, baseLiteral: baseLit, dynamicParts };
-        
+
         if (editIndexStr) {
             const idx = parseInt(editIndexStr);
             if (State.selectedColumns[idx]) {
@@ -157,11 +157,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             State.addComputedColumn(expression, alias, parts);
         }
-        
+
         UIManager.renderColumns(State.columnsByTable, State.selectedColumns);
         UIManager.renderAggregation(State.selectedColumns, State.isAggregationEnabled);
         stateChanged();
-        
+
         const modal = bootstrap.Modal.getInstance(DOM.computedColumnModal);
         if (modal) modal.hide();
     });
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             await navigator.clipboard.writeText(DOM.sqlPreviewCode.textContent);
             const originalText = DOM.copySqlBtnText.textContent;
             const originalIcon = DOM.copySqlIcon.className;
-            
+
             DOM.copySqlBtnText.textContent = 'Copied!';
             DOM.copySqlIcon.className = 'bi bi-check-lg';
             DOM.copySqlBtn.classList.replace('border-secondary', 'border-success');
@@ -191,13 +191,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     let fileNameValidationTimer = null;
 
     function removeVietnameseTones(str) {
-        str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,"a"); 
-        str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,"e"); 
-        str = str.replace(/ì|í|ị|ỉ|ĩ/g,"i"); 
-        str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,"o"); 
-        str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,"u"); 
-        str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g,"y"); 
-        str = str.replace(/đ/g,"d");
+        str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+        str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+        str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+        str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+        str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+        str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+        str = str.replace(/đ/g, "d");
         str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
         str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
         str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
@@ -205,8 +205,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
         str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
         str = str.replace(/Đ/g, "D");
-        str = str.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, ""); 
-        str = str.replace(/\u02C6|\u0306|\u031B/g, ""); 
+        str = str.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, "");
+        str = str.replace(/\u02C6|\u0306|\u031B/g, "");
         return str;
     }
 
@@ -214,13 +214,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         let originalVal = e.target.value;
         const vietnameseRegex = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]/;
         const specialCharRegex = /[\\/:*?"<>|]/;
-        
+
         if (vietnameseRegex.test(originalVal) || specialCharRegex.test(originalVal)) {
             DOM.fileNameInput.classList.add('is-invalid');
             let cleanVal = removeVietnameseTones(originalVal).replace(/[\\/:*?"<>|]/g, '');
             e.target.value = cleanVal;
             originalVal = cleanVal;
-            
+
             if (fileNameValidationTimer) clearTimeout(fileNameValidationTimer);
             fileNameValidationTimer = setTimeout(() => {
                 DOM.fileNameInput.classList.remove('is-invalid');
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function triggerSqlPreview() {
         if (sqlPreviewTimer) clearTimeout(sqlPreviewTimer);
-        
+
         const payload = getRequestPayload();
         if (!payload.TableName || payload.AdvancedSelectColumns.length === 0) {
             DOM.sqlPreviewCode.textContent = "-- Cấu hình báo cáo để xem câu lệnh SQL tự động tạo tại đây...";
@@ -275,9 +275,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         DOM.joinsContainer.innerHTML = '';
         DOM.filtersContainer.innerHTML = '';
         DOM.aggregationContainer.innerHTML = '';
-        
+
         State.reset(tableName);
-        
+
         DOM.joinSelectionGroup.style.display = 'none';
         DOM.aggregationGroup.style.display = 'none';
         resetAggregationButton();
@@ -363,12 +363,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 item.classList.add('opacity-50');
             }
         });
-        
+
         DOM.sortableColumns.addEventListener('dragover', (e) => {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
         });
-        
+
         DOM.sortableColumns.addEventListener('drop', (e) => {
             e.preventDefault();
             const item = e.target.closest('.sortable-item');
@@ -378,14 +378,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const cols = State.selectedColumns;
                     const movedItem = cols.splice(dragStartIndex, 1)[0];
                     cols.splice(dropIndex, 0, movedItem);
-                    
+
                     UIManager.renderColumns(State.columnsByTable, State.selectedColumns);
                     UIManager.renderAggregation(State.selectedColumns, State.isAggregationEnabled);
                     stateChanged();
                 }
             }
         });
-        
+
         DOM.sortableColumns.addEventListener('dragend', (e) => {
             const item = e.target.closest('.sortable-item');
             if (item) item.classList.remove('opacity-50');
@@ -498,13 +498,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             select.add(new Option(table, table));
         });
 
-        select.addEventListener('change', async function() {
+        select.addEventListener('change', async function () {
             const table = this.value;
             if (table && !State.columnsByTable[table]) {
                 try {
                     const res = await ApiService.getColumns(table);
                     if (res.success) State.setColumns(table, res.data);
-                } catch (err) {}
+                } catch (err) { }
             }
             await rebuildColumnsFromActiveTables();
             stateChanged();
@@ -535,13 +535,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (res.success) res.data.forEach(t => {
                     if (!activeTables.includes(t)) newAvailableSet.add(t);
                 });
-            } catch (err) {}
+            } catch (err) { }
         }
         State.availableRelations = Array.from(newAvailableSet);
 
         // Filter out columns from tables no longer joined
         State.selectedColumns = State.selectedColumns.filter(c => activeTables.includes(c.TableName));
-        
+
+        // Clean up columnsByTable to only include active tables
+        const newColumnsByTable = {};
+        activeTables.forEach(t => {
+            if (State.columnsByTable[t]) {
+                newColumnsByTable[t] = State.columnsByTable[t];
+            }
+        });
+        State.columnsByTable = newColumnsByTable;
+
         UIManager.renderColumns(State.columnsByTable, State.selectedColumns);
         UIManager.renderAggregation(State.selectedColumns, State.isAggregationEnabled);
     }

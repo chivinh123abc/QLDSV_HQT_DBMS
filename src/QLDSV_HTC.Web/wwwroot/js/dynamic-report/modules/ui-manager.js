@@ -46,8 +46,15 @@ export const UIManager = {
      * Uses template strings and event delegation from index.js
      */
     renderColumns(columnsByTable, selectedColumns) {
-        const isSelected = (tableName, colName) =>
-            selectedColumns.some(c => c.TableName === tableName && c.ColumnName === colName);
+        const isSelected = (tableName, colName) => {
+            const cleanTbl = tableName.trim().toLowerCase();
+            const cleanCol = colName.trim().toLowerCase();
+            return selectedColumns.some(c => 
+                !c.IsComputed &&
+                c.TableName.trim().toLowerCase() === cleanTbl && 
+                c.ColumnName.trim().toLowerCase() === cleanCol
+            );
+        };
 
         const tables = Object.keys(columnsByTable);
         if (tables.length === 0) {
@@ -57,20 +64,27 @@ export const UIManager = {
 
         let html = tables.map(table => {
             const cols = columnsByTable[table];
-            const allSelected = cols.length > 0 && cols.every(col => isSelected(table, col));
-            
             const colsHtml = cols.map((col, index) => {
                 const id = `col_${table}_${index}`;
                 const checked = isSelected(table, col);
-                const selectedCol = selectedColumns.find(c => c.TableName === table && c.ColumnName === col && !c.IsComputed);
+                const disabled = !checked && selectedColumns.some(c => 
+                    !c.IsComputed &&
+                    c.ColumnName.trim().toLowerCase() === col.trim().toLowerCase() && 
+                    c.TableName.trim().toLowerCase() !== table.trim().toLowerCase()
+                );
+                const selectedCol = selectedColumns.find(c => 
+                    !c.IsComputed &&
+                    c.TableName.trim().toLowerCase() === table.trim().toLowerCase() && 
+                    c.ColumnName.trim().toLowerCase() === col.trim().toLowerCase()
+                );
                 const aliasVal = selectedCol ? selectedCol.AliasName : '';
                 
                 return `
-                    <div class="col-chip" style="${checked ? 'padding-right: 4px;' : ''}">
+                    <div class="col-chip ${disabled ? 'disabled' : ''}" style="${checked ? 'padding-right: 4px;' : ''}">
                         <div class="form-check mb-0 d-flex align-items-center">
                             <input class="form-check-input column-checkbox me-2" type="checkbox" 
-                                data-table="${table}" data-column="${col}" id="${id}" ${checked ? 'checked' : ''}>
-                            <label class="form-check-label text-truncate" style="max-width:140px; margin-right: ${checked ? '8px' : '0'}" for="${id}" title="${col}">
+                                data-table="${table}" data-column="${col}" id="${id}" ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
+                            <label class="form-check-label text-truncate ${disabled ? 'text-muted' : ''}" style="max-width:140px; margin-right: ${checked ? '8px' : '0'}" for="${id}" title="${col}">
                                 ${col}
                             </label>
                             ${checked ? `<input type="text" class="alias-input" data-table="${table}" data-column="${col}" value="${aliasVal}" placeholder="Alias..." title="Nhập Alias" />` : ''}
@@ -79,12 +93,23 @@ export const UIManager = {
                 `;
             }).join('');
 
+            const isColDisabled = (colName) => {
+                if (isSelected(table, colName)) return false;
+                return selectedColumns.some(c => 
+                    !c.IsComputed &&
+                    c.ColumnName.trim().toLowerCase() === colName.trim().toLowerCase() && 
+                    c.TableName.trim().toLowerCase() !== table.trim().toLowerCase()
+                );
+            };
+            const enabledCols = cols.filter(col => !isColDisabled(col));
+            const allSelected = enabledCols.length > 0 && enabledCols.every(col => isSelected(table, col));
+
             return `
-                <div class="table-group-label d-flex justify-content-between align-items-center">Bảng: ${table}</div>
-                <div class="select-all-row mb-2">
+                <div class="table-group-label d-flex justify-content-between align-items-center mt-3">
+                    <span class="fw-bold text-primary">${table}</span>
                     <div class="form-check mb-0">
                         <input class="form-check-input select-all-checkbox" type="checkbox" id="select_all_${table}" data-table="${table}" ${allSelected ? 'checked' : ''}>
-                        <label class="form-check-label" for="select_all_${table}" style="cursor:pointer">Chọn tất cả cột</label>
+                        <label class="form-check-label small" for="select_all_${table}" style="cursor:pointer">Chọn tất cả</label>
                     </div>
                 </div>
                 <div class="d-flex flex-wrap gap-2 mb-3">${colsHtml}</div>

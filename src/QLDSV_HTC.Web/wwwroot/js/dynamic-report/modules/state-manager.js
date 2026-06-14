@@ -23,8 +23,23 @@ export const State = {
     },
 
     toggleColumn(tableName, colName, isChecked) {
+        const cleanCol = colName.trim().toLowerCase();
+        const cleanTable = tableName.trim().toLowerCase();
+
         if (isChecked) {
-            if (!this.selectedColumns.some(c => c.TableName === tableName && c.ColumnName === colName && !c.IsComputed)) {
+            const existsInOtherTable = this.selectedColumns.some(c => 
+                !c.IsComputed && 
+                c.ColumnName.trim().toLowerCase() === cleanCol && 
+                c.TableName.trim().toLowerCase() !== cleanTable
+            );
+            if (existsInOtherTable) {
+                return;
+            }
+            if (!this.selectedColumns.some(c => 
+                !c.IsComputed && 
+                c.TableName.trim().toLowerCase() === cleanTable && 
+                c.ColumnName.trim().toLowerCase() === cleanCol
+            )) {
                 this.selectedColumns.push({
                     TableName: tableName,
                     ColumnName: colName,
@@ -38,7 +53,10 @@ export const State = {
                 });
             }
         } else {
-            this.selectedColumns = this.selectedColumns.filter(c => !(c.TableName === tableName && c.ColumnName === colName && !c.IsComputed));
+            this.selectedColumns = this.selectedColumns.filter(c => 
+                c.IsComputed || 
+                !(c.TableName.trim().toLowerCase() === cleanTable && c.ColumnName.trim().toLowerCase() === cleanCol)
+            );
         }
     },
 

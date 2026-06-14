@@ -100,6 +100,13 @@
     border-color: var(--dr-primary-light);
     background: var(--dr-primary-bg);
 }
+.dr-page .col-chip.disabled {
+    cursor: not-allowed !important;
+    opacity: 0.55;
+    background: #f1f5f9 !important;
+    border-color: var(--dr-border) !important;
+    pointer-events: none;
+}
 .dr-page .col-chip input:checked + label {
     color: var(--dr-primary);
     font-weight: 600;

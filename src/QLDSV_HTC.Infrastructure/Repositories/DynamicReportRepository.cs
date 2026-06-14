@@ -159,7 +159,7 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
                     selectedColumns.Add($"{aggFunc}({qualifiedCol}) AS [{aggAlias}]");
                 }
 
-                if (orderByColumn == "(SELECT NULL)") orderByColumn = $"[{aggAlias}]";
+                if (orderByColumn == "(SELECT NULL)") orderByColumn = isRaw ? qualifiedCol : $"[{aggAlias}]";
             }
             return string.Join(", ", selectedColumns);
         }
