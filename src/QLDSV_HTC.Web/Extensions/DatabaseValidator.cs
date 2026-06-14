@@ -18,7 +18,7 @@ namespace QLDSV_HTC.Web.Extensions
                 foreach (var file in Directory.GetFiles(spFolderPath, "*.sql"))
                 {
                     var content = await File.ReadAllTextAsync(file);
-                    var match = Regex.Match(content, @"CREATE\s+PROC(?:EDURE)?\s+([a-zA-Z0-9_]+)", RegexOptions.IgnoreCase);
+                    var match = Regex.Match(content, @"CREATE\s+(?:OR\s+ALTER\s+)?PROC(?:EDURE)?\s+(?:\[?[a-zA-Z0-9_]+\]?\s*\.\s*)?\[?([a-zA-Z0-9_]+)\]?", RegexOptions.IgnoreCase);
                     if (match.Success)
                     {
                         requiredSps.Add(match.Groups[1].Value);
