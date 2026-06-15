@@ -190,8 +190,8 @@ namespace QLDSV_HTC.Web.Controllers
                 var currentLoginName = User.FindFirst(AppConstants.SessionKeys.Username)?.Value?.Trim();
                 var accounts = await accountRepository.GetAccountListAsync();
                 var targetAccount = accounts.FirstOrDefault(a => a.LoginName.Trim().Equals(input.OldLoginName.Trim(), StringComparison.OrdinalIgnoreCase));
-                
-                bool isSelfUpdate = targetAccount != null && !string.IsNullOrEmpty(currentLoginName) && 
+
+                bool isSelfUpdate = targetAccount != null && !string.IsNullOrEmpty(currentLoginName) &&
                                    targetAccount.UserName.Trim().Equals(currentLoginName, StringComparison.OrdinalIgnoreCase);
 
                 var currentGroup = User.FindFirst(AppConstants.SessionKeys.Group)?.Value ?? string.Empty;

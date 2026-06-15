@@ -3,9 +3,9 @@ using System.Drawing;
 
 namespace QLDSV_HTC.Web.Reports
 {
-    public class BangDiemMonHocLTCReport : XtraReport
+    public class BangDiemMonHocLtcReport : XtraReport
     {
-        public BangDiemMonHocLTCReport(string facultyName, string nienKhoa, int hocKy, string subjectName, int nhom)
+        public BangDiemMonHocLtcReport(string facultyName, string nienKhoa, int hocKy, string subjectName, int nhom)
         {
             PaperKind = DevExpress.Drawing.Printing.DXPaperKind.A4;
             Landscape = false;

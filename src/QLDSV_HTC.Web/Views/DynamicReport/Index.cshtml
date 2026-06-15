@@ -1,0 +1,320 @@
+@using QLDSV_HTC.Domain.Enums
+@{
+    ViewData["Title"] = "Báo cáo động";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/dynamic-report.css" asp-append-version="true" />
+}
+
+<div class="dr-page">
+    <div class="container-fluid mt-3">
+        <div class="row g-3">
+            <!-- ============ LEFT PANEL: Configuration ============ -->
+            <div class="col-lg-4 col-md-5">
+                <div class="dr-card dr-config-sidebar">
+                    <div class="dr-card-header">
+                        <h5><i class="bi bi-gear-fill me-2"></i>Cấu hình báo cáo</h5>
+                    </div>
+                    <div class="dr-card-body">
+                        <form id="dynamicReportForm" autocomplete="off">
+
+                            <!-- STEP 1: Table Selection -->
+                            <div class="mb-3">
+                                <div class="step-label">
+                                    <span class="step-num">1</span> Chọn bảng chính
+                                </div>
+                                <select id="tableNameSelect" class="form-select form-select-sm" required>
+                                    <option value="">-- Đang tải danh sách bảng... --</option>
+                                </select>
+                            </div>
+
+                            <!-- STEP 2: Joins -->
+                            <div class="mb-3" id="joinSelectionGroup" style="display: none;">
+                                <div class="step-label">
+                                    <span class="step-num">2</span> Kết hợp bảng (JOIN)
+                                    <button type="button" class="dr-btn-add ms-auto" id="addJoinBtn">
+                                        <i class="bi bi-plus-lg"></i> Thêm
+                                    </button>
+                                </div>
+                                <div id="joinsContainer"></div>
+                            </div>
+
+                            <!-- STEP 3: Column Selection -->
+                            <div class="mb-3">
+                                <div class="step-label">
+                                    <span class="step-num">3</span> Chọn cột hiển thị
+                                </div>
+                                <div id="columnSelectionContainer" class="column-scroll rounded p-2">
+                                    <p class="text-muted small mb-0 empty-state-text">Vui lòng chọn bảng trước.</p>
+                                </div>
+                                <div class="mt-2 d-flex gap-2 flex-wrap mb-2">
+                                    <button type="button" class="dr-btn-add" id="addComputedColumnBtn" disabled>
+                                        <i class="bi bi-plus-slash-minus"></i> Cột tính toán
+                                    </button>
+                                    <button type="button" class="dr-btn-add" id="toggleAggregationBtn" disabled>
+                                        <i class="bi bi-calculator"></i> Thống kê (Group By)
+                                    </button>
+                                </div>
+                                <div id="selectedColumnsOrderContainer" style="display: none;">
+                                    <div class="table-group-label text-secondary mb-2 mt-2">
+                                        <i class="bi bi-sort-down me-1"></i> Thứ tự hiển thị (Kéo thả để thay đổi)
+                                    </div>
+                                    <div id="sortableColumns" class="d-flex flex-wrap gap-2 p-2 border rounded bg-white"></div>
+                                </div>
+                            </div>
+
+                            <!-- STEP 4: Aggregation -->
+                            <div class="mb-3" id="aggregationGroup" style="display: none;">
+                                <div class="step-label">
+                                    <span class="step-num">4</span> Cấu hình Thống kê
+                                </div>
+                                <div id="aggregationContainer" class="column-scroll rounded p-2 bg-light"></div>
+                            </div>
+
+                            <!-- STEP 5: Filters -->
+                            <div class="mb-3">
+                                <div class="step-label">
+                                    <span class="step-num">5</span> Điều kiện lọc (WHERE)
+                                    <button type="button" class="dr-btn-add ms-auto" id="addFilterBtn" disabled>
+                                        <i class="bi bi-plus-lg"></i> Thêm
+                                    </button>
+                                </div>
+                                <div id="filtersContainer"></div>
+                            </div>
+
+                            <!-- STEP 6: Report Settings -->
+                            <div class="mb-3" id="reportSettingsGroup">
+                                <div class="step-label">
+                                    <span class="step-num">6</span> Cài đặt báo cáo
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small text-muted mb-1">Tiêu đề báo cáo</label>
+                                    <input type="text" class="form-control form-control-sm" id="reportTitleInput" 
+                                        placeholder="VD: ĐIỂM CỦA LỚP A (bỏ trống = tự động)" />
+                                </div>
+                                <div>
+                                    <label class="form-label small text-muted mb-1">Tên file tải về</label>
+                                    <div class="input-group input-group-sm has-validation">
+                                        <input type="text" class="form-control" id="fileNameInput" 
+                                            placeholder="VD: DiemLopA (bỏ trống = tự động)" />
+                                        <span class="input-group-text">.pdf</span>
+                                        <div class="invalid-feedback">
+                                            Tên file không được chứa dấu tiếng Việt hoặc kí tự đặc biệt (\ / : * ? " &lt; &gt; |).
+                                        </div>
+                                    </div>
+                                    <div class="form-text small mt-1" id="fileNamePreview">
+                                        File: <code>DynamicReport_[TABLE]_[timestamp].pdf</code>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="dr-divider" />
+
+                            <!-- Action Buttons -->
+                            <div class="d-grid gap-2">
+                                <button type="button" class="dr-btn dr-btn-primary" id="previewBtn" disabled aria-live="polite">
+                                    <i class="bi bi-table"></i> <span id="previewBtnText">Xem trước dữ liệu</span>
+                                </button>
+                                <button type="button" class="dr-btn dr-btn-success" id="generatePdfBtn" disabled aria-live="polite">
+                                    <i class="bi bi-file-earmark-pdf"></i> <span id="generatePdfBtnText">Xuất PDF</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ RIGHT PANEL: SQL Preview + Results ============ -->
+            <div class="col-lg-8 col-md-7 d-flex flex-column gap-3">
+
+                <!-- SQL Preview (Always Visible) -->
+                <div class="sql-card" id="sqlPreviewCard">
+                    <div class="sql-header">
+                        <h6><i class="bi bi-braces me-1"></i> SQL PREVIEW</h6>
+                        <button type="button" class="btn btn-sm btn-outline-secondary text-light border-secondary copy-sql-btn" id="copySqlBtn"
+                            aria-label="Copy SQL">
+                            <i class="bi bi-clipboard" id="copySqlIcon"></i>
+                            <span id="copySqlBtnText" class="ms-2">Copy</span>
+                        </button>
+                    </div>
+                    <div class="sql-body">
+                        <pre class="mb-0"><code id="sqlPreviewCode" class="sql-placeholder">-- Cấu hình báo cáo để xem câu lệnh SQL tự động tạo tại đây...</code></pre>
+                    </div>
+                </div>
+
+                <!-- Data Preview -->
+                <div class="dr-card flex-grow-1">
+                    <div class="dr-card-header">
+                        <h6><i class="bi bi-table me-2"></i>Kết quả xem trước</h6>
+                        <span id="recordCountBadge" class="dr-badge dr-badge-info">0 dòng</span>
+                    </div>
+                    <div class="preview-table-wrap">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead id="previewTableHead">
+                                <tr>
+                                    <th class="text-center py-4 table-placeholder-cell">
+                                        Kết quả sẽ hiển thị tại đây
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template: Join Row -->
+<template id="joinRowTemplate">
+    <div class="dynamic-row join-row">
+        <button type="button" class="btn-remove remove-join-btn" aria-label="Xóa" title="Xóa bảng">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="mb-2">
+            <select class="form-select form-select-sm join-table-select" required>
+                <option value="">-- Chọn bảng --</option>
+            </select>
+        </div>
+        <div>
+            <select class="form-select form-select-sm join-type-select">
+                <option value="INNER JOIN">INNER JOIN (Phần giao)</option>
+                <option value="LEFT JOIN">LEFT JOIN (Hết bảng trái)</option>
+                <option value="RIGHT JOIN">RIGHT JOIN (Hết bảng phải)</option>
+                <option value="FULL OUTER JOIN">FULL OUTER JOIN (Hết cả hai)</option>
+            </select>
+        </div>
+    </div>
+</template>
+
+<!-- Template: Filter Row -->
+<template id="filterRowTemplate">
+    <div class="dynamic-row filter-row">
+        <button type="button" class="btn-remove remove-filter-btn" aria-label="Xóa" title="Xóa điều kiện">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="mb-2">
+            <select class="form-select form-select-sm filter-column-select" required>
+                <option value="">-- Chọn cột --</option>
+            </select>
+        </div>
+        <div class="mb-2">
+            <select class="form-select form-select-sm filter-operator-select" required>
+                <option value="0">Bằng (=)</option>
+                <option value="1">Không bằng (!=)</option>
+                <option value="2">Chứa</option>
+                <option value="3">Bắt đầu bằng</option>
+                <option value="4">Kết thúc bằng</option>
+                <option value="5">Lớn hơn (&gt;)</option>
+                <option value="6">Lớn hơn hoặc bằng (&gt;=)</option>
+                <option value="7">Nhỏ hơn (&lt;)</option>
+                <option value="8">Nhỏ hơn hoặc bằng (&lt;=)</option>
+                <option value="9">Trống (IS NULL)</option>
+                <option value="10">Không trống (IS NOT NULL)</option>
+                <option value="11">Thuộc danh sách (IN)</option>
+                <option value="12">Không thuộc DS (NOT IN)</option>
+                <option value="13">Trong khoảng (BETWEEN)</option>
+                <option value="14">Không chứa (NOT LIKE)</option>
+            </select>
+        </div>
+        <div>
+            <input type="text" class="form-control form-control-sm filter-value-input" placeholder="Giá trị..."
+                required />
+        </div>
+    </div>
+</template>
+
+<!-- Modal: Computed Column -->
+<div class="modal fade" id="computedColumnModal" tabindex="-1" aria-labelledby="computedColumnModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="computedColumnForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="computedColumnModalLabel">Cấu hình cột tính toán</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Base Part (Part 1) -->
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-primary mb-2">Phần 1 (Bắt đầu)</label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label x-small text-muted">Chọn cột</label>
+                                <select class="form-select form-select-sm base-col-select" id="computedCol1">
+                                    <option value="">-- Chọn cột --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label x-small text-muted">Hoặc giá trị cố định</label>
+                                <input type="text" class="form-control form-control-sm" id="computedLiteral1" placeholder="VD: 0.5, 'A'..." />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="dynamicPartsContainer" class="mb-3">
+                        <!-- Dynamic rows will be added here -->
+                    </div>
+
+                    <div class="mb-4">
+                        <button type="button" class="dr-btn-add w-100 py-2 border-dashed" id="addPartBtn">
+                            <i class="bi bi-plus-circle-fill me-2"></i> Thêm bước tính toán tiếp theo
+                        </button>
+                    </div>
+
+                    <div class="mb-1 pt-4 border-top">
+                        <label class="form-label small fw-bold">Tên hiển thị (Alias)</label>
+                        <input type="text" class="form-control form-control-sm" id="computedAlias" required placeholder="VD: DIEM_TONG_KET" />
+                    </div>
+                    <div class="form-text x-small text-muted mt-2">
+                        <i class="bi bi-info-circle me-1"></i> Biểu thức sẽ được tính tuần tự: <code>((Phần 1 [Op] Phần 2) [Op] Phần 3)...</code>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-link btn-sm text-decoration-none text-muted" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="dr-btn dr-btn-primary px-4">
+                        <i class="bi bi-check-lg"></i> Lưu cấu hình
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Template: Computed Part Row -->
+<template id="computedPartTemplate">
+    <div class="computed-part-row">
+        <div class="remove-part-btn" title="Xóa bước này">
+            <i class="bi bi-x-lg"></i>
+        </div>
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label x-small text-muted">Toán tử</label>
+                <select class="form-select form-select-sm border-primary part-op-select" required>
+                    <option value="+">Cộng (+)</option>
+                    <option value="-">Trừ (-)</option>
+                    <option value="*">Nhân (*)</option>
+                    <option value="/">Chia (/)</option>
+                    <option value="+ ' ' +">Ghép ' '</option>
+                    <option value="+ '-' +">Ghép '-'</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label x-small text-muted">Cột dữ liệu</label>
+                <select class="form-select form-select-sm part-col-select">
+                    <option value="">-- Chọn cột --</option>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label x-small text-muted">Hoặc giá trị cố định</label>
+                <input type="text" class="form-control form-control-sm part-lit-input" placeholder="Giá trị..." />
+            </div>
+        </div>
+    </div>
+</template>
+
+@section Scripts {
+    <script type="module" src="~/js/dynamic-report/index.js" asp-append-version="true"></script>
+}
+
