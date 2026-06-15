@@ -1,19 +1,21 @@
+@using QLDSV_HTC.Domain.Constants
 @{
     ViewData["Title"] = "Kết quả học tập";
+    var studentId = User.FindFirst(AppConstants.SessionKeys.Username)?.Value?.Trim() ?? string.Empty;
 }
 
-<div class="container-fluid px-0">
+<div class="container-fluid px-0 animate__animated animate__fadeIn">
     <!-- Header Section -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
             <h2 class="h3 fw-bold mb-1 text-gradient">Kết quả học tập</h2>
             <p class="text-muted small mb-0">
-                <i class="bi bi-info-circle me-1"></i> Xem điểm các môn học và kết quả tích lũy
+                <i class="bi bi-info-circle me-1"></i> Xem điểm các môn học và kết quả tích lũy thực tế
             </p>
         </div>
-        <button class="btn btn-primary d-inline-flex align-items-center gap-2 px-4 shadow-sm transition-base">
-            <i class="bi bi-file-earmark-pdf"></i>
-            Xuất bảng điểm (PDF)
+        <button id="btnExportPdf" class="btn btn-primary d-inline-flex align-items-center gap-2 px-4 shadow-sm transition-base">
+            <i class="bi bi-file-earmark-pdf-fill"></i>
+            Xuất toàn bộ bảng điểm (PDF)
         </button>
     </div>
 
@@ -25,7 +27,7 @@
                     <i class="bi bi-book"></i>
                 </div>
                 <div>
-                    <div class="stat-value">69/87</div>
+                    <div class="stat-value" id="lblTichLuyCredits">-</div>
                     <div class="stat-label">Tín chỉ tích lũy</div>
                 </div>
             </div>
@@ -37,7 +39,7 @@
                     <i class="bi bi-graph-up"></i>
                 </div>
                 <div>
-                    <div class="stat-value text-success">3.45</div>
+                    <div class="stat-value text-success" id="lblCumulativeGpa">-</div>
                     <div class="stat-label">GPA tích lũy (Hệ 4)</div>
                 </div>
             </div>
@@ -49,7 +51,7 @@
                     <i class="bi bi-award"></i>
                 </div>
                 <div>
-                    <div class="stat-value text-primary">Khá</div>
+                    <div class="stat-value text-primary" id="lblClassification">-</div>
                     <div class="stat-label">Xếp loại học lực</div>
                 </div>
             </div>
@@ -61,7 +63,7 @@
                     <i class="bi bi-calendar-check"></i>
                 </div>
                 <div>
-                    <div class="stat-value">2</div>
+                    <div class="stat-value" id="lblSemestersCount">-</div>
                     <div class="stat-label">Học kỳ hoàn thành</div>
                 </div>
             </div>
@@ -71,142 +73,15 @@
     <!-- Semester Selector -->
     <div class="qldsv-card border-0 shadow-sm mb-4 p-2">
         <div class="nav nav-pills gap-2" id="semester-tabs" role="tablist">
-            <button class="nav-link active px-4 py-2 rounded-pill transition-base" data-index="0">
-                Học kỳ 1 - 2025-2026
-            </button>
-            <button class="nav-link px-4 py-2 rounded-pill transition-base" data-index="1">
-                Học kỳ 3 - 2024-2025
-            </button>
+            <!-- Dynamic Tab Buttons -->
         </div>
     </div>
 
     <!-- Semesters Content -->
     <div id="semesters-content">
-        <!-- Semester 0 (Current) -->
-        <div class="semester-group">
-            <div class="qldsv-card border-0 shadow-sm bg-primary bg-gradient text-white mb-4 p-4 overflow-hidden position-relative">
-                <!-- Decorative background icon -->
-                <i class="bi bi-stars position-absolute end-0 bottom-0 opacity-25" style="font-size: 8rem; margin-right: -2rem; margin-bottom: -2rem;"></i>
-                
-                <h3 class="h6 fw-bold mb-4 d-flex align-items-center gap-2">
-                    <i class="bi bi-lightning-charge-fill"></i> Tóm tắt Học kỳ 1 - 2025-2026
-                </h3>
-                <div class="row g-4 position-relative">
-                    <div class="col-4 border-end border-white border-opacity-25 text-center">
-                        <div class="text-white text-opacity-75 small mb-1">Số môn học</div>
-                        <div class="h3 fw-bold mb-0">6</div>
-                    </div>
-                    <div class="col-4 border-end border-white border-opacity-25 text-center">
-                        <div class="text-white text-opacity-75 small mb-1">Tín chỉ HK</div>
-                        <div class="h3 fw-bold mb-0">18</div>
-                    </div>
-                    <div class="col-4 text-center">
-                        <div class="text-white text-opacity-75 small mb-1">GPA HK</div>
-                        <div class="h3 fw-bold mb-0">3.25</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="qldsv-card border-0 shadow-sm p-0 overflow-hidden mb-4">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-4 border-0 small fw-bold">Mã MH</th>
-                                <th class="border-0 small fw-bold">Tên môn học</th>
-                                <th class="text-center border-0 small fw-bold">Tín chỉ</th>
-                                <th class="text-center border-0 small fw-bold">Giữa kỳ</th>
-                                <th class="text-center border-0 small fw-bold">Cuối kỳ</th>
-                                <th class="text-center border-0 small fw-bold">Trung bình</th>
-                                <th class="text-center border-0 small fw-bold">Hệ 4</th>
-                                <th class="text-center border-0 small fw-bold">Điểm chữ</th>
-                                <th class="pe-4 text-center border-0 small fw-bold">Trạng thái</th>
-                            </tr>
-                        </thead>
-                        <tbody class="border-top-0">
-                            <tr>
-                                <td class="ps-4"><span class="text-muted font-monospace">IT301</span></td>
-                                <td class="fw-semibold">Cơ sở dữ liệu</td>
-                                <td class="text-center">3</td>
-                                <td class="text-center">8.5</td>
-                                <td class="text-center">7.5</td>
-                                <td class="text-center"><span class="fw-bold text-primary">7.8</span></td>
-                                <td class="text-center"><span class="fw-bold text-success">3.0</span></td>
-                                <td class="text-center"><span class="badge-status badge-info">B+</span></td>
-                                <td class="pe-4 text-center"><span class="badge-status badge-success">Đã hoàn thành</span></td>
-                            </tr>
-                            <tr>
-                                <td class="ps-4"><span class="text-muted font-monospace">IT302</span></td>
-                                <td class="fw-semibold">Lập trình Web</td>
-                                <td class="text-center">3</td>
-                                <td class="text-center">9.0</td>
-                                <td class="text-center">8.5</td>
-                                <td class="text-center"><span class="fw-bold text-primary">8.7</span></td>
-                                <td class="text-center"><span class="fw-bold text-success">3.7</span></td>
-                                <td class="text-center"><span class="badge-status badge-success">A</span></td>
-                                <td class="pe-4 text-center"><span class="badge-status badge-success">Đã hoàn thành</span></td>
-                            </tr>
-                            <tr>
-                                <td class="ps-4"><span class="text-muted font-monospace">IT303</span></td>
-                                <td class="fw-semibold">Mạng máy tính</td>
-                                <td class="text-center">3</td>
-                                <td class="text-center">7.0</td>
-                                <td class="text-center">--</td>
-                                <td class="text-center text-muted">--</td>
-                                <td class="text-center text-muted">--</td>
-                                <td class="text-center text-muted">--</td>
-                                <td class="pe-4 text-center"><span class="badge-status badge-warning">Đang cập nhật</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Semester 1 (Hidden) -->
-        <div class="semester-group d-none">
-            <div class="qldsv-card border-0 shadow-sm bg-secondary bg-gradient text-white mb-4 p-4">
-                <h3 class="h6 fw-bold mb-4">Tóm tắt Học kỳ 3 - 2024-2025</h3>
-                <div class="row g-4">
-                    <div class="col-4 border-end border-white border-opacity-25 text-center">
-                        <div class="text-white text-opacity-75 small">Số môn học</div>
-                        <div class="h3 fw-bold mb-0">3</div>
-                    </div>
-                    <div class="col-4 border-end border-white border-opacity-25 text-center">
-                        <div class="text-white text-opacity-75 small">Tín chỉ HK</div>
-                        <div class="h3 fw-bold mb-0">9</div>
-                    </div>
-                    <div class="col-4 text-center">
-                        <div class="text-white text-opacity-75 small">GPA HK</div>
-                        <div class="h3 fw-bold mb-0">3.10</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="qldsv-card border-0 shadow-sm p-0 overflow-hidden">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                         <thead class="bg-light">
-                             <tr>
-                                 <th class="ps-4 border-0 small fw-bold">Mã MH</th>
-                                 <th class="border-0 small fw-bold">Tên môn học</th>
-                                 <th class="text-center border-0 small fw-bold">Trung bình</th>
-                                 <th class="text-center border-0 small fw-bold">Hệ 4</th>
-                                 <th class="pe-4 text-center border-0 small fw-bold">Điểm chữ</th>
-                             </tr>
-                         </thead>
-                         <tbody>
-                             <tr>
-                                 <td class="ps-4 text-muted font-monospace">IT201</td>
-                                 <td class="fw-semibold">Cấu trúc dữ liệu và giải thuật</td>
-                                 <td class="text-center">7.7</td>
-                                 <td class="text-center"><span class="fw-bold text-success">3.0</span></td>
-                                 <td class="pe-4 text-center"><span class="badge-status badge-info">B+</span></td>
-                             </tr>
-                         </tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="mt-2 text-muted small">Đang tải bảng điểm cá nhân...</div>
         </div>
     </div>
 
@@ -216,38 +91,342 @@
         <div class="row g-4">
             <div class="col-md-6">
                 <ul class="list-unstyled small text-muted mb-0">
-                    <li class="mb-2">• <strong>Giữa kỳ:</strong> Chiếm 30% tổng điểm</li>
-                    <li>• <strong>Cuối kỳ:</strong> Chiếm 70% tổng điểm</li>
+                    <li class="mb-2">• <strong>Chuyên cần:</strong> Chiếm 10% trọng số điểm tổng kết.</li>
+                    <li class="mb-2">• <strong>Giữa kỳ:</strong> Chiếm 30% trọng số điểm tổng kết.</li>
+                    <li>• <strong>Cuối kỳ:</strong> Chiếm 60% trọng số điểm tổng kết.</li>
                 </ul>
             </div>
             <div class="col-md-6">
                 <ul class="list-unstyled small text-muted mb-0">
-                    <li class="mb-2">• <strong>Công thức:</strong> TB = (GK × 0.3) + (CK × 0.7)</li>
-                    <li>• <strong>Thang điểm chữ:</strong> A (>= 8.5), B (7.0 - 8.4), C (5.5 - 6.9), D (4.0 - 5.4), F (&lt; 4.0)</li>
+                    <li class="mb-2">• <strong>Công thức tính:</strong> TB = (CC × 0.1) + (GK × 0.3) + (CK × 0.6)</li>
+                    <li>• <strong>Xếp loại hệ 4:</strong> A (>= 8.5), B (7.0 - 8.4), C (5.5 - 6.9), D (4.0 - 5.4), F (&lt; 4.0)</li>
                 </ul>
             </div>
         </div>
     </div>
 </div>
 
+@section Scripts {
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const tabs = document.querySelectorAll("#semester-tabs .nav-link");
-        const semesterGroups = document.querySelectorAll(".semester-group");
+        const studentId = '@studentId';
+        if (!studentId) {
+            document.getElementById('semesters-content').innerHTML = `
+                <div class="alert alert-danger text-center shadow-sm rounded-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i> Không tìm thấy thông tin sinh viên đăng nhập.
+                </div>`;
+            return;
+        }
 
-        tabs.forEach((tab, index) => {
-            tab.addEventListener("click", () => {
-                // Style updates
-                tabs.forEach(t => t.classList.remove("active"));
-                tab.classList.add("active");
+        // Bind PDF export action (all semesters)
+        document.getElementById('btnExportPdf').addEventListener('click', function () {
+            window.open(`/report/grades?studentId=${encodeURIComponent(studentId)}`, '_blank');
+        });
 
-                // Content updates
-                semesterGroups.forEach(group => group.classList.add("d-none"));
-                if (semesterGroups[index]) {
-                    semesterGroups[index].classList.remove("d-none");
-                    semesterGroups[index].classList.add("animate__animated", "animate__fadeIn");
+        // Load grades data via AJAX
+        fetch(`/report/grades?studentId=${encodeURIComponent(studentId)}&asJson=true`)
+            .then(res => {
+                if (!res.ok) {
+                    if (res.status === 403) throw new Error("Bạn không có quyền truy cập bảng điểm này.");
+                    throw new Error("Không thể tải bảng điểm từ hệ thống.");
+                }
+                return res.json();
+            })
+            .then(data => {
+                renderDashboard(data);
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('semesters-content').innerHTML = `
+                    <div class="alert alert-danger text-center shadow-sm rounded-3 py-4">
+                        <i class="bi bi-exclamation-circle fs-3 d-block mb-2 text-danger"></i>
+                        <div class="fw-bold mb-1">Đã xảy ra lỗi</div>
+                        <div class="small">${err.message}</div>
+                    </div>`;
+            });
+
+        function getGpaInfo(tb) {
+            if (tb === null || isNaN(tb)) return { gpa: 0, letter: 'F', pass: false };
+            if (tb >= 9.0) return { gpa: 4.0, letter: 'A+', pass: true };
+            if (tb >= 8.5) return { gpa: 3.7, letter: 'A', pass: true };
+            if (tb >= 8.0) return { gpa: 3.5, letter: 'B+', pass: true };
+            if (tb >= 7.0) return { gpa: 3.0, letter: 'B', pass: true };
+            if (tb >= 6.5) return { gpa: 2.5, letter: 'C+', pass: true };
+            if (tb >= 5.5) return { gpa: 2.0, letter: 'C', pass: true };
+            if (tb >= 5.0) return { gpa: 1.5, letter: 'D+', pass: true };
+            if (tb >= 4.0) return { gpa: 1.0, letter: 'D', pass: true };
+            return { gpa: 0.0, letter: 'F', pass: false };
+        }
+
+        function getClassification(gpa) {
+            if (gpa >= 3.6) return 'Xuất sắc';
+            if (gpa >= 3.2) return 'Giỏi';
+            if (gpa >= 2.5) return 'Khá';
+            if (gpa >= 2.0) return 'Trung bình';
+            return 'Yếu';
+        }
+
+        function getClassificationColor(cls) {
+            if (cls === 'Xuất sắc') return 'text-danger';
+            if (cls === 'Giỏi') return 'text-success';
+            if (cls === 'Khá') return 'text-primary';
+            if (cls === 'Trung bình') return 'text-warning';
+            return 'text-muted';
+        }
+
+        function renderDashboard(data) {
+            const tabsContainer = document.getElementById('semester-tabs');
+            const contentContainer = document.getElementById('semesters-content');
+
+            tabsContainer.innerHTML = '';
+            contentContainer.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                contentContainer.innerHTML = `
+                    <div class="qldsv-card border-0 shadow-sm text-center py-5">
+                        <i class="bi bi-folder2-open fs-2 text-muted d-block mb-3"></i>
+                        <h6 class="fw-bold mb-1">Chưa có kết quả học tập</h6>
+                        <p class="small text-muted mb-0">Bạn hiện chưa đăng ký hoặc chưa được nhập điểm cho môn học nào.</p>
+                    </div>`;
+                
+                // Zero states
+                document.getElementById('lblTichLuyCredits').textContent = '0';
+                document.getElementById('lblCumulativeGpa').textContent = '0.00';
+                document.getElementById('lblClassification').textContent = 'N/A';
+                document.getElementById('lblSemestersCount').textContent = '0';
+                return;
+            }
+
+            // Group data by school year and semester
+            const semestersMap = {};
+            let totalCreditsPassed = 0;
+            let totalCreditsCountForGpa = 0;
+            let weightedGpaSum = 0;
+
+            data.forEach(item => {
+                const year = item["Niên Khóa"] || "Chưa xác định";
+                const semester = item["Học Kỳ"] || 1;
+                const key = `${year}_HK${semester}`;
+
+                if (!semestersMap[key]) {
+                    semestersMap[key] = {
+                        year: year,
+                        semester: semester,
+                        displayName: `Học kỳ ${semester} - ${year}`,
+                        items: []
+                    };
+                }
+                semestersMap[key].items.push(item);
+
+                // Cumulative calculations
+                const tb = item["Điểm"];
+                const sotc = parseInt(item["SOTC"]) || 0;
+                const gpaInfo = getGpaInfo(tb);
+
+                if (tb !== null) {
+                    if (gpaInfo.pass) {
+                        totalCreditsPassed += sotc;
+                    }
+                    totalCreditsCountForGpa += sotc;
+                    weightedGpaSum += (gpaInfo.gpa * sotc);
                 }
             });
-        });
+
+            // Calculate Cumulative GPA
+            const finalCumulativeGpa = totalCreditsCountForGpa > 0 
+                ? (weightedGpaSum / totalCreditsCountForGpa) 
+                : 0.0;
+            
+            const classification = getClassification(finalCumulativeGpa);
+            const classColor = getClassificationColor(classification);
+
+            // Bind values to headers
+            document.getElementById('lblTichLuyCredits').textContent = totalCreditsPassed;
+            document.getElementById('lblCumulativeGpa').textContent = finalCumulativeGpa.toFixed(2);
+            
+            const classificationEl = document.getElementById('lblClassification');
+            classificationEl.textContent = classification;
+            classificationEl.className = `stat-value ${classColor}`;
+
+            const semesterKeys = Object.keys(semestersMap).sort().reverse(); // Show latest semesters first
+            document.getElementById('lblSemestersCount').textContent = semesterKeys.length;
+
+            // Render Dynamic Tabs
+            semesterKeys.forEach((key, idx) => {
+                const sem = semestersMap[key];
+                const activeClass = idx === 0 ? 'active' : '';
+
+                const tabBtn = document.createElement('button');
+                tabBtn.className = `nav-link ${activeClass} px-4 py-2 rounded-pill transition-base`;
+                tabBtn.setAttribute('data-target-id', `sem-${key}`);
+                tabBtn.textContent = sem.displayName;
+                tabsContainer.appendChild(tabBtn);
+
+                // Render dynamic semester group view
+                const semDiv = document.createElement('div');
+                semDiv.className = `semester-group ${idx === 0 ? '' : 'd-none'}`;
+                semDiv.id = `sem-${key}`;
+
+                // Calculate semester-specific stats
+                let semCredits = 0;
+                let semWeightedGpa = 0;
+                let semTotalGpaCredits = 0;
+                sem.items.forEach(itm => {
+                    const sotc = parseInt(itm["SOTC"]) || 0;
+                    const tb = itm["Điểm"];
+                    if (tb !== null) {
+                        const gpaI = getGpaInfo(tb);
+                        semCredits += sotc;
+                        semTotalGpaCredits += sotc;
+                        semWeightedGpa += (gpaI.gpa * sotc);
+                    }
+                });
+                const semGpa = semTotalGpaCredits > 0 ? (semWeightedGpa / semTotalGpaCredits) : 0.0;
+
+                let rowsHtml = '';
+                sem.items.forEach(item => {
+                    const mamh = item["MAMH"] || "N/A";
+                    const tenmh = item["Tên Môn Học"] || "N/A";
+                    const cc = item["Chuyên Cần"] !== null ? item["Chuyên Cần"] : '--';
+                    const gk = item["Giữa Kỳ"] !== null ? item["Giữa Kỳ"] : '--';
+                    const ck = item["Cuối Kỳ"] !== null ? item["Cuối Kỳ"] : '--';
+                    const tb = item["Điểm"] !== null ? item["Điểm"] : null;
+                    const sotc = item["SOTC"] || 0;
+
+                    let tbText = '--';
+                    let gpaText = '--';
+                    let letterText = '--';
+                    let statusHtml = '<span class="badge-status badge-warning">Đang cập nhật</span>';
+                    let letterBadgeClass = 'bg-light text-muted border';
+
+                    if (tb !== null) {
+                        const gpaI = getGpaInfo(tb);
+                        tbText = tb.toFixed(1);
+                        gpaText = gpaI.gpa.toFixed(1);
+                        letterText = gpaI.letter;
+
+                        if (gpaI.pass) {
+                            statusHtml = '<span class="badge-status badge-success">Đã hoàn thành</span>';
+                        } else {
+                            statusHtml = '<span class="badge-status badge-danger">Học lại</span>';
+                        }
+
+                        if (gpaI.letter.startsWith('A')) {
+                            letterBadgeClass = 'bg-success bg-opacity-10 text-success border-success-subtle';
+                        } else if (gpaI.letter.startsWith('B')) {
+                            letterBadgeClass = 'bg-primary bg-opacity-10 text-primary border-primary-subtle';
+                        } else if (gpaI.letter.startsWith('C') || gpaI.letter.startsWith('D')) {
+                            letterBadgeClass = 'bg-warning bg-opacity-10 text-warning border-warning-subtle';
+                        } else {
+                            letterBadgeClass = 'bg-danger bg-opacity-10 text-danger border-danger-subtle';
+                        }
+                    }
+
+                    rowsHtml += `
+                        <tr>
+                            <td class="ps-4"><span class="text-muted font-monospace">${mamh}</span></td>
+                            <td class="fw-semibold text-dark">${tenmh}</td>
+                            <td class="text-center">${sotc}</td>
+                            <td class="text-center text-muted">${cc}</td>
+                            <td class="text-center text-muted">${gk}</td>
+                            <td class="text-center text-muted">${ck}</td>
+                            <td class="text-center"><span class="fw-bold text-success">${tbText}</span></td>
+                            <td class="text-center"><span class="fw-semibold text-primary">${gpaText}</span></td>
+                            <td class="text-center">
+                                <span class="badge ${letterBadgeClass} font-monospace rounded-pill px-3 py-1 fw-bold" style="font-size: 0.75rem;">
+                                    ${letterText}
+                                </span>
+                            </td>
+                            <td class="pe-4 text-center">${statusHtml}</td>
+                        </tr>`;
+                });
+
+                semDiv.innerHTML = `
+                    <div class="qldsv-card border-0 shadow-sm bg-primary bg-gradient text-white mb-4 p-4 overflow-hidden position-relative rounded-4 animate__animated animate__fadeIn">
+                        <i class="bi bi-stars position-absolute end-0 bottom-0 opacity-25" style="font-size: 8rem; margin-right: -2rem; margin-bottom: -2rem;"></i>
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4 position-relative">
+                            <h3 class="h6 fw-bold mb-0 d-flex align-items-center gap-2">
+                                <i class="bi bi-lightning-charge-fill"></i> Tóm tắt ${sem.displayName}
+                            </h3>
+                            <button class="btn btn-light btn-sm btn-export-sem shadow-sm d-inline-flex align-items-center gap-2 px-3 py-1.5 transition-base" 
+                                    data-year="${sem.year}" 
+                                    data-semester="${sem.semester}"
+                                    style="border-radius: 20px; font-weight: 600; color: #0d6efd; border: none;">
+                                <i class="bi bi-file-earmark-pdf-fill"></i>
+                                Xuất học kỳ này (PDF)
+                            </button>
+                        </div>
+                        <div class="row g-4 position-relative">
+                            <div class="col-4 border-end border-white border-opacity-25 text-center">
+                                <div class="text-white text-opacity-75 small mb-1">Môn học đã học</div>
+                                <div class="h3 fw-bold mb-0">${sem.items.length}</div>
+                            </div>
+                            <div class="col-4 border-end border-white border-opacity-25 text-center">
+                                <div class="text-white text-opacity-75 small mb-1">Tín chỉ đăng ký</div>
+                                <div class="h3 fw-bold mb-0">${semCredits}</div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div class="text-white text-opacity-75 small mb-1">GPA Học kỳ</div>
+                                <div class="h3 fw-bold mb-0">${semGpa.toFixed(2)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="qldsv-card border-0 shadow-sm p-0 overflow-hidden mb-4 rounded-4">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4 border-0 small fw-bold">Mã MH</th>
+                                        <th class="border-0 small fw-bold">Tên môn học</th>
+                                        <th class="text-center border-0 small fw-bold">Tín chỉ</th>
+                                        <th class="text-center border-0 small fw-bold">Chuyên cần</th>
+                                        <th class="text-center border-0 small fw-bold">Giữa kỳ</th>
+                                        <th class="text-center border-0 small fw-bold">Cuối kỳ</th>
+                                        <th class="text-center border-0 small fw-bold">Tổng kết</th>
+                                        <th class="text-center border-0 small fw-bold">Hệ 4</th>
+                                        <th class="text-center border-0 small fw-bold">Điểm chữ</th>
+                                        <th class="pe-4 text-center border-0 small fw-bold">Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="border-top-0">
+                                    ${rowsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>`;
+
+                contentContainer.appendChild(semDiv);
+            });
+
+            // Bind click events for all semester-specific export buttons
+            contentContainer.querySelectorAll('.btn-export-sem').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const year = this.getAttribute('data-year');
+                    const semNum = this.getAttribute('data-semester');
+                    window.open(`/report/grades?studentId=${encodeURIComponent(studentId)}&schoolYear=${encodeURIComponent(year)}&semester=${encodeURIComponent(semNum)}`, '_blank');
+                });
+            });
+
+            // Bind tab click events
+            tabsContainer.querySelectorAll('.nav-link').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    tabsContainer.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const targetId = this.getAttribute('data-target-id');
+                    contentContainer.querySelectorAll('.semester-group').forEach(div => {
+                        div.classList.add('d-none');
+                    });
+                    const targetEl = document.getElementById(targetId);
+                    if (targetEl) {
+                        targetEl.classList.remove('d-none');
+                        targetEl.classList.add('animate__animated', 'animate__fadeIn');
+                    }
+                });
+            });
+        }
     });
 </script>
+}
