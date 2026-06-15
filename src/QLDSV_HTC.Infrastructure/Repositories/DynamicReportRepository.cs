@@ -143,15 +143,7 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
                     selectedColumns.Add($"{qualifiedCol} AS [{aggAlias}]");
                     if (hasAggregates)
                     {
-                        if (string.IsNullOrWhiteSpace(c.Expression))
-                        {
-                            groupByColumns.Add(qualifiedCol);
-                        }
-                        else
-                        {
-                            // If expression is used with aggregates, it must be part of GROUP BY
-                            groupByColumns.Add(qualifiedCol);
-                        }
+                        groupByColumns.Add(qualifiedCol);
                     }
                 }
                 else
