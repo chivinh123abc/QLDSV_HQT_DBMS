@@ -39,6 +39,16 @@ namespace QLDSV_HTC.Web.Controllers
                 return BadRequest("Không có dữ liệu điểm để lưu.");
             }
 
+            foreach (var grade in grades)
+            {
+                if ((grade.AttendanceGrade.HasValue && (grade.AttendanceGrade < 0 || grade.AttendanceGrade > 10)) ||
+                    (grade.MidtermGrade.HasValue && (grade.MidtermGrade < 0 || grade.MidtermGrade > 10)) ||
+                    (grade.FinalGrade.HasValue && (grade.FinalGrade < 0 || grade.FinalGrade > 10)))
+                {
+                    return BadRequest(new { success = false, message = "Điểm của sinh viên phải nằm trong khoảng từ 0 đến 10." });
+                }
+            }
+
             try
             {
                 await gradeRepository.UpdateGradesAsync(grades);
