@@ -48,6 +48,7 @@ namespace QLDSV_HTC.Web.Extensions
             services.AddScoped<ICreditClassRepository, CreditClassRepository>();
             services.AddScoped<IRegistrationRepository, RegistrationRepository>();
             services.AddScoped<IGradeRepository, GradeRepository>();
+            services.AddScoped<IDynamicReportRepository, DynamicReportRepository>();
             services.AddSingleton<ISidebarService, SidebarService>();
 
             return services;

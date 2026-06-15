@@ -93,5 +93,35 @@ namespace QLDSV_HTC.Domain.Constants
                 public const string IsRegistered = "DA_DANGKY";
             }
         }
+        public static class SqlKeywords
+        {
+            public const string InnerJoin = "INNER JOIN";
+            public const string LeftJoin = "LEFT JOIN";
+            public const string RightJoin = "RIGHT JOIN";
+            public const string FullOuterJoin = "FULL OUTER JOIN";
+            public const string CrossJoin = "CROSS JOIN";
+            public const string Select = "SELECT";
+            public const string From = "FROM";
+            public const string Where = "WHERE";
+            public const string GroupBy = "GROUP BY";
+            public const string OrderBy = "ORDER BY";
+            public const string Having = "HAVING";
+            public const string And = "AND";
+            public const string Or = "OR";
+            public const string Asc = "ASC";
+            public const string Desc = "DESC";
+            public const string Offset = "OFFSET";
+            public const string FetchNext = "FETCH NEXT";
+            public const string RowsOnly = "ROWS ONLY";
+            public const string In = "IN";
+            public const string NotIn = "NOT IN";
+            public const string Between = "BETWEEN";
+            public const string IsNull = "IS NULL";
+            public const string IsNotNull = "IS NOT NULL";
+            public const string Like = "LIKE";
+            public const string NotLike = "NOT LIKE";
+            public const string Cast = "CAST";
+            public const string As = "AS";
+        }
     }
 }
