@@ -28,6 +28,14 @@ namespace QLDSV_HTC.Domain.Constants
             public const string Semester = "@HOCKY";
             public const string SubjectId = "@MAMH";
             public const string Group = "@NHOM";
+            public const string StudentId = "@MASV";
+            public const string StudentName = "@TENSV";
+        }
+
+        public static class UpdateGrades
+        {
+            public const string GradesParam = "@Grades";
+            public const string TypeName = "dbo.GradeEntryType";
         }
 
         public static class GetClassGradesSummary

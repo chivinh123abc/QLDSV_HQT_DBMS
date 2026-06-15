@@ -14,41 +14,58 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             var dt = await ExecuteQueryAsync(
                 AppConstants.SpNames.GetSubjectGrades,
                 CommandType.StoredProcedure,
-                new SqlParameter("@NIENKHOA", year),
-                new SqlParameter("@HOCKY", semester),
-                new SqlParameter("@MAMH", subjectId),
-                new SqlParameter("@NHOM", group),
-                new SqlParameter("@MASV", masv ?? (object)DBNull.Value),
-                new SqlParameter("@TENSV", tensv ?? (object)DBNull.Value)
+                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.SchoolYear, year),
+                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.Semester, semester),
+                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.SubjectId, subjectId),
+                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.Group, group),
+                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.StudentId, masv ?? (object)DBNull.Value),
+                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.StudentName, tensv ?? (object)DBNull.Value)
             );
 
             return dt.AsEnumerable().Select(row => new GradeEntryDto
             {
-                MaLtc = Convert.ToInt32(row["MALTC"]),
-                StudentId = row["MASV"]?.ToString() ?? string.Empty,
-                LastName = row["HO"]?.ToString() ?? string.Empty,
-                FirstName = row["TEN"]?.ToString() ?? string.Empty,
-                AttendanceGrade = row["DIEM_CC"] != DBNull.Value ? Convert.ToSingle(row["DIEM_CC"]) : null,
-                MidtermGrade = row["DIEM_GK"] != DBNull.Value ? Convert.ToSingle(row["DIEM_GK"]) : null,
-                FinalGrade = row["DIEM_CK"] != DBNull.Value ? Convert.ToSingle(row["DIEM_CK"]) : null,
-                TotalGrade = row["DIEM_HET_MON"] != DBNull.Value ? Convert.ToSingle(row["DIEM_HET_MON"]) : null
+                MaLtc = Convert.ToInt32(row[DbConstants.Columns.Grade.CreditClassId]),
+                StudentId = row[DbConstants.Columns.Grade.StudentId]?.ToString() ?? string.Empty,
+                LastName = row[DbConstants.Columns.Student.FirstName]?.ToString() ?? string.Empty,
+                FirstName = row[DbConstants.Columns.Student.LastName]?.ToString() ?? string.Empty,
+                AttendanceGrade = row[DbConstants.Columns.Grade.AttendanceGrade] != DBNull.Value ? Convert.ToSingle(row[DbConstants.Columns.Grade.AttendanceGrade]) : null,
+                MidtermGrade = row[DbConstants.Columns.Grade.MidtermGrade] != DBNull.Value ? Convert.ToSingle(row[DbConstants.Columns.Grade.MidtermGrade]) : null,
+                FinalGrade = row[DbConstants.Columns.Grade.FinalGrade] != DBNull.Value ? Convert.ToSingle(row[DbConstants.Columns.Grade.FinalGrade]) : null,
+                TotalGrade = row[DbConstants.Columns.Grade.TotalGrade] != DBNull.Value ? Convert.ToSingle(row[DbConstants.Columns.Grade.TotalGrade]) : null
             });
         }
 
         public async Task UpdateGradesAsync(IEnumerable<GradeEntryDto> grades)
         {
+            var table = new DataTable();
+            table.Columns.Add(DbConstants.Columns.Grade.CreditClassId, typeof(int));
+            table.Columns.Add(DbConstants.Columns.Grade.StudentId, typeof(string));
+            table.Columns.Add(DbConstants.Columns.Grade.AttendanceGrade, typeof(float));
+            table.Columns.Add(DbConstants.Columns.Grade.MidtermGrade, typeof(float));
+            table.Columns.Add(DbConstants.Columns.Grade.FinalGrade, typeof(float));
+
             foreach (var g in grades)
             {
-                await ExecuteNonQueryAsync(
-                    AppConstants.SpNames.UpdateGrades,
-                    CommandType.StoredProcedure,
-                    new SqlParameter("@MALTC", g.MaLtc),
-                    new SqlParameter("@MASV", g.StudentId),
-                    new SqlParameter("@DIEM_CC", g.AttendanceGrade ?? (object)DBNull.Value),
-                    new SqlParameter("@DIEM_GK", g.MidtermGrade ?? (object)DBNull.Value),
-                    new SqlParameter("@DIEM_CK", g.FinalGrade ?? (object)DBNull.Value)
+                table.Rows.Add(
+                    g.MaLtc,
+                    g.StudentId,
+                    (object?)g.AttendanceGrade ?? DBNull.Value,
+                    (object?)g.MidtermGrade ?? DBNull.Value,
+                    (object?)g.FinalGrade ?? DBNull.Value
                 );
             }
+
+            var structuredParam = new SqlParameter(StoredProcedureConstants.UpdateGrades.GradesParam, SqlDbType.Structured)
+            {
+                TypeName = StoredProcedureConstants.UpdateGrades.TypeName,
+                Value = table
+            };
+
+            await ExecuteNonQueryAsync(
+                AppConstants.SpNames.UpdateGrades,
+                CommandType.StoredProcedure,
+                structuredParam
+            );
         }
     }
 }

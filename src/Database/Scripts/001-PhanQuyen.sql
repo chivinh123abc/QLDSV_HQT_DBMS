@@ -29,6 +29,8 @@ GRANT EXECUTE ON OBJECT::dbo.sp_PhanTrangDong TO [KHOA];
 
 GRANT EXECUTE ON OBJECT::dbo.sp_CapNhatDiem TO [KHOA];
 
+GRANT EXECUTE, REFERENCES ON TYPE::dbo.GradeEntryType TO [KHOA];
+
 GRANT VIEW DEFINITION TO [KHOA];
 
 -- (D) Đảm bảo KHOA không có quyền CUD (Xóa/Sửa/Thêm) Lớp và Sinh viên

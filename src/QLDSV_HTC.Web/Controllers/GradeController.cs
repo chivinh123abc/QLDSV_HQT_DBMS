@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QLDSV_HTC.Domain.Constants;
 using QLDSV_HTC.Application.Interfaces;
+using QLDSV_HTC.Application.DTOs;
 
 namespace QLDSV_HTC.Web.Controllers
 {
@@ -22,7 +23,7 @@ namespace QLDSV_HTC.Web.Controllers
         }
 
         [HttpGet]
-        [Route("/api/grades/students")]
+        [Route(RouteConstants.Grade.GetGrades)]
         public async Task<IActionResult> GetGrades(string? year, int semester, string? subjectId, int group, string? studentId, string? studentName)
         {
             var grades = await gradeRepository.GetGradesAsync(year ?? "", semester, subjectId ?? "", group, studentId, studentName);
@@ -30,10 +31,10 @@ namespace QLDSV_HTC.Web.Controllers
         }
 
         [HttpPost]
-        [Route("/api/grades/save")]
-        public async Task<IActionResult> SaveGrades([FromBody] IEnumerable<QLDSV_HTC.Application.DTOs.GradeEntryDto> grades)
+        [Route(RouteConstants.Grade.SaveGrades)]
+        public async Task<IActionResult> SaveGrades([FromBody] IEnumerable<GradeEntryDto> grades)
         {
-            if (grades == null || !grades.Any())
+            if (grades?.Any() != true)
             {
                 return BadRequest("Không có dữ liệu điểm để lưu.");
             }

@@ -35,4 +35,3 @@ BEGIN
     ORDER BY ltc.MALTC, sv.TEN, sv.HO;
 END
 GO
-GO

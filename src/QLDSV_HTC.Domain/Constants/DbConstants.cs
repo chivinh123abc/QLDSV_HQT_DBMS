@@ -92,6 +92,16 @@ namespace QLDSV_HTC.Domain.Constants
                 public const string RegisteredCount = "SOSV_DANGKY";
                 public const string IsRegistered = "DA_DANGKY";
             }
+
+            public static class Grade
+            {
+                public const string CreditClassId = "MALTC";
+                public const string StudentId = "MASV";
+                public const string AttendanceGrade = "DIEM_CC";
+                public const string MidtermGrade = "DIEM_GK";
+                public const string FinalGrade = "DIEM_CK";
+                public const string TotalGrade = "DIEM_HET_MON";
+            }
         }
         public static class SqlKeywords
         {
