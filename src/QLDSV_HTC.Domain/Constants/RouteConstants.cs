@@ -165,6 +165,8 @@ namespace QLDSV_HTC.Domain.Constants
         {
             public const string Prefix = "/grade";
             public const string Index = "";
+            public const string GetGrades = "/api/grades/students";
+            public const string SaveGrades = "/api/grades/save";
 
             public const string GradePath = Prefix;
         }

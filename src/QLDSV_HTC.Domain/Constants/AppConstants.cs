@@ -10,6 +10,7 @@ namespace QLDSV_HTC.Domain.Constants
             public const string GetRegisteredStudentsList = "sp_LayDanhSachSinhVienDangKyLopTinChi";
             public const string GetSubjectGrades = "sp_LayBangDiemMonHocCuaMotLopTinChi";
             public const string GetClassGradesSummary = "sp_LayBangDiemTongKet";
+            public const string UpdateGrades = "sp_CapNhatDiem";
 
             public const string GetClassList = "sp_LayDanhSachLop";
             public const string AddClass = "sp_ThemLop";

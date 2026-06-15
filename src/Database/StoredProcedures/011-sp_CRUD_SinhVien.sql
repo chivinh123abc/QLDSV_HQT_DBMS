@@ -1,5 +1,4 @@
 USE [QLDSV_HTC]
-GO
 
 -- =============================================
 -- Description: Lặp danh sách sinh viên
@@ -48,7 +47,6 @@ BEGIN
 END
 GO
 
-
 -- =============================================
 -- Description: Thêm mới sinh viên
 -- =============================================
@@ -91,7 +89,6 @@ BEGIN
     VALUES (@MASV, @HO, @TEN, @PHAI, @DIACHI, @NGAYSINH, @MALOP, @DANGHIHOC, @PASSWORD);
 END
 GO
-
 
 -- =============================================
 -- Description: Cập nhật thông tin sinh viên
@@ -151,7 +148,6 @@ BEGIN
     WHERE MASV = @MASV_OLD;
 END
 GO
-
 
 -- =============================================
 -- Description: Xóa sinh viên
