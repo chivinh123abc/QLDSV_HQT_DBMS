@@ -13,9 +13,15 @@ namespace QLDSV_HTC.Web.Reports
 
             var detailBand = new DetailBand() { HeightF = 30f };
             var reportHeaderBand = new ReportHeaderBand() { HeightF = 130f };
-            var pageHeaderBand = new PageHeaderBand() { HeightF = 40f };
+            var groupHeaderBand = new GroupHeaderBand()
+            {
+                HeightF = 75f,
+                RepeatEveryPage = true
+            };
+            groupHeaderBand.GroupFields.Add(new GroupField("NIENKHOA"));
+            groupHeaderBand.GroupFields.Add(new GroupField("HOCKY"));
 
-            Bands.AddRange([reportHeaderBand, pageHeaderBand, detailBand]);
+            Bands.AddRange([reportHeaderBand, groupHeaderBand, detailBand]);
 
             // ------- REPORT HEADER -------
             XRLabel lblTitle = new()
@@ -38,13 +44,24 @@ namespace QLDSV_HTC.Web.Reports
 
             reportHeaderBand.Controls.AddRange([lblTitle, lblMaSV]);
 
-            // ------- PAGE HEADER (Headers of the Table) -------
+            // ------- GROUP HEADER (Semester Title and Table Headers) -------
+            XRLabel lblSemester = new()
+            {
+                Font = new("Times New Roman", 12, DevExpress.Drawing.DXFontStyle.Bold),
+                TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleLeft,
+                SizeF = new(727f, 30f),
+                LocationF = new(0f, 5f)
+            };
+            lblSemester.ExpressionBindings.Add(new("BeforePrint", "Text", "'Học kỳ ' + [HOCKY] + ' - Niên khóa: ' + [NIENKHOA]"));
+            groupHeaderBand.Controls.Add(lblSemester);
+
             const DevExpress.XtraPrinting.BorderSide borderSideAll = DevExpress.XtraPrinting.BorderSide.All;
             var headerFont = new DevExpress.Drawing.DXFont("Times New Roman", 12, DevExpress.Drawing.DXFontStyle.Bold);
 
             XRTable headerTable = new()
             {
                 SizeF = new(727f, 40f),
+                LocationF = new(0f, 35f),
                 Borders = borderSideAll,
                 Font = headerFont,
                 TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleCenter,
@@ -61,7 +78,7 @@ namespace QLDSV_HTC.Web.Reports
             headerRow.Cells.Add(new XRTableCell() { WidthF = 172f, Text = "ĐIỂM TỔNG" });
 
             headerTable.Rows.Add(headerRow);
-            pageHeaderBand.Controls.Add(headerTable);
+            groupHeaderBand.Controls.Add(headerTable);
 
             // ------- DETAIL BAND (Data source bindings) -------
             var detailFont = new DevExpress.Drawing.DXFont("Times New Roman", 12, DevExpress.Drawing.DXFontStyle.Regular);
@@ -75,11 +92,11 @@ namespace QLDSV_HTC.Web.Reports
             };
             XRTableRow detailRow = new();
 
-            // Setup STT auto-increment using sumRecordNumber()
+            // Setup STT auto-increment using sumRecordNumber() reset by Group
             XRTableCell cellStt = new()
             {
                 WidthF = 50f,
-                Summary = new() { Func = SummaryFunc.RecordNumber, Running = SummaryRunning.Report }
+                Summary = new() { Func = SummaryFunc.RecordNumber, Running = SummaryRunning.Group }
             };
             cellStt.ExpressionBindings.Add(new("BeforePrint", "Text", "sumRecordNumber()"));
 

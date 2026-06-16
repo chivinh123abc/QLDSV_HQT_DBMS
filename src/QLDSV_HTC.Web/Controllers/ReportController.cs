@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QLDSV_HTC.Application.Interfaces;
@@ -7,7 +8,7 @@ using QLDSV_HTC.Web.Reports;
 namespace QLDSV_HTC.Web.Controllers
 {
     [Route(RouteConstants.Report.Prefix)]
-    [Authorize(Roles = AppConstants.Groups.Faculty)]
+    [Authorize]
     public class ReportController(
         IReportRepository repository,
         IFacultyRepository facultyRepository,
@@ -32,6 +33,7 @@ namespace QLDSV_HTC.Web.Controllers
 
         [HttpGet]
         [Route(RouteConstants.Report.Index)]
+        [Authorize(Roles = AppConstants.Groups.Faculty)]
         public async Task<IActionResult> Index()
         {
             ViewBag.Faculties = await facultyRepository.GetFacultiesAsync();
@@ -43,7 +45,12 @@ namespace QLDSV_HTC.Web.Controllers
 
         [HttpGet]
         [Route(RouteConstants.Report.GetGradesReport)]
-        public async Task<IActionResult> GetGradesReport(string studentId, [FromQuery] bool asJson = false)
+        [Authorize(Roles = AppConstants.Groups.Faculty + "," + AppConstants.Groups.SV)]
+        public async Task<IActionResult> GetGradesReport(
+            string studentId,
+            [FromQuery] string? schoolYear = null,
+            [FromQuery] int? semester = null,
+            [FromQuery] bool asJson = false)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -52,7 +59,33 @@ namespace QLDSV_HTC.Web.Controllers
                 return BadRequest("Mã sinh viên không được để trống.");
             }
 
-            var studentScores = await repository.GetGradesReportAsync(studentId);
+            // Chống lỗi IDOR: Sinh viên chỉ được phép xem điểm của chính mình
+            if (User.IsInRole(AppConstants.Groups.SV))
+            {
+                var loggedInStudentId = User.FindFirst(AppConstants.SessionKeys.Username)?.Value?.Trim();
+                if (!string.Equals(studentId.Trim(), loggedInStudentId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Forbid();
+                }
+            }
+
+            var studentScores = await repository.GetGradesReportAsync(studentId.Trim());
+
+            // Lọc theo niên khóa và học kỳ nếu có yêu cầu
+            if (!string.IsNullOrEmpty(schoolYear) && semester.HasValue)
+            {
+                var filteredRows = studentScores.AsEnumerable()
+                    .Where(row => string.Equals(Convert.ToString(row["NIENKHOA"]), schoolYear.Trim(), StringComparison.OrdinalIgnoreCase)
+                                  && Convert.ToInt32(row["HOCKY"]) == semester.Value);
+                if (filteredRows.Any())
+                {
+                    studentScores = filteredRows.CopyToDataTable();
+                }
+                else
+                {
+                    studentScores = studentScores.Clone(); // Trả về bảng trống cùng cấu trúc
+                }
+            }
 
             if (asJson) return ConvertDataTableToJson(studentScores);
 
@@ -63,12 +96,16 @@ namespace QLDSV_HTC.Web.Controllers
 
             await using var ms = new MemoryStream();
             await report.ExportToPdfAsync(ms);
-            Response.Headers.Append("Content-Disposition", $"inline; filename=\"BangDiem_{studentId}.pdf\"");
+            string fileName = !string.IsNullOrEmpty(schoolYear) && semester.HasValue
+                ? $"BangDiem_{studentId}_{schoolYear}_HK{semester}.pdf"
+                : $"BangDiem_{studentId}.pdf";
+            Response.Headers.Append("Content-Disposition", $"inline; filename=\"{fileName}\"");
             return File(ms.ToArray(), "application/pdf");
         }
 
         [HttpGet]
         [Route(RouteConstants.Report.GetCreditClassList)]
+        [Authorize(Roles = AppConstants.Groups.Faculty)]
         public async Task<IActionResult> GetCreditClassList(string facultyName, string facultyId, string schoolYear, int semester, [FromQuery] bool asJson = false)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -95,6 +132,7 @@ namespace QLDSV_HTC.Web.Controllers
 
         [HttpGet]
         [Route(RouteConstants.Report.GetRegisteredStudentsList)]
+        [Authorize(Roles = AppConstants.Groups.Faculty)]
         public async Task<IActionResult> GetRegisteredStudentsList(string facultyName, string schoolYear, int semester, string subjectId, string subjectName, int group, [FromQuery] bool asJson = false)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -121,6 +159,7 @@ namespace QLDSV_HTC.Web.Controllers
 
         [HttpGet]
         [Route(RouteConstants.Report.GetSubjectGrades)]
+        [Authorize(Roles = AppConstants.Groups.Faculty)]
         public async Task<IActionResult> GetSubjectGrades(string facultyName, string schoolYear, int semester, string subjectId, string subjectName, int group, [FromQuery] bool asJson = false)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -147,6 +186,7 @@ namespace QLDSV_HTC.Web.Controllers
 
         [HttpGet]
         [Route(RouteConstants.Report.GetClassGradesSummary)]
+        [Authorize(Roles = AppConstants.Groups.Faculty)]
         public async Task<IActionResult> GetClassGradesSummary(string classId, [FromQuery] bool asJson = false)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);

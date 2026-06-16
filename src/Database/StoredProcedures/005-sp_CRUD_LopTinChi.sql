@@ -134,15 +134,36 @@ GO
 
 -- =============================================
 -- Description: Lấy danh sách Lớp Tín Chỉ theo lọc
+-- [TỐI ƯU THEO ĐIỀU 7]
+--   1. Phép chọn/chiếu trước, phép kết sau: Lọc LOPTINCHI qua CTE trước khi JOIN với MONHOC/GIANGVIEN.
+--   2. Sắp xếp thứ tự các mệnh đề lọc tương ứng với Non-Clustered Index: MAKHOA -> NIENKHOA -> HOCKY.
 -- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[sp_LayDanhSachLopTinChi]
     @NIENKHOA NVARCHAR(9) = NULL,
     @HOCKY    INT = NULL,
-    @MAKHOA   NVARCHAR(10) = NULL
+    @MAKHOA   NVARCHAR(10) = NULL,
+    @GET_ALL  BIT = 1
 AS
 BEGIN
     SET NOCOUNT ON;
 
+    ;WITH FilteredLtc AS (
+        SELECT 
+            MALTC,
+            NIENKHOA,
+            HOCKY,
+            MAMH,
+            NHOM,
+            MAGV,
+            MAKHOA,
+            SOSVTOITHIEU,
+            HUYLOP
+        FROM LOPTINCHI
+        WHERE (@MAKHOA IS NULL OR MAKHOA = @MAKHOA)
+          AND (@NIENKHOA IS NULL OR NIENKHOA = @NIENKHOA)
+          AND (@HOCKY IS NULL OR HOCKY = @HOCKY)
+          AND (@GET_ALL = 1 OR HUYLOP = 0 OR HUYLOP IS NULL)
+    )
     SELECT 
         ltc.MALTC,
         ltc.NIENKHOA,
@@ -156,12 +177,9 @@ BEGIN
         ltc.SOSVTOITHIEU,
         ltc.HUYLOP,
         (SELECT COUNT(*) FROM DANGKY dk WHERE dk.MALTC = ltc.MALTC AND (dk.HUYDANGKY = 0 OR dk.HUYDANGKY IS NULL)) AS SOSV_DANGKY
-    FROM LOPTINCHI ltc
+    FROM FilteredLtc ltc
     INNER JOIN MONHOC mh ON ltc.MAMH = mh.MAMH
     INNER JOIN GIANGVIEN gv ON ltc.MAGV = gv.MAGV
-    WHERE (@NIENKHOA IS NULL OR ltc.NIENKHOA = @NIENKHOA)
-      AND (@HOCKY IS NULL OR ltc.HOCKY = @HOCKY)
-      AND (@MAKHOA IS NULL OR ltc.MAKHOA = @MAKHOA)
     ORDER BY ltc.NIENKHOA DESC, ltc.HOCKY DESC, mh.TENMH, ltc.NHOM;
 END
 GO

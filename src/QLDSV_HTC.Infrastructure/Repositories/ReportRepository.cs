@@ -24,7 +24,8 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                 CommandType.StoredProcedure,
                 new SqlParameter(StoredProcedureConstants.GetCreditClassList.SchoolYear, schoolYear),
                 new SqlParameter(StoredProcedureConstants.GetCreditClassList.Semester, semester),
-                new SqlParameter(StoredProcedureConstants.GetCreditClassList.FacultyId, facultyId)
+                new SqlParameter(StoredProcedureConstants.GetCreditClassList.FacultyId, facultyId),
+                new SqlParameter(StoredProcedureConstants.GetCreditClassList.GetAll, false)
             );
         }
 
