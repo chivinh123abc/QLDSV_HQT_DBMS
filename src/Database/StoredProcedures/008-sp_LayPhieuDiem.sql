@@ -8,7 +8,17 @@ BEGIN
     -- Sử dụng ROW_NUMBER() OVER (PARTITION BY...) để xếp hạng các lần học của cùng 1 môn học.
     -- Lọc lấy lần học có điểm hết môn cao nhất (RowNum = 1) để lấy đúng điểm thi Max.
     
-    ;WITH RawGrades AS (
+    ;WITH FilteredDK AS (
+        SELECT 
+            MALTC,
+            DIEM_CC,
+            DIEM_GK,
+            DIEM_CK
+        FROM DANGKY
+        WHERE MASV = @MASV
+          AND (HUYDANGKY = 0 OR HUYDANGKY IS NULL)
+    ),
+    RawGrades AS (
         SELECT 
             ltc.MAMH,
             mh.TENMH,
@@ -23,11 +33,9 @@ BEGIN
             (mh.SOTIET_LT + mh.SOTIET_TH) / 15 AS SOTC,
             ltc.NIENKHOA,
             ltc.HOCKY
-        FROM DANGKY dk
-        JOIN LOPTINCHI ltc ON ltc.MALTC = dk.MALTC
-        JOIN MONHOC mh ON mh.MAMH = ltc.MAMH
-        WHERE dk.MASV = @MASV
-          AND (dk.HUYDANGKY = 0 OR dk.HUYDANGKY IS NULL)
+        FROM FilteredDK dk
+        INNER JOIN LOPTINCHI ltc ON ltc.MALTC = dk.MALTC
+        INNER JOIN MONHOC mh ON mh.MAMH = ltc.MAMH
     ),
     RankedGrades AS (
         SELECT
