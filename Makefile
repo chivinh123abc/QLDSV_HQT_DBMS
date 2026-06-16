@@ -2,7 +2,7 @@
 WEB_PROJECT = src/QLDSV_HTC.Web
 INFRA_PROJECT = src/QLDSV_HTC.Infrastructure
 
-.PHONY: dev build clean db-update
+.PHONY: dev build clean db-update db-setup
 
 format:
 	dotnet format
@@ -25,3 +25,7 @@ clean: format
 # Lệnh cập nhật Database (Dành cho đồ án DBMS của bạn)
 db-update:
 	dotnet ef database update --project $(INFRA_PROJECT) --startup-project $(WEB_PROJECT)
+
+# Khởi tạo toàn bộ Cơ sở dữ liệu và Stored Procedures từ mã nguồn SQL
+db-setup:
+	dotnet run --project $(WEB_PROJECT) -- --setup-db
