@@ -1,0 +1,153 @@
+### I. KHÁI NIỆM VỀ CURSOR (CON TRỎ)
+
+Trong cơ sở dữ liệu quan hệ (RDBMS) như SQL Server, các câu lệnh SQL thông thường hoạt động theo cơ chế **hướng tập hợp (Set-based)** – nghĩa là xử lý toàn bộ các dòng dữ liệu cùng một lúc.
+
+Tuy nhiên, trong một số bài toán nghiệp vụ phức tạp, lập trình viên cần xử lý dữ liệu theo cơ chế **tuần tự từng dòng một (Row-by-row / Procedural)**. Lúc này, ta sử dụng **Cursor**.
+
+- **Cursor là gì?** Là một đối tượng cơ sở dữ liệu dùng để quản lý một tập các records (kết quả trả về của một phát biểu `SQL-Select`) và cho phép duyệt qua, xử lý từng mẫu tin một trong tập kết quả đó.
+- **Phạm vi áp dụng:** Thường được sử dụng phổ biến bên trong các **Stored Procedures** (Thủ tục lưu trữ) và **Triggers** (Trình kích hoạt).
+- **Khi nào nên dùng?** Khi bạn muốn thực hiện các cách thức xử lý khác nhau cho từng mẫu tin cụ thể, hoặc khi cần nhận kết quả trả về từng hàng để tính toán lũy tiến (ví dụ: thuật toán khớp lệnh tài chính/chứng khoán, tính số dư ngân hàng, gửi email tự động theo danh sách).
+
+---
+
+### II. VÒNG ĐỜI VÀ TIẾN TRÌNH SỬ DỤNG CURSOR
+
+Quá trình sử dụng một Cursor trong T-SQL bắt buộc phải trải qua 5 bước nghiêm ngặt theo trình tự sau:
+
+1. **Khai báo biến dữ liệu & Khai báo Cursor (`DECLARE`):** Định nghĩa câu lệnh `SELECT` tạo ra tập dữ liệu và khai báo các biến có kiểu dữ liệu tương ứng với các cột trong câu lệnh `SELECT` để chứa dữ liệu khi duyệt.
+2. **Mở Cursor (`OPEN`):** Thực thi câu lệnh `SELECT` liên kết với Cursor và nạp tập kết quả vào bộ nhớ vùng đệm.
+3. **Đọc dữ liệu (`FETCH INTO`):** Lấy dữ liệu từ một mẫu tin hiện tại trong Cursor đưa vào các biến đã khai báo để xử lý. Tiến trình này thường được lồng trong một vòng lặp `WHILE` để duyệt cho đến dòng cuối cùng.
+4. **Đóng Cursor (`CLOSE`):** Ngắt kết nối dữ liệu và giải phóng các tài nguyên đệm của dòng hiện tại, nhưng giữ nguyên cấu trúc định nghĩa để có thể mở lại (`OPEN`) nếu cần.
+5. **Giải phóng vùng nhớ (`DEALLOCATE`):** Xóa bỏ hoàn toàn định nghĩa Cursor và giải phóng toàn bộ tài nguyên hệ thống gắn liền với nó.
+
+---
+
+### III. CÚ PHÁP CHI TIẾT (SYNTAX) VÀ ĐOẠN MÃ MẪU
+
+#### 1. Khai báo biến nhận dữ liệu
+
+Trước khi khai báo con trỏ, bạn phải dùng lệnh `DECLARE` để tạo các biến lưu trữ tạm thời một dòng dữ liệu lấy từ con trỏ:
+
+```sql
+DECLARE @Bien_1 Kieu_Du_Lieu, @Bien_2 Kieu_Du_Lieu;
+
+```
+
+#### 2. Cú pháp khai báo Cursor đầy đủ
+
+```sql
+DECLARE cursor_name CURSOR
+    [ LOCAL | GLOBAL ]
+    [ FORWARD_ONLY | SCROLL ]
+    [ STATIC | KEYSET | DYNAMIC | FAST_FORWARD ]
+    [ READ_ONLY | SCROLL_LOCKS | OPTIMISTIC ]
+    [ TYPE_WARNING ]
+FOR select_statement
+    [ FOR UPDATE [ OF column_name [ , ... n ] ] ]
+
+```
+
+_Giải thích các tùy chọn quan trọng:_
+
+- `LOCAL` / `GLOBAL`: Phạm vi của con trỏ. `LOCAL` nghĩa là con trỏ cục bộ (chỉ tồn tại trong khối lệnh, SP hoặc Trigger tạo ra nó). `GLOBAL` giúp con trỏ có tác dụng toàn cục trong suốt phiên kết nối (Connection).
+- `FORWARD_ONLY` / `SCROLL`: Hướng duyệt dữ liệu. `FORWARD_ONLY` (Mặc định) chỉ cho phép duyệt từ dòng đầu đến dòng cuối. `SCROLL` cho phép nhảy tự do tới bất kỳ dòng nào bằng các lệnh: `FETCH FIRST` (dòng đầu), `FETCH LAST` (dòng cuối), `FETCH PRIOR` (dòng trước), `FETCH ABSOLUTE n` (dòng thứ n).
+- `STATIC` / `KEYSET` / `DYNAMIC`: Cách con trỏ phản ánh sự thay đổi dữ liệu của bảng gốc. `STATIC` sẽ sao lưu dữ liệu vào bảng tạm ở `tempdb` nên khi bảng gốc bị thay đổi bởi user khác, dữ liệu trong con trỏ không đổi. `DYNAMIC` phản ánh tức thời mọi thay đổi ở bảng gốc khi ta đang duyệt.
+- `FAST_FORWARD`: Cấu hình tối ưu hóa đặc biệt, tương đương với một con trỏ có thuộc tính `FORWARD_ONLY` và `READ_ONLY` được tối ưu hiệu năng đọc tốt nhất.
+
+#### 3. Mở, Đọc và Vòng lặp duyệt Cursor
+
+Để kiểm tra xem việc đọc dữ liệu có thành công hay không, SQL Server sử dụng biến toàn cục hệ thống **`@@FETCH_STATUS`**:
+
+- `0`: Lệnh `FETCH` thực hiện thành công, đã lấy được dữ liệu dòng tiếp theo.
+- `-1`: Lệnh `FETCH` thất bại hoặc đã duyệt hết dữ liệu (vượt quá dòng cuối cùng).
+- `-2`: Dòng được chọn không còn tồn tại trong bảng (do bị user khác xóa).
+
+_Cấu trúc vòng lặp mẫu chuẩn:_
+
+```sql
+-- Mở con trỏ
+OPEN cursor_name;
+
+-- Đọc mẫu tin đầu tiên
+FETCH NEXT FROM cursor_name INTO @Bien_1, @Bien_2;
+
+-- Vòng lặp duyệt dữ liệu
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    -- [Nơi xử lý logic nghiệp vụ với @Bien_1, @Bien_2]
+
+    -- Tiếp tục đọc mẫu tin tiếp theo
+    FETCH NEXT FROM cursor_name INTO @Bien_1, @Bien_2;
+END
+
+-- Đóng và Giải phóng tài nguyên
+CLOSE cursor_name;
+DEALLOCATE cursor_name;
+
+```
+
+---
+
+### IV. TÍNH NĂNG CẬP NHẬT DỮ LIỆU QUA CURSOR (`WHERE CURRENT OF`)
+
+Một kỹ thuật rất mạnh mẽ của Cursor là khả năng chỉnh sửa (`UPDATE`) hoặc xóa (`DELETE`) chính xác ngay tại dòng dữ liệu mà con trỏ đang đứng mà không cần phải tìm lại bằng Khóa chính. Bạn thực hiện bằng cách dùng mệnh đề **`WHERE CURRENT OF cursor_name`**.
+
+_Đoạn mã ứng dụng thực tế trong quản lý khớp lệnh của bạn:_
+
+```sql
+-- Khai báo biến nhận dữ liệu từ con trỏ
+DECLARE @ngaydat NVARCHAR(50), @soluong INT, @giadat FLOAT;
+
+-- Tiến hành duyệt con trỏ @CrsrVar
+FETCH NEXT FROM @CrsrVar INTO @ngaydat, @soluong, @giadat;
+
+WHILE (@@FETCH_STATUS <> -1 AND @soluongMB > 0)
+BEGIN
+    IF (@LoaiGD = 'B')
+    BEGIN
+        IF (@giadatMB <= @giadat)
+        BEGIN
+            IF @soluongMB > @soluong
+            BEGIN
+                -- Cập nhật trực tiếp số lượng của dòng hiện tại trong con trỏ về 0
+                UPDATE dbo.LENHDAT
+                SET SOLUONG = 0
+                WHERE CURRENT OF @CrsrVar;
+
+                SET @soluongMB = @soluongMB - @soluong;
+            END
+            ELSE
+            BEGIN
+                -- Trừ bớt số lượng ngay tại dòng hiện tại con trỏ đang đứng
+                UPDATE dbo.LENHDAT
+                SET SOLUONG = SOLUONG - @soluongMB
+                WHERE CURRENT OF @CrsrVar;
+
+                SET @soluongMB = 0;
+            END
+        END
+    END
+    FETCH NEXT FROM @CrsrVar INTO @ngaydat, @soluong, @giadat;
+END
+
+```
+
+---
+
+### V. ĐÁNH GIÁ ƯU - NHƯỢC ĐIỂM VÀ LỜI KHUYÊN KHI SỬ DỤNG
+
+Dù Cursor giải quyết tốt các bài toán xử lý tuần tự, nhưng trong quản trị CSDL, nó luôn đi kèm với những khuyến cáo lớn về hiệu năng.
+
+| Tiêu chí    | Đánh giá                                                                                                    |
+| ----------- | ----------------------------------------------------------------------------------------------------------- |
+| **Ưu điểm** | - Giúp viết các thuật toán phức tạp đòi hỏi tính toán bắc cầu, lũy tiến giữa các dòng dữ liệu với nhau.<br> |
+
+<br>- Dễ dàng tích hợp các hành động lập trình bên ngoài (như gọi Stored Procedure khác ứng với mỗi dòng). |
+| **Nhược điểm** | - **Hạ thấp hiệu năng nghiêm trọng (Slow Performance):** Việc đọc/ghi từng dòng một gây tốn chi phí I/O ổ đĩa và CPU gấp nhiều lần xử lý tập hợp.<br>
+
+<br>- **Nghẽn mạch hệ thống (Locking & Blocking):** Khi duyệt lâu, Cursor có thể giữ các khóa (Locks) trên dòng hoặc bảng, gây ra hiện tượng hàng chờ kéo dài hoặc `Deadlock` cho các User khác. |
+
+**Lời khuyên cốt lõi (Best Practices):**
+
+1. **Hạn chế tối đa:** Hãy luôn cố gắng tìm giải pháp thay thế Cursor bằng các kỹ thuật hướng tập hợp hiệu năng cao như: `JOIN`, `Subquery` (Truy vấn con), `CTE` (Bảng tạm biểu thức), hoặc `Window Functions` (`ROW_NUMBER()`, `SUM() OVER()`).
+2. **Tối ưu hóa khi bắt buộc phải dùng:** Nếu không thể thay thế, hãy luôn khai báo rõ thuộc tính con trỏ là **`LOCAL FORWARD_ONLY STATIC`** hoặc **`LOCAL FAST_FORWARD`**. Điều này giúp SQL Server hiểu con trỏ chỉ đọc một chiều, không tốn tài nguyên quản lý khóa, giúp bảo vệ tốc độ vận hành của hệ thống một cách tốt nhất.
