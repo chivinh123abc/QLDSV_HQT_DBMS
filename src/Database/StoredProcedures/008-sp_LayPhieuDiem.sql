@@ -4,36 +4,66 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- [TỐI ƯU]
-    -- CHỌN / CHIẾU TRƯỚC: Lọc qua bảng DANGKY lấy duy nhất các record 
-    -- đăng ký thuộc sinh viên này (lượng data nhỏ, SARGable với MASV và HUYDANGKY)
-    -- sau đó mới thực hiện JOIN với LOPTINCHI và MONHOC.
+    -- [TỐI ƯU & ĐIỂM THI MAX]
+    -- Sử dụng ROW_NUMBER() OVER (PARTITION BY...) để xếp hạng các lần học của cùng 1 môn học.
+    -- Lọc lấy lần học có điểm hết môn cao nhất (RowNum = 1) để lấy đúng điểm thi Max.
     
     ;WITH FilteredDK AS (
         SELECT 
-            MALTC, 
-            DIEM_CC, 
-            DIEM_GK, 
+            MALTC,
+            DIEM_CC,
+            DIEM_GK,
             DIEM_CK
         FROM DANGKY
         WHERE MASV = @MASV
-          -- SARGable: Giữ nguyên HUYDANGKY
           AND (HUYDANGKY = 0 OR HUYDANGKY IS NULL)
+    ),
+    RawGrades AS (
+        SELECT 
+            ltc.MAMH,
+            mh.TENMH,
+            dk.DIEM_CC,
+            dk.DIEM_GK,
+            dk.DIEM_CK,
+            CASE
+                WHEN dk.DIEM_CC IS NULL OR dk.DIEM_GK IS NULL OR dk.DIEM_CK IS NULL
+                    THEN NULL
+                ELSE dk.DIEM_CC * 0.1 + dk.DIEM_GK * 0.3 + dk.DIEM_CK * 0.6
+            END AS DIEM,
+            (mh.SOTIET_LT + mh.SOTIET_TH) / 15 AS SOTC,
+            ltc.NIENKHOA,
+            ltc.HOCKY
+        FROM FilteredDK dk
+        INNER JOIN LOPTINCHI ltc ON ltc.MALTC = dk.MALTC
+        INNER JOIN MONHOC mh ON mh.MAMH = ltc.MAMH
+    ),
+    RankedGrades AS (
+        SELECT
+            MAMH,
+            TENMH,
+            DIEM_CC,
+            DIEM_GK,
+            DIEM_CK,
+            DIEM,
+            SOTC,
+            NIENKHOA,
+            HOCKY,
+            ROW_NUMBER() OVER (PARTITION BY MAMH ORDER BY ISNULL(DIEM, -1) DESC) AS RowNum
+        FROM RawGrades
     )
     SELECT
-        mh.TENMH,
-        fdk.DIEM_CC,
-        fdk.DIEM_GK,
-        fdk.DIEM_CK,
-        CASE
-            WHEN fdk.DIEM_CC IS NULL OR fdk.DIEM_GK IS NULL OR fdk.DIEM_CK IS NULL
-                THEN NULL
-            ELSE fdk.DIEM_CC * 0.1 + fdk.DIEM_GK * 0.3 + fdk.DIEM_CK * 0.6
-        END AS DIEM
-    FROM FilteredDK fdk
-    JOIN LOPTINCHI ltc ON ltc.MALTC = fdk.MALTC
-    JOIN MONHOC mh ON mh.MAMH = ltc.MAMH
-    ORDER BY mh.TENMH;
+        MAMH,
+        TENMH,
+        DIEM_CC,
+        DIEM_GK,
+        DIEM_CK,
+        DIEM,
+        SOTC,
+        NIENKHOA,
+        HOCKY
+    FROM RankedGrades
+    WHERE RowNum = 1
+    ORDER BY NIENKHOA ASC, HOCKY ASC, TENMH ASC;
 
 END
 GO

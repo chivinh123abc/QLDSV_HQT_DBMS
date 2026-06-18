@@ -7,6 +7,23 @@ Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+// CLI Database Setup runner
+if (args.Contains("--setup-db"))
+{
+    try
+    {
+        await DatabaseInitializer.SetupDatabaseAsync(builder.Environment.ContentRootPath);
+        return;
+    }
+    catch (Exception ex)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine($"❌ Setup Database thất bại: {ex.Message}");
+        Console.ResetColor();
+        Environment.Exit(1);
+    }
+}
+
 // Register "App Module" (Services, Providers, Auth)
 builder.Services.AddAppModule();
 

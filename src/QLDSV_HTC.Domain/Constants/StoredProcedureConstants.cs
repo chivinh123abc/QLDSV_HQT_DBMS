@@ -12,6 +12,7 @@ namespace QLDSV_HTC.Domain.Constants
             public const string SchoolYear = "@NIENKHOA";
             public const string Semester = "@HOCKY";
             public const string FacultyId = "@MAKHOA";
+            public const string GetAll = "@GET_ALL";
         }
 
         public static class GetRegisteredStudentsList
