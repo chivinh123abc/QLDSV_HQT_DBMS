@@ -8,10 +8,10 @@
 
 Dự án tuân thủ mô hình **Kiến trúc sạch (Clean Architecture)** nhằm tách biệt tuyệt đối giữa logic nghiệp vụ và cơ sở dữ liệu:
 
-- **[QLDSV_HTC.Domain](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/src/QLDSV_HTC.Domain)**: Chứa các thực thể, cấu trúc hằng số nghiệp vụ, hằng số cơ sở dữ liệu (`DbConstants.cs`, `AppConstants.cs`), và các hằng số stored procedure (`StoredProcedureConstants.cs`). Hoàn toàn độc lập với database và framework.
-- **[QLDSV_HTC.Application](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/src/QLDSV_HTC.Application)**: Chứa các định nghĩa DTOs, interfaces dịch vụ và các hợp đồng truy cập dữ liệu (Repositories Interfaces).
-- **[QLDSV_HTC.Infrastructure](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/src/QLDSV_HTC.Infrastructure)**: Thực thi kết nối cơ sở dữ liệu và truy cập dữ liệu (ADO.NET SqlClient). Sử dụng giải thuật tối ưu kết nối động dựa trên tài khoản SQL Server đăng nhập của người dùng.
-- **[QLDSV_HTC.Web](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/src/QLDSV_HTC.Web)**: Giao diện người dùng Web MVC (Razor Pages), các Controllers, phân quyền và cấu hình tích hợp DevExpress Web Document Viewer phục vụ in ấn PDF.
+- **[QLDSV_HTC.Domain](src/QLDSV_HTC.Domain)**: Chứa các thực thể, cấu trúc hằng số nghiệp vụ, hằng số cơ sở dữ liệu (`DbConstants.cs`, `AppConstants.cs`), và các hằng số stored procedure (`StoredProcedureConstants.cs`). Hoàn toàn độc lập với database và framework.
+- **[QLDSV_HTC.Application](src/QLDSV_HTC.Application)**: Chứa các định nghĩa DTOs, interfaces dịch vụ và các hợp đồng truy cập dữ liệu (Repositories Interfaces).
+- **[QLDSV_HTC.Infrastructure](src/QLDSV_HTC.Infrastructure)**: Thực thi kết nối cơ sở dữ liệu và truy cập dữ liệu (ADO.NET SqlClient). Sử dụng giải thuật tối ưu kết nối động dựa trên tài khoản SQL Server đăng nhập của người dùng.
+- **[QLDSV_HTC.Web](src/QLDSV_HTC.Web)**: Giao diện người dùng Web MVC (Razor Pages), các Controllers, phân quyền và cấu hình tích hợp DevExpress Web Document Viewer phục vụ in ấn PDF.
 
 > [!NOTE]
 > **Cơ chế Đăng nhập Động (Dynamic Connection String)**
@@ -35,19 +35,19 @@ Làm theo các bước sau để thiết lập dự án trên môi trường Win
 
 1. Mở SQL Server Management Studio (SSMS) hoặc Azure Data Studio và tạo một cơ sở dữ liệu trống có tên là `QLDSV_HTC`.
 2. Chạy file SQL tạo cấu trúc bảng (`Tables`):
-   - Mở file **[QLDSV_HTC.sql](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/src/Database/Tables/QLDSV_HTC.sql)**.
+   - Mở file **[QLDSV_HTC.sql](src/Database/Tables/QLDSV_HTC.sql)**.
    - _Lưu ý:_ File được định dạng mã hóa **UTF-16LE** để hiển thị đúng ký tự tiếng Việt. Bạn cần mở trực tiếp bằng SSMS hoặc trình soạn thảo hỗ trợ mã hóa này để thực thi chính xác.
 3. Tạo các Stored Procedure:
-   - Chạy toàn bộ các script SQL trong thư mục **[src/Database/StoredProcedures/](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/src/Database/StoredProcedures)**.
+   - Chạy toàn bộ các script SQL trong thư mục **[src/Database/StoredProcedures/](src/Database/StoredProcedures)**.
 4. Thiết lập Phân quyền, Index hiệu năng cao và Seed Data mẫu:
-   - Chạy lần lượt các script trong thư mục **[src/Database/Scripts/](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/src/Database/Scripts)** theo thứ tự:
-     1. **[001-PhanQuyen.sql](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/src/Database/Scripts/001-PhanQuyen.sql)** (Cấp quyền hạn tối thiểu cho nhóm `KHOA`, `SV` và toàn quyền cho `PGV`).
-     2. **[002-Indexes.sql](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/src/Database/Scripts/002-Indexes.sql)** (Tạo các chỉ mục bao phủ không cụm - non-clustered covering index để tối ưu hiệu năng truy vấn dữ liệu).
-     3. **[003-SeedsDatabase.sql](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/src/Database/Scripts/003-SeedsDatabase.sql)** (Nạp dữ liệu thử nghiệm về Khoa, Lớp, Môn học, Giảng viên, Sinh viên, Lớp tín chỉ và Đăng ký).
+   - Chạy lần lượt các script trong thư mục **[src/Database/Scripts/](src/Database/Scripts)** theo thứ tự:
+     1. **[001-PhanQuyen.sql](src/Database/Scripts/001-PhanQuyen.sql)** (Cấp quyền hạn tối thiểu cho nhóm `KHOA`, `SV` và toàn quyền cho `PGV`).
+     2. **[002-Indexes.sql](src/Database/Scripts/002-Indexes.sql)** (Tạo các chỉ mục bao phủ không cụm - non-clustered covering index để tối ưu hiệu năng truy vấn dữ liệu).
+     3. **[003-SeedsDatabase.sql](src/Database/Scripts/003-SeedsDatabase.sql)** (Nạp dữ liệu thử nghiệm về Khoa, Lớp, Môn học, Giảng viên, Sinh viên, Lớp tín chỉ và Đăng ký).
 
 ### 3. Cấu hình Ứng dụng
 
-Tạo file **`.env`** tại thư mục gốc của dự án (sao chép nội dung từ **[.env.example](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/.env.example)**) và chỉnh sửa cấu hình kết nối SQL Server local của bạn:
+Tạo file **`.env`** tại thư mục gốc của dự án (sao chép nội dung từ **[.env.example](.env.example)**) và chỉnh sửa cấu hình kết nối SQL Server local của bạn:
 
 ```ini
 # App Configuration
@@ -124,7 +124,7 @@ Hệ thống kết xuất các báo cáo chuẩn PDF chất lượng cao:
 
 ## 🛠️ Makefile và Các lệnh Phát triển hữu ích
 
-Dự án cung cấp các lệnh tự động hóa trong file **[makefile](file:///d:/CODE%20PLAYGROUND%20Projects/HQTCSDL/QLDSV_HQT_DBMS/makefile)**:
+Dự án cung cấp các lệnh tự động hóa trong file **[Makefile](Makefile)**:
 
 | Lệnh             | Ý nghĩa                                                                             |
 | :--------------- | :---------------------------------------------------------------------------------- |
@@ -139,31 +139,36 @@ Dự án cung cấp các lệnh tự động hóa trong file **[makefile](file:/
 
 ## 📚 Tài liệu Dự án & Bài học (Documentation & Lessons)
 
-Hệ thống cung cấp bộ tài liệu đầy đủ về yêu cầu nghiệp vụ đồ án cũng như giáo trình học tập SQL Server từ cơ bản đến nâng cao trong thư mục **[docs](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs)**:
+Hệ thống cung cấp bộ tài liệu đầy đủ về yêu cầu nghiệp vụ đồ án cũng như giáo trình học tập SQL Server từ cơ bản đến nâng cao trong thư mục **[docs](docs)**:
 
 ### 📋 1. Đồ án & Nghiệp vụ (Assignment & Specification)
-- **[Yêu cầu Đề tài 3](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/assignment/De3.md)**: Chi tiết yêu cầu đề tài quản lý điểm sinh viên hệ tín chỉ từ giáo viên.
-- **[Tóm tắt & Trạng thái triển khai](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/assignment/TomTatDe3.md)**: Bảng theo dõi tiến độ thực tế, đánh giá chi tiết các tính năng đã hoàn thành và kỹ thuật tối ưu hóa đã áp dụng trên codebase.
+
+- **[Yêu cầu Đề tài 3](docs/assignment/De3.md)**: Chi tiết yêu cầu đề tài quản lý điểm sinh viên hệ tín chỉ từ giáo viên.
+- **[Tóm tắt & Trạng thái triển khai](docs/assignment/TomTatDe3.md)**: Bảng theo dõi tiến độ thực tế, đánh giá chi tiết các tính năng đã hoàn thành và kỹ thuật tối ưu hóa đã áp dụng trên codebase.
 
 ### 📖 2. Giáo trình học tập SQL Server (MS SQL Server Lessons)
-Hệ thống tài liệu học tập được tổ chức khoa học theo từng chương tại **[Mục lục bài học](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/MucLuc.md)**:
-- **[Chương 1: Tổng quan về SQL Server](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/Chuong1_TongQuanSQLServer.md)**: Kiến trúc mạng, các dịch vụ và đối tượng CSDL cơ bản.
-- **[Chương 2: Hệ quản trị SQL Server](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/Chuong2_TaoVaQuanLyCSDL.md)**: Hướng dẫn cấu hình SSMS và các kiểu dữ liệu.
-- **[Chương 3: Ngôn ngữ định nghĩa dữ liệu (DDL)](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/Chuong3_TaoVaQuanLyBangVaRangBuoc.md)**: Quản lý database, bảng, các ràng buộc toàn vẹn.
-- **[Chương 4: Ngôn ngữ thao tác dữ liệu (DML)](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/Chuong4_ThaoTacVaTruyVanDuLieu.md)**: SELECT nâng cao, các lệnh INSERT, UPDATE, DELETE.
-- **[Chương 5: Cơ chế an toàn và bảo mật](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/Chuong5_BaoMatVaPhanQuyenCSDL.md)**: Login, User, Role và cơ chế GRANT/REVOKE/DENY.
-- **[Chương 6: Sao lưu & Phục hồi dữ liệu](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/Chuong6_SaoLuuVaPhucHoiDuLieu.md)**: Full/Diff/Log Backups và Point-in-time Restore.
-- **[Chương 7: Nhân bản dữ liệu (Replication)](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/Chuong7_NhanBanDuLieu.md)**: Snapshot, Transactional, Merge Replication.
-- **[Chương 8: Trigger và UDF](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/Chuong8_TriggerVaUDF.md)**: Ràng buộc bằng Trigger và xây dựng các hàm tự định nghĩa.
+
+Hệ thống tài liệu học tập được tổ chức khoa học theo từng chương tại **[Mục lục bài học](docs/lessons/MucLuc.md)**:
+
+- **[Chương 1: Tổng quan về SQL Server](docs/lessons/Chuong1_TongQuanSQLServer.md)**: Kiến trúc mạng, các dịch vụ và đối tượng CSDL cơ bản.
+- **[Chương 2: Hệ quản trị SQL Server](docs/lessons/Chuong2_TaoVaQuanLyCSDL.md)**: Hướng dẫn cấu hình SSMS và các kiểu dữ liệu.
+- **[Chương 3: Ngôn ngữ định nghĩa dữ liệu (DDL)](docs/lessons/Chuong3_TaoVaQuanLyBangVaRangBuoc.md)**: Quản lý database, bảng, các ràng buộc toàn vẹn.
+- **[Chương 4: Ngôn ngữ thao tác dữ liệu (DML)](docs/lessons/Chuong4_ThaoTacVaTruyVanDuLieu.md)**: SELECT nâng cao, các lệnh INSERT, UPDATE, DELETE.
+- **[Chương 5: Cơ chế an toàn và bảo mật](docs/lessons/Chuong5_BaoMatVaPhanQuyenCSDL.md)**: Login, User, Role và cơ chế GRANT/REVOKE/DENY.
+- **[Chương 6: Sao lưu & Phục hồi dữ liệu](docs/lessons/Chuong6_SaoLuuVaPhucHoiDuLieu.md)**: Full/Diff/Log Backups và Point-in-time Restore.
+- **[Chương 7: Nhân bản dữ liệu (Replication)](docs/lessons/Chuong7_NhanBanDuLieu.md)**: Snapshot, Transactional, Merge Replication.
+- **[Chương 8: Trigger và UDF](docs/lessons/Chuong8_TriggerVaUDF.md)**: Ràng buộc bằng Trigger và xây dựng các hàm tự định nghĩa.
 
 ### 🚀 3. Chuyên đề nâng cao (Advanced Topics)
-Tài liệu đi sâu giải quyết các bài toán kỹ thuật phức tạp trong SQL Server tại **[Thư mục Chuyên đề nâng cao](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/advance)**:
-- **[Tối ưu hóa Truy vấn CSDL](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/advance/ToiUuTruyVanCSDL.md)**: Quy tắc tối ưu hóa câu lệnh SELECT, cách viết Stored Procedure hiệu năng cao.
-- **[Các mức cô lập giao dịch (Isolation Levels)](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/advance/CacMucCoLapGiaoDich_IsolationLevels.md)**: Dirty Read, Non-repeatable Read, Phantom Read và cách thiết lập mức cô lập phù hợp.
-- **[Con trỏ (Cursor) trong T-SQL](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/advance/ConTro_Cursor.md)**: Cách khai báo, duyệt và giải phóng tài nguyên khi sử dụng Cursor.
-- **[Báo cáo XtraReport](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/advance/TaoBaoCao.md)**: Cách thiết kế báo cáo động bằng DevExpress Reporting.
-- **[Bảo mật chuyên sâu trong SQL Server](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/advance/CacMucBaoMat.md)**: Tìm hiểu sâu về các lớp bảo mật Server, Database và Schema.
-- **[Tra cứu Mối liên kết Khóa ngoại bằng System Tables](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/docs/lessons/advance/CacBangHeThongLuuMoiLienKet_FK.md)**: Sử dụng các bảng hệ thống như `sys.foreign_keys`, `sys.foreign_key_columns` để truy vấn metadata liên kết dữ liệu.
+
+Tài liệu đi sâu giải quyết các bài toán kỹ thuật phức tạp trong SQL Server tại **[Thư mục Chuyên đề nâng cao](docs/lessons/advance)**:
+
+- **[Tối ưu hóa Truy vấn CSDL](docs/lessons/advance/ToiUuTruyVanCSDL.md)**: Quy tắc tối ưu hóa câu lệnh SELECT, cách viết Stored Procedure hiệu năng cao.
+- **[Các mức cô lập giao dịch (Isolation Levels)](docs/lessons/advance/CacMucCoLapGiaoDich_IsolationLevels.md)**: Dirty Read, Non-repeatable Read, Phantom Read và cách thiết lập mức cô lập phù hợp.
+- **[Con trỏ (Cursor) trong T-SQL](docs/lessons/advance/ConTro_Cursor.md)**: Cách khai báo, duyệt và giải phóng tài nguyên khi sử dụng Cursor.
+- **[Báo cáo XtraReport](docs/lessons/advance/TaoBaoCao.md)**: Cách thiết kế báo cáo động bằng DevExpress Reporting.
+- **[Bảo mật chuyên sâu trong SQL Server](docs/lessons/advance/CacMucBaoMat.md)**: Tìm hiểu sâu về các lớp bảo mật Server, Database và Schema.
+- **[Tra cứu Mối liên kết Khóa ngoại bằng System Tables](docs/lessons/advance/CacBangHeThongLuuMoiLienKet_FK.md)**: Sử dụng các bảng hệ thống như `sys.foreign_keys`, `sys.foreign_key_columns` để truy vấn metadata liên kết dữ liệu.
 
 ---
 
@@ -171,7 +176,7 @@ Tài liệu đi sâu giải quyết các bài toán kỹ thuật phức tạp tr
 
 Tất cả các thành viên tham gia phát triển dự án cần tuân thủ nghiêm ngặt các quy tắc đã được định nghĩa tại file hướng dẫn:
 
-👉 **[Xem chi tiết Quy tắc Phát triển và Tối ưu CSDL](file:///d:/CODE%20PLAYGROUND/Projects/HQTCSDL/QLDSV_HQT_DBMS/.agents/rules/rules.md)**
+👉 **[Xem chi tiết Quy tắc Phát triển và Tối ưu CSDL](.agents/rules/rules.md)**
 
 Các quy tắc quan quan trọng bao gồm:
 
