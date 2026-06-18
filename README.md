@@ -133,6 +133,7 @@ Dự án cung cấp các lệnh tự động hóa trong file **[makefile](file:/
 | `make dev`       | Chạy ứng dụng Web ở chế độ Watch (Hot Reload) đồng thời tự động định dạng mã nguồn. |
 | `make clean`     | Dọn dẹp các thư mục rác `bin`/`obj` sinh ra trong quá trình biên dịch.              |
 | `make db-update` | Chạy cập nhật database Migration (dành cho EF Core nếu có cấu hình).                |
+| `make db-setup`  | Khởi tạo toàn bộ Cơ sở dữ liệu và Stored Procedures từ mã nguồn SQL.                |
 
 ---
 
