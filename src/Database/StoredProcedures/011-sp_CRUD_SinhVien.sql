@@ -59,10 +59,17 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_ThemSinhVien]
     @NGAYSINH  DATE = NULL,
     @MALOP     NCHAR(10),
     @DANGHIHOC BIT = 0,
-    @PASSWORD  NVARCHAR(40) = '123456'
+    @PASSWORD  NVARCHAR(40) = '12345678'
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    -- Kiểm tra độ dài mật khẩu tối thiểu
+    IF LEN(@PASSWORD) < 8
+    BEGIN
+        RAISERROR(N'Mật khẩu phải chứa ít nhất 8 ký tự.', 16, 1);
+        RETURN;
+    END
 
     -- Kiểm tra MASV trùng (EXISTS tối ưu hơn COUNT)
     IF EXISTS (SELECT 1 FROM SINHVIEN WHERE MASV = @MASV)
@@ -111,6 +118,13 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM SINHVIEN WHERE MASV = @MASV_OLD)
     BEGIN
         RAISERROR(N'Mã sinh viên gốc không tồn tại.', 16, 1);
+        RETURN;
+    END
+
+    -- Kiểm tra độ dài mật khẩu mới tối thiểu nếu được thay đổi
+    IF @PASSWORD IS NOT NULL AND LEN(@PASSWORD) < 8
+    BEGIN
+        RAISERROR(N'Mật khẩu mới phải chứa ít nhất 8 ký tự.', 16, 1);
         RETURN;
     END
 

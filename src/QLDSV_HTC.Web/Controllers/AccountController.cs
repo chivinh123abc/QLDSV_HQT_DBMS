@@ -1,9 +1,13 @@
 using System.Security.Claims;
+using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Mail;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using QLDSV_HTC.Infrastructure.Helpers;
 using QLDSV_HTC.Application.DTOs;
 using QLDSV_HTC.Application.Interfaces;
 using QLDSV_HTC.Domain.Constants;
@@ -16,19 +20,271 @@ namespace QLDSV_HTC.Web.Controllers
     public class AccountController(
         IAuthRepository authRepository,
         IAccountRepository accountRepository,
-        ILecturerRepository lecturerRepository) : Controller
+        ILecturerRepository lecturerRepository,
+        IStudentRepository studentRepository) : Controller
     {
+        private static readonly ConcurrentDictionary<string, (string Otp, DateTime Expiry)> ResetOtpCache = new();
+
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("forgot-password")]
+        public IActionResult ForgotPassword()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return Redirect(RouteConstants.Home.HomePath);
+            }
+            return View(new ForgotPasswordViewModel { Step = 1, IsStudent = true });
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [Route("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            model.IsStudent = true; // Chỉ xử lý sinh viên
+
+            if (model.ResendOtp)
+            {
+                if (string.IsNullOrWhiteSpace(model.LoginName))
+                {
+                    ViewBag.ErrorMessage = "Vui lòng nhập mã sinh viên.";
+                    model.Step = 1;
+                    ModelState.Clear();
+                    return View(model);
+                }
+
+                var student = await studentRepository.GetStudentByIdAsync(model.LoginName);
+                if (student == null)
+                {
+                    ViewBag.ErrorMessage = "Mã sinh viên không tồn tại trong hệ thống.";
+                    model.Step = 1;
+                    ModelState.Clear();
+                    return View(model);
+                }
+
+                var loginNameClean = model.LoginName.Trim().ToLower();
+                var email = $"{loginNameClean}@student.ptithcm.edu.vn";
+                model.Email = email;
+
+                var random = new Random();
+                var otp = random.Next(100000, 999999).ToString();
+
+                ResetOtpCache[loginNameClean] = (otp, DateTime.UtcNow.AddMinutes(5));
+
+                try
+                {
+                    var host = Environment.GetEnvironmentVariable("MAIL_HOST") ?? "smtp.gmail.com";
+                    var portStr = Environment.GetEnvironmentVariable("MAIL_PORT") ?? "587";
+                    var user = Environment.GetEnvironmentVariable("MAIL_USER");
+                    var pass = Environment.GetEnvironmentVariable("MAIL_PASSWORD");
+                    var fromAddress = Environment.GetEnvironmentVariable("MAIL_FROM_ADDRESS") ?? user;
+
+                    if (!string.IsNullOrEmpty(user) && !string.IsNullOrEmpty(pass))
+                    {
+                        int port = int.TryParse(portStr, out var p) ? p : 587;
+
+                        using var message = new MailMessage();
+                        message.From = new MailAddress(fromAddress ?? user, "Hệ Thống Quản Lý Đào Tạo");
+                        message.To.Add(new MailAddress(email));
+                        message.Subject = "Mã Xác Nhận Khôi Phục Mật Khẩu (Gửi Lại)";
+                        message.Body = $@"
+                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>
+                                <h3 style='color: #2563eb; margin-bottom: 20px;'>Mã Xác Nhận Khôi Phục Mật Khẩu (Gửi Lại)</h3>
+                                <p>Xin chào,</p>
+                                <p>Chúng tôi nhận được yêu cầu gửi lại mã xác nhận đặt lại mật khẩu cho tài khoản của bạn.</p>
+                                <p>Mã xác nhận (OTP) mới của bạn là: <strong style='font-size: 24px; color: #2563eb; letter-spacing: 2px; background: #eff6ff; padding: 5px 15px; border-radius: 4px; display: inline-block;'>{otp}</strong></p>
+                                <p>Mã này có hiệu lực trong vòng 5 phút. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+                                <p style='color: #64748b; font-size: 12px; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px;'>Trân trọng,<br/>Phòng Giáo vụ</p>
+                            </div>";
+                        message.IsBodyHtml = true;
+
+                        using var client = new SmtpClient(host, port);
+                        client.Credentials = new NetworkCredential(user, pass);
+                        client.EnableSsl = true;
+
+                        await client.SendMailAsync(message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SMTP ERROR]: {ex.Message}");
+                }
+
+                Console.WriteLine("==================================================");
+                Console.WriteLine($"[RESEND OTP]: {otp} for student {loginNameClean}");
+                Console.WriteLine("==================================================");
+
+                ViewBag.SuccessMessage = $"Mã xác nhận (OTP) mới đã được gửi lại đến email: {email}.";
+                model.Step = 2;
+                model.Otp = null;
+                model.ResendOtp = false;
+                ModelState.Clear();
+                return View(model);
+            }
+
+            if (model.Step == 1)
+            {
+                if (string.IsNullOrWhiteSpace(model.LoginName))
+                {
+                    ViewBag.ErrorMessage = "Vui lòng nhập mã sinh viên.";
+                    return View(model);
+                }
+
+                var student = await studentRepository.GetStudentByIdAsync(model.LoginName);
+                bool exists = student != null;
+
+                if (!exists)
+                {
+                    ViewBag.ErrorMessage = "Mã sinh viên không tồn tại trong hệ thống.";
+                    return View(model);
+                }
+
+                var loginNameClean = model.LoginName.Trim().ToLower();
+                var email = $"{loginNameClean}@student.ptithcm.edu.vn";
+
+                model.Email = email;
+
+                var random = new Random();
+                var otp = random.Next(100000, 999999).ToString();
+
+                ResetOtpCache[loginNameClean] = (otp, DateTime.UtcNow.AddMinutes(5));
+
+                try
+                {
+                    var host = Environment.GetEnvironmentVariable("MAIL_HOST") ?? "smtp.gmail.com";
+                    var portStr = Environment.GetEnvironmentVariable("MAIL_PORT") ?? "587";
+                    var user = Environment.GetEnvironmentVariable("MAIL_USER");
+                    var pass = Environment.GetEnvironmentVariable("MAIL_PASSWORD");
+                    var fromAddress = Environment.GetEnvironmentVariable("MAIL_FROM_ADDRESS") ?? user;
+
+                    if (!string.IsNullOrEmpty(user) && !string.IsNullOrEmpty(pass))
+                    {
+                        int port = int.TryParse(portStr, out var p) ? p : 587;
+
+                        using var message = new MailMessage();
+                        message.From = new MailAddress(fromAddress ?? user, "Hệ Thống Quản Lý Đào Tạo");
+                        message.To.Add(new MailAddress(email));
+                        message.Subject = "Mã Xác Nhận Khôi Phục Mật Khẩu";
+                        message.Body = $@"
+                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>
+                                <h3 style='color: #2563eb; margin-bottom: 20px;'>Mã Xác Nhận Khôi Phục Mật Khẩu</h3>
+                                <p>Xin chào,</p>
+                                <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn trên hệ thống Quản lý Đào tạo.</p>
+                                <p>Mã xác nhận (OTP) của bạn là: <strong style='font-size: 24px; color: #2563eb; letter-spacing: 2px; background: #eff6ff; padding: 5px 15px; border-radius: 4px; display: inline-block;'>{otp}</strong></p>
+                                <p>Mã này có hiệu lực trong vòng 5 phút. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+                                <p style='color: #64748b; font-size: 12px; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px;'>Trân trọng,<br/>Phòng Giáo vụ</p>
+                            </div>";
+                        message.IsBodyHtml = true;
+
+                        using var client = new SmtpClient(host, port);
+                        client.Credentials = new NetworkCredential(user, pass);
+                        client.EnableSsl = true;
+
+                        await client.SendMailAsync(message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SMTP ERROR]: {ex.Message}");
+                }
+
+                Console.WriteLine("==================================================");
+                Console.WriteLine($"[RESET PASSWORD OTP]: {otp} for student {loginNameClean}");
+                Console.WriteLine("==================================================");
+
+                ViewBag.SuccessMessage = $"Mã xác nhận (OTP) đã được gửi đến email: {email}. Vui lòng nhập mã để tiếp tục.";
+                model.Step = 2;
+                ModelState.Clear();
+                return View(model);
+            }
+            else if (model.Step == 2)
+            {
+                var loginNameClean = model.LoginName.Trim().ToLower();
+                var email = model.Email;
+                if (string.IsNullOrEmpty(email))
+                {
+                    email = $"{loginNameClean}@student.ptithcm.edu.vn";
+                }
+                ViewBag.EmailInfo = $"Mã OTP đã được gửi đến email: {email}.";
+
+                if (string.IsNullOrWhiteSpace(model.Otp))
+                {
+                    ViewBag.ErrorMessage = "Vui lòng nhập mã xác nhận OTP.";
+                    return View(model);
+                }
+
+
+
+                if (string.IsNullOrWhiteSpace(model.NewPassword) || model.NewPassword.Length < 8)
+                {
+                    ViewBag.ErrorMessage = "Mật khẩu mới phải chứa ít nhất 8 ký tự.";
+                    return View(model);
+                }
+
+                if (model.NewPassword != model.ConfirmPassword)
+                {
+                    ViewBag.ErrorMessage = "Mật khẩu xác nhận không khớp.";
+                    return View(model);
+                }
+
+                if (!ResetOtpCache.TryGetValue(loginNameClean, out var cachedData) || cachedData.Otp != model.Otp.Trim())
+                {
+                    ViewBag.ErrorMessage = "Mã xác nhận OTP không đúng hoặc đã hết hạn.";
+                    return View(model);
+                }
+
+                if (DateTime.UtcNow > cachedData.Expiry)
+                {
+                    ResetOtpCache.TryRemove(loginNameClean, out _);
+                    ViewBag.ErrorMessage = "Mã xác nhận OTP đã hết hạn. Vui lòng yêu cầu gửi lại mã.";
+                    model.Step = 1;
+                    ModelState.Clear();
+                    return View(model);
+                }
+
+                try
+                {
+                    await studentRepository.ResetPasswordAsync(model.LoginName, model.NewPassword);
+
+                    ResetOtpCache.TryRemove(loginNameClean, out _);
+
+                    TempData["SuccessMessage"] = "Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.";
+                    return RedirectToAction("Login", new
+                    {
+                        successMessage = "Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.",
+                        isStudent = true
+                    });
+                }
+                catch (SqlException ex)
+                {
+                    ViewBag.ErrorMessage = SqlErrorHelper.GetFriendlyMessage(ex);
+                    return View(model);
+                }
+            }
+
+            return View(model);
+        }
+
         [HttpGet]
         [AllowAnonymous]
         [Route(RouteConstants.Account.Login)]
-        public IActionResult Login()
+        public IActionResult Login([FromQuery] string? successMessage = null, [FromQuery] string? errorMessage = null, [FromQuery] bool isStudent = false)
         {
             // If already logged in, redirect to Home
             if (User.Identity?.IsAuthenticated == true)
             {
                 return Redirect(RouteConstants.Home.HomePath);
             }
-            return View(new LoginViewModel { IsStudent = false });
+            if (!string.IsNullOrEmpty(successMessage))
+            {
+                ViewBag.SuccessMessage = successMessage;
+            }
+            if (!string.IsNullOrEmpty(errorMessage))
+            {
+                ViewBag.ErrorMessage = errorMessage;
+            }
+            return View(new LoginViewModel { IsStudent = isStudent });
         }
 
         [HttpPost]
@@ -162,7 +418,7 @@ namespace QLDSV_HTC.Web.Controllers
             }
             catch (SqlException ex)
             {
-                return BadRequest(new { success = false, message = ex.Message });
+                return BadRequest(new { success = false, message = SqlErrorHelper.GetFriendlyMessage(ex) });
             }
         }
 
@@ -222,7 +478,7 @@ namespace QLDSV_HTC.Web.Controllers
             }
             catch (SqlException ex)
             {
-                return BadRequest(new { success = false, message = ex.Message });
+                return BadRequest(new { success = false, message = SqlErrorHelper.GetFriendlyMessage(ex) });
             }
         }
 
@@ -257,7 +513,7 @@ namespace QLDSV_HTC.Web.Controllers
             }
             catch (SqlException ex)
             {
-                return BadRequest(new { success = false, message = ex.Message });
+                return BadRequest(new { success = false, message = SqlErrorHelper.GetFriendlyMessage(ex) });
             }
         }
     }

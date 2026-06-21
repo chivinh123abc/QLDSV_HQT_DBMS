@@ -1020,6 +1020,44 @@ body {
   animation: fadeInUp 0.3s ease forwards;
 }
 
+/* Support info panel */
+.support-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  transition: all var(--transition-base);
+}
+
+.support-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.support-card.highlight-pulse {
+  animation: supportCardPulse 1.5s ease-out;
+}
+
+@keyframes supportCardPulse {
+  0% {
+    box-shadow: 0 0 0 0px rgba(37, 99, 235, 0.4);
+    border-color: var(--color-primary);
+    transform: scale(1.02);
+  }
+  50% {
+    box-shadow: 0 0 0 15px rgba(37, 99, 235, 0);
+    border-color: var(--color-primary);
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: 0 0 0 0px rgba(37, 99, 235, 0);
+    transform: scale(1);
+  }
+}
+
 /* Loading States */
 .container-loading {
   position: relative;
@@ -1270,4 +1308,10 @@ body {
   flex: 1;
   height: 1px;
   background: var(--color-border);
+}
+
+/* Hide native password reveal button in Edge/IE */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
 }

@@ -4,6 +4,7 @@ using QLDSV_HTC.Application.DTOs;
 using QLDSV_HTC.Application.Helpers;
 using QLDSV_HTC.Application.Interfaces;
 using QLDSV_HTC.Domain.Constants;
+using QLDSV_HTC.Infrastructure.Helpers;
 
 namespace QLDSV_HTC.Infrastructure.Repositories
 {
@@ -72,7 +73,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             }
             catch (SqlException ex)
             {
-                return new UserSession { ErrorMessage = ex.Message };
+                return new UserSession { ErrorMessage = SqlErrorHelper.GetFriendlyMessage(ex) };
             }
         }
     }

@@ -1,6 +1,80 @@
 USE [QLDSV_HTC]
 
 -- ========================================================
+-- 0. TẠO LOGIN VÀ USER CHO SINH VIÊN (DÙNG ĐỂ ĐĂNG NHẬP CHUNG)
+-- ========================================================
+-- Tạo Login 'sv' ở cấp Server nếu chưa có
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'sv')
+BEGIN
+    CREATE LOGIN [sv] WITH PASSWORD = 'sv12345678', DEFAULT_DATABASE = [QLDSV_HTC];
+END
+ELSE
+BEGIN
+    ALTER LOGIN [sv] WITH PASSWORD = 'sv12345678';
+END
+GO
+
+-- Tạo User 'user_sv' trong Database QLDSV_HTC nếu chưa có
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'user_sv')
+BEGIN
+    CREATE USER [user_sv] FOR LOGIN [sv];
+END
+GO
+
+-- Gán User 'user_sv' vào Role 'SV' để thừa hưởng quyền hạn chế
+ALTER ROLE [SV] ADD MEMBER [user_sv];
+GO
+
+-- ========================================================
+-- 0.5 TẠO LOGIN VÀ USER CHO LCVINH (PGV) VÀ PTQUANH (KHOA)
+-- ========================================================
+-- (A) Tài khoản lcvinh - Nhóm PGV (Toàn quyền)
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'lcvinh')
+BEGIN
+    CREATE LOGIN [lcvinh] WITH PASSWORD = 'lcvinh123', DEFAULT_DATABASE = [QLDSV_HTC];
+END
+ELSE
+BEGIN
+    ALTER LOGIN [lcvinh] WITH PASSWORD = 'lcvinh123';
+END
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'lcvinh')
+BEGIN
+    CREATE USER [lcvinh] FOR LOGIN [lcvinh];
+END
+GO
+ALTER ROLE [PGV] ADD MEMBER [lcvinh];
+-- Cho phép lcvinh tạo tài khoản khác
+IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'lcvinh')
+BEGIN
+    ALTER SERVER ROLE [securityadmin] ADD MEMBER [lcvinh];
+END
+GO
+
+-- (B) Tài khoản ptquanh - Nhóm KHOA (Quyền hạn chế)
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'ptquanh')
+BEGIN
+    CREATE LOGIN [ptquanh] WITH PASSWORD = 'ptquanh123', DEFAULT_DATABASE = [QLDSV_HTC];
+END
+ELSE
+BEGIN
+    ALTER LOGIN [ptquanh] WITH PASSWORD = 'ptquanh123';
+END
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'ptquanh')
+BEGIN
+    CREATE USER [ptquanh] FOR LOGIN [ptquanh];
+END
+GO
+ALTER ROLE [KHOA] ADD MEMBER [ptquanh];
+-- Cho phép ptquanh tạo tài khoản khác
+IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'ptquanh')
+BEGIN
+    ALTER SERVER ROLE [securityadmin] ADD MEMBER [ptquanh];
+END
+GO
+
+-- ========================================================
 -- 1. NHÓM PGV: TOÀN QUYỀN TRÊN DATABASE
 -- ========================================================
 -- PGV được add vào db_owner, có quyền execute tất cả SP
