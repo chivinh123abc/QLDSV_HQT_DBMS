@@ -32,15 +32,25 @@ namespace QLDSV_HTC.Web.Controllers
 
             var pagedResult = await subjectRepository.GetPagedSubjectListAsync(paginationQuery);
             var subjects = pagedResult.Items.ToList();
+            var allSubjects = await subjectRepository.GetSubjectListAsync();
 
             var vm = new SubjectManagementViewModel
             {
                 Subjects = subjects.Select(s => new SubjectViewModel
                 {
-                    Id = s.SubjectId,
-                    Name = s.SubjectName,
+                    Id = s.SubjectId.Trim(),
+                    Name = s.SubjectName.Trim(),
                     TheoryHours = s.TheoryHours,
-                    PracticeHours = s.PracticeHours
+                    PracticeHours = s.PracticeHours,
+                    CanDelete = s.CanDelete
+                }),
+                AllSubjects = allSubjects.Select(s => new SubjectViewModel
+                {
+                    Id = s.SubjectId.Trim(),
+                    Name = s.SubjectName.Trim(),
+                    TheoryHours = s.TheoryHours,
+                    PracticeHours = s.PracticeHours,
+                    CanDelete = s.CanDelete
                 }),
                 Pagination = new PaginationViewModel
                 {

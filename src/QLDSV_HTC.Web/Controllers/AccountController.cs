@@ -373,10 +373,15 @@ namespace QLDSV_HTC.Web.Controllers
         [Authorize(Roles = AppConstants.Groups.Faculty)]
         public async Task<IActionResult> Management()
         {
-            var accounts = (await accountRepository.GetAccountListAsync()).ToList();
+            var allAccounts = (await accountRepository.GetAccountListAsync()).ToList();
             var lecturers = (await lecturerRepository.GetLecturerListAsync(null)).ToList();
 
             var currentGroup = User.FindFirst(AppConstants.SessionKeys.Group)?.Value ?? string.Empty;
+
+            // KHOA chỉ thấy tài khoản nhóm KHOA, PGV thấy tất cả
+            var accounts = currentGroup.Equals(AppConstants.Groups.KHOA, StringComparison.OrdinalIgnoreCase)
+                ? allAccounts.Where(a => a.GroupName.Equals(AppConstants.Groups.KHOA, StringComparison.OrdinalIgnoreCase)).ToList()
+                : allAccounts;
 
             var vm = new AccountManagementViewModel
             {
@@ -412,7 +417,11 @@ namespace QLDSV_HTC.Web.Controllers
         public async Task<IActionResult> Add([FromBody] AccountInputModel input)
         {
             if (!ModelState.IsValid)
-                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ." });
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Where(m => !string.IsNullOrEmpty(m));
+                var msg = errors.Any() ? string.Join(" ", errors) : "Dữ liệu không hợp lệ.";
+                return BadRequest(new { success = false, message = msg });
+            }
 
             // Phân quyền: KHOA chỉ được tạo tài khoản nhóm KHOA
             var currentGroup = User.FindFirst(AppConstants.SessionKeys.Group)?.Value ?? string.Empty;
@@ -448,7 +457,11 @@ namespace QLDSV_HTC.Web.Controllers
         public async Task<IActionResult> Edit([FromBody] AccountUpdateInputModel input)
         {
             if (!ModelState.IsValid)
-                return BadRequest(new { success = false, message = "Dữ liệu không hợp lệ." });
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Where(m => !string.IsNullOrEmpty(m));
+                var msg = errors.Any() ? string.Join(" ", errors) : "Dữ liệu không hợp lệ.";
+                return BadRequest(new { success = false, message = msg });
+            }
 
             try
             {
