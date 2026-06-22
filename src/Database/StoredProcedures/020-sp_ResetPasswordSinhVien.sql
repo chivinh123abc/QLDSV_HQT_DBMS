@@ -1,1 +1,33 @@
-﻿单⁅兛䑌噓䡟䍔੝佇ਊⴭ㴠㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽ⴊ‭敄捳楲瑰潩㩮쐠랺⁴ꆺ⁩궺⁴桫뫡疩挠潨匠湩⁨楖꫃⁮倨慬湩整瑸਩ⴭ㴠㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽㴽䌊䕒呁⁅剏䄠呌剅倠佒䕃啄䕒嬠扤嵯嬮灳剟獥瑥慐獳潷摲楓桮楖湥੝††䵀十⁖噎剁䡃剁㔨⤰ਬ††偀十坓剏⁄噎剁䡃剁㔨⤰䄊੓䕂䥇੎††䕓⁔低佃乕⁔乏਻ †ⴠ‭楋믡涃琠慲猠湩⁨楶꫃⁮鎻⁮ꆺ੩††䙉丠呏䔠䥘呓⁓匨䱅䍅⁔‱剆䵏匠义噈䕉⁎䡗剅⁅䅍噓㴠䀠䅍噓਩††䕂䥇੎††††䅒卉剅佒⡒❎썍₣楳桮瘠썩溪欠써溴⁧鎻⁮ꆺ⹩Ⱗㄠⰶㄠ㬩 †††删呅剕㭎 †䔠䑎ਊ††ⴭ䬠莻⁭牴⁡釄믡ₙ썤榠洠뫡璭欠ꦺ⁵醻⁩桴莻ੵ††䙉䰠久䀨䅐卓佗䑒 ‼ਸ††䕂䥇੎††††䅒卉剅佒⡒❎궺⁴桫뫡疩洠믡榛瀠ꎺ⁩档믡憩쌠璭渠ꖺ⁴‸썫₽놻✮‬㘱‬⤱਻††††䕒啔乒਻††久੄ †ⴠ‭궺⁰桮뫡璭洠뫡璭欠ꦺ⁵汰楡瑮硥ੴ††偕䅄䕔匠义噈䕉੎††䕓⁔䅐卓佗䑒㴠䀠䅐卓佗䑒 †圠䕈䕒䴠十⁖‽䵀十㭖䔊䑎䜊੏
+﻿USE [QLDSV_HTC]
+GO
+
+-- =============================================
+-- Description: Đặt lại mật khẩu cho Sinh Viên (Plaintext)
+-- =============================================
+CREATE OR ALTER PROCEDURE [dbo].[sp_ResetPasswordSinhVien]
+    @MASV NVARCHAR(50),
+    @PASSWORD NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Kiểm tra sinh viên tồn tại
+    IF NOT EXISTS (SELECT 1 FROM SINHVIEN WHERE MASV = @MASV)
+    BEGIN
+        RAISERROR(N'Mã sinh viên không tồn tại.', 16, 1);
+        RETURN;
+    END
+
+    -- Kiểm tra độ dài mật khẩu tối thiểu
+    IF LEN(@PASSWORD) < 8
+    BEGIN
+        RAISERROR(N'Mật khẩu mới phải chứa ít nhất 8 ký tự.', 16, 1);
+        RETURN;
+    END
+
+    -- Cập nhật mật khẩu plaintext
+    UPDATE SINHVIEN
+    SET PASSWORD = @PASSWORD
+    WHERE MASV = @MASV;
+END
+GO
