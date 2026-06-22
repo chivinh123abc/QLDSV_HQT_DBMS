@@ -151,3 +151,151 @@ Dù Cursor giải quyết tốt các bài toán xử lý tuần tự, nhưng tro
 
 1. **Hạn chế tối đa:** Hãy luôn cố gắng tìm giải pháp thay thế Cursor bằng các kỹ thuật hướng tập hợp hiệu năng cao như: `JOIN`, `Subquery` (Truy vấn con), `CTE` (Bảng tạm biểu thức), hoặc `Window Functions` (`ROW_NUMBER()`, `SUM() OVER()`).
 2. **Tối ưu hóa khi bắt buộc phải dùng:** Nếu không thể thay thế, hãy luôn khai báo rõ thuộc tính con trỏ là **`LOCAL FORWARD_ONLY STATIC`** hoặc **`LOCAL FAST_FORWARD`**. Điều này giúp SQL Server hiểu con trỏ chỉ đọc một chiều, không tốn tài nguyên quản lý khóa, giúp bảo vệ tốc độ vận hành của hệ thống một cách tốt nhất.
+
+---
+
+### GHI CHÚ TRÊN LỚP (Quicknote)
+
+> Bài tập ứng dụng Cursor: Import dữ liệu NCKH từ file Excel vào database.
+
+#### Bài tập: Import dữ liệu NCKH từ Excel
+
+**Dữ liệu mẫu trong file Excel** (Sheet: `Sheet1`):
+
+| MAGV       | Tên Giảng viên      | Tổng giờ NCKH |
+|------------|---------------------|---------------|
+| GV001      | Nguyễn Văn An       | 120.5         |
+| GV002      | Trần Thị Bích       | 85.0          |
+| GV003      | Lê Hoàng Cường      | 200.0         |
+| GV004      | Phạm Minh Đức       | 0.0           |
+| GV005      | Võ Thị Em           | 45.5          |
+
+> **Tải driver:** Cần cài đặt `Microsoft.ACE.OLEDB.12.0` — [Download](https://www.microsoft.com/en-us/download/details.aspx?id=54920)
+
+**Bước 1: Bật cấu hình nâng cao (chỉ cần chạy 1 lần trên Server):**
+
+```sql
+USE [master];
+GO
+EXEC sp_configure 'show advanced options', 1;
+RECONFIGURE;
+EXEC sp_configure 'Ad Hoc Distributed Queries', 1;
+RECONFIGURE;
+GO
+
+-- Bật AllowInProcess và DynamicParameters cho ACE.OLEDB.12.0
+EXEC master.dbo.sp_MSset_oledb_prop N'Microsoft.ACE.OLEDB.12.0', N'AllowInProcess', 1;
+EXEC master.dbo.sp_MSset_oledb_prop N'Microsoft.ACE.OLEDB.12.0', N'DynamicParameters', 1;
+GO
+```
+
+**Bước 2: Tạo bảng GiangVien và NCKH:**
+
+```sql
+USE [BT_CURSOR];
+GO
+
+CREATE TABLE GiangVien (
+    MA_GV NCHAR(15) PRIMARY KEY,
+    HOTEN_GV NVARCHAR(200)
+);
+
+CREATE TABLE NCKH (
+    MA_GV NCHAR(15),
+    NIEN_KHOA NCHAR(11),
+    ID_HOCKY INT,
+    TT_NCKH FLOAT,
+    PRIMARY KEY (MA_GV, NIEN_KHOA, ID_HOCKY),
+    FOREIGN KEY (MA_GV) REFERENCES GiangVien(MA_GV)
+);
+```
+
+**Bước 3: SP Import dùng OPENROWSET + Cursor:**
+
+```sql
+CREATE PROCEDURE SP_Import_TrucTiep_Tu_Excel
+    @FilePath NVARCHAR(500),   -- VD: 'D:\NCKH_2018.xlsx'
+    @SheetName NVARCHAR(100),  -- VD: 'Sheet1$' (nhớ dấu $ cuối)
+    @NienKhoa NCHAR(11),       -- VD: '2022-2023'
+    @IdHocKy INT               -- VD: 1
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. Tạo bảng tạm để chứa dữ liệu từ Excel
+    IF OBJECT_ID('tempdb..#TEMP_EXCEL') IS NOT NULL DROP TABLE #TEMP_EXCEL;
+    CREATE TABLE #TEMP_EXCEL (
+        MA_GV NCHAR(15),
+        HOTEN_GV NVARCHAR(200),
+        NCKH FLOAT
+    );
+
+    -- 2. Đọc Excel bằng Dynamic SQL + OPENROWSET
+    DECLARE @SQL NVARCHAR(MAX);
+    SET @SQL = N'
+        INSERT INTO #TEMP_EXCEL (MA_GV, HOTEN_GV, NCKH)
+        SELECT [MAGV], [Tên Giảng viên], [Tổng giờ NCKH]
+        FROM OPENROWSET(''Microsoft.ACE.OLEDB.12.0'',
+                        ''Excel 12.0 Xml;Database=' + @FilePath + ';HDR=YES;IMEX=1'',
+                        ''SELECT * FROM [' + @SheetName + ']'')';
+
+    BEGIN TRY
+        EXEC sp_executesql @SQL;
+    END TRY
+    BEGIN CATCH
+        PRINT N'LỖI: Không thể đọc file Excel. Kiểm tra đường dẫn hoặc driver ACE.OLEDB.12.0';
+        PRINT ERROR_MESSAGE();
+        RETURN;
+    END CATCH
+
+    -- 3. Dùng Cursor duyệt từng dòng để INSERT/UPDATE
+    DECLARE @MaGV NCHAR(15), @HoTenGV NVARCHAR(200), @SoGioNCKH FLOAT;
+
+    DECLARE cur_ImportNCKH CURSOR LOCAL FAST_FORWARD FOR
+        SELECT MA_GV, HOTEN_GV, NCKH FROM #TEMP_EXCEL;
+
+    OPEN cur_ImportNCKH;
+    FETCH NEXT FROM cur_ImportNCKH INTO @MaGV, @HoTenGV, @SoGioNCKH;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        -- Xử lý 1: Cập nhật / Thêm Giảng Viên
+        IF NOT EXISTS (SELECT 1 FROM GiangVien WHERE MA_GV = @MaGV)
+            INSERT INTO GiangVien (MA_GV, HOTEN_GV) VALUES (@MaGV, @HoTenGV);
+        ELSE
+            UPDATE GiangVien SET HOTEN_GV = @HoTenGV WHERE MA_GV = @MaGV;
+
+        -- Xử lý 2: Import NCKH (kết hợp tham số từ bên ngoài vào làm Khóa chính)
+        IF EXISTS (SELECT 1 FROM NCKH WHERE MA_GV = @MaGV AND NIEN_KHOA = @NienKhoa AND ID_HOCKY = @IdHocKy)
+            UPDATE NCKH SET TT_NCKH = @SoGioNCKH
+            WHERE MA_GV = @MaGV AND NIEN_KHOA = @NienKhoa AND ID_HOCKY = @IdHocKy;
+        ELSE
+            INSERT INTO NCKH (MA_GV, NIEN_KHOA, ID_HOCKY, TT_NCKH)
+            VALUES (@MaGV, @NienKhoa, @IdHocKy, @SoGioNCKH);
+
+        FETCH NEXT FROM cur_ImportNCKH INTO @MaGV, @HoTenGV, @SoGioNCKH;
+    END
+
+    -- 4. Dọn dẹp
+    CLOSE cur_ImportNCKH;
+    DEALLOCATE cur_ImportNCKH;
+    DROP TABLE #TEMP_EXCEL;
+
+    PRINT N'Import thành công từ file Excel!';
+END
+GO
+```
+
+**Bước 4: Chạy thử:**
+
+```sql
+EXEC SP_Import_TrucTiep_Tu_Excel
+    @FilePath  = 'C:\BT_CURSOR\BAOCAO_NCKH.xlsx',
+    @SheetName = 'Sheet1$',    -- Nhớ dấu $ ở cuối tên Sheet
+    @NienKhoa  = '2022-2023',
+    @IdHocKy   = 1;
+
+-- Kiểm tra kết quả
+SELECT * FROM GiangVien;
+SELECT * FROM NCKH;
+```

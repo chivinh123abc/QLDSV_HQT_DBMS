@@ -76,3 +76,59 @@ Sử dụng để thay đổi cấu trúc CSDL sau khi đã tạo:
 - _OFFLINE:_ CSDL không khả dụng, không thể truy xuất.
 - _RESTORING:_ Đang trong quá trình phục hồi (Restore).
 - _SUSPECT:_ Bị lỗi, SQL Server không thể đảm bảo tính toàn vẹn (thường do mất file log hoặc lỗi phần cứng).
+
+---
+
+### GHI CHÚ TRÊN LỚP (Quicknote)
+
+> Các ghi chú bổ sung từ bài giảng trên lớp.
+
+**1. `SET ROWCOUNT` — Giới hạn số dòng trả về:**
+
+Dùng để giới hạn số lượng mẫu tin mà câu truy vấn trả về. Ví dụ, in ra 30 câu hỏi thi ngẫu nhiên:
+
+```sql
+-- Cách 1: Dùng SET ROWCOUNT
+SET ROWCOUNT 30
+
+SELECT * FROM BODE
+WHERE maMH = 'CSDL' AND trinhDo = 'A'
+ORDER BY NEWID()
+
+SET ROWCOUNT 0  -- Reset lại (0 = không giới hạn)
+
+-- Cách 2: Dùng SELECT TOP (cách viết tương đương, hiện đại hơn)
+SELECT TOP 30 maMH, trinhDo FROM BODE
+WHERE maMH = 'CSDL' AND trinhDo = 'A'
+ORDER BY NEWID()
+```
+
+> **Lưu ý:** `SET ROWCOUNT` đã bị **deprecated** từ SQL Server 2012. Microsoft khuyến nghị dùng `SELECT TOP` thay thế.
+
+**2. Khai báo và sử dụng biến (Variables):**
+
+- Trong T-SQL, tham số/biến bắt đầu bằng ký tự `@`.
+- Khai báo biến bằng `DECLARE`, gán giá trị bằng `SET` hoặc `SELECT`.
+
+```sql
+DECLARE @SOCAUTHI INT = 30
+SET ROWCOUNT @SOCAUTHI
+```
+
+**3. `@@ROWCOUNT` — Đếm số dòng bị ảnh hưởng:**
+
+- `@@ROWCOUNT` là biến hệ thống (global variable) trả về **số lượng mẫu tin bị ảnh hưởng** bởi câu lệnh SQL vừa thực thi (INSERT, UPDATE, DELETE, SELECT).
+
+```sql
+DELETE FROM SinhVien WHERE MaLop = 'D22CQCN01'
+PRINT CAST(@@ROWCOUNT AS VARCHAR) + N' dòng đã bị xóa.'
+```
+
+**4. Cách sao chép Database từ Server A sang Server B:**
+
+| Bước | Thao tác |
+|---|---|
+| **Bước 1:** Xuất script từ Server A | Click chuột phải Database → **Generate Scripts** → Advanced → *Types of data to script* → chọn **Schema and Data** → Save as script file |
+| **Bước 2:** Import vào Server B | Đứng ở Server B → `Ctrl + O` mở file script → **Xóa các lệnh `CREATE DATABASE`** và các lệnh thay đổi option CSDL → Chạy script |
+
+> **Hạn chế:** Cách này chỉ hoạt động tốt với database có quy mô **vài chục ngàn dòng**. Với dữ liệu lớn hơn, nên dùng **Backup/Restore** hoặc **Detach/Attach**.
