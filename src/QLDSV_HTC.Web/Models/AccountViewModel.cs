@@ -41,7 +41,6 @@ namespace QLDSV_HTC.Web.Models
         public string OldLoginName { get; set; } = string.Empty;
 
         public string? NewLoginName { get; set; }
-        [MinLength(8, ErrorMessage = "Mật khẩu mới phải chứa ít nhất 8 ký tự.")]
         public string? NewPassword { get; set; }
         public string? NewUserName { get; set; }
         public string? NewRole { get; set; }
