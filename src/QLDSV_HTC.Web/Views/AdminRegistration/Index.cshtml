@@ -1,0 +1,425 @@
+@model QLDSV_HTC.Web.Models.AdminRegistrationViewModel
+@using QLDSV_HTC.Domain.Constants
+@{
+    ViewData["Title"] = "Đăng ký lớp tín chỉ sinh viên";
+}
+
+<div class="dashboard-container fade-in-up">
+
+    @* ── Tìm kiếm Sinh Viên ── *@
+    <div class="card border-0 shadow-lg mb-4 rounded-4 animate__animated animate__fadeIn" style="position: relative; z-index: 10;">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="icon-box-sm bg-primary-subtle text-primary rounded-circle">
+                    <i class="bi bi-person-search"></i>
+                </div>
+                <h6 class="fw-bold mb-0 text-dark">Chọn sinh viên</h6>
+            </div>
+
+            <div class="row g-3 align-items-end">
+                <div class="col-sm-12 col-md-6 col-lg-5">
+                    <label for="studentSearch" class="form-label small fw-bold text-muted">Tìm sinh viên (Mã SV hoặc Họ tên)</label>
+                    <div class="position-relative">
+                        <div class="input-group input-group-merge shadow-none border rounded-3 overflow-hidden">
+                            <span class="input-group-text bg-light border-0"><i class="bi bi-search text-primary"></i></span>
+                            <input type="text" id="studentSearch" class="form-control border-0 bg-white shadow-none ps-0"
+                                   placeholder="Nhập mã SV hoặc họ tên..." autocomplete="off">
+                        </div>
+                        <div id="studentDropdown" class="dropdown-menu shadow-lg border-0 rounded-3 w-100" style="max-height: 300px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+
+                <div class="col-sm-12 col-md-6 col-lg-7">
+                    <div id="selectedStudentCard" class="d-none">
+                        <div class="d-flex align-items-center gap-3 bg-success bg-opacity-10 border border-success-subtle rounded-3 px-3 py-2">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-25 text-success fw-bold"
+                                 style="width: 40px; height: 40px; font-size: 0.85rem;" id="studentInitials">--</div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold text-dark" id="selectedStudentName">--</div>
+                                <div class="small text-muted">
+                                    <span class="font-monospace text-primary fw-bold" id="selectedStudentId">--</span>
+                                    <span class="mx-1">•</span>
+                                    <span id="selectedStudentClass">--</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger rounded-circle" id="btnClearStudent" title="Bỏ chọn">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Học kỳ hiện tại (readonly) ── *@
+    <div class="card border-0 shadow-sm mb-4 rounded-4 bg-white overflow-hidden">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-2">
+                <div class="icon-box-sm bg-primary-subtle text-primary rounded-circle">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+                <h6 class="fw-bold mb-0 text-dark">Học kỳ đăng ký</h6>
+                <div class="ms-2 d-flex align-items-center gap-2">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill shadow-sm">
+                        <i class="bi bi-calendar3 me-1"></i> @Model.CurrentYear
+                    </span>
+                    <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2 rounded-pill shadow-sm">
+                        <i class="bi bi-clock-history me-1"></i> Học kỳ @Model.CurrentSemester
+                    </span>
+                </div>
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <div class="spinner-border spinner-border-sm text-primary d-none" id="filterSpinner" role="status"></div>
+                    <span class="small text-muted" id="filterMessage">Chọn sinh viên để bắt đầu</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Bảng kết quả ── *@
+    <partial name="_AdminRegistrationTable" />
+</div>
+
+<partial name="_DeleteConfirmModal" />
+
+@section Scripts {
+<script>
+(function () {
+    'use strict';
+
+    const URL_SEARCH      = '@RouteConstants.AdminRegistration.SearchStudentsPath';
+    const URL_FILTER      = '@RouteConstants.AdminRegistration.FilterPath';
+    const URL_REGISTER    = '@RouteConstants.AdminRegistration.RegisterPath';
+    const URL_UNREGISTER  = '@RouteConstants.AdminRegistration.UnregisterPath';
+
+    // DOM refs
+    const studentSearch   = document.getElementById('studentSearch');
+    const studentDropdown = document.getElementById('studentDropdown');
+    const selectedCard    = document.getElementById('selectedStudentCard');
+    const btnClearStudent = document.getElementById('btnClearStudent');
+
+    const FIXED_YEAR     = '@Model.CurrentYear';
+    const FIXED_SEMESTER = @Model.CurrentSemester;
+    const searchInput   = document.getElementById('searchInput');
+    const tbody         = document.getElementById('classTableBody');
+    const resultCount   = document.getElementById('resultCount');
+    const footerInfo    = document.getElementById('footerInfo');
+    const filterSpinner = document.getElementById('filterSpinner');
+    const filterMessage = document.getElementById('filterMessage');
+
+    let selectedStudent = null;
+    let allData = [];
+    let searchTimer = null;
+    let debounceTimer = null;
+
+    // ── Student Search ────────────────────────────────────────────────
+    studentSearch.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        const q = studentSearch.value.trim();
+        if (q.length < 2) { hideDropdown(); return; }
+        searchTimer = setTimeout(() => searchStudents(q), 300);
+    });
+
+    studentSearch.addEventListener('blur', () => {
+        setTimeout(hideDropdown, 200);
+    });
+
+    btnClearStudent.addEventListener('click', () => {
+        selectedStudent = null;
+        selectedCard.classList.add('d-none');
+        studentSearch.value = '';
+        studentSearch.disabled = false;
+        studentSearch.focus();
+        allData = [];
+        showMessage('Chọn sinh viên để bắt đầu', 'person-search');
+        setFilterStatus('Chọn sinh viên để bắt đầu', 'text-muted');
+    });
+
+    async function searchStudents(q) {
+        try {
+            const res = await fetch(`${URL_SEARCH}?q=${encodeURIComponent(q)}`);
+            const json = await res.json();
+            if (!json.success || !json.data.length) {
+                showDropdown('<div class="px-3 py-2 text-muted small">Không tìm thấy sinh viên</div>');
+                return;
+            }
+            const html = json.data.map(s => `
+                <button type="button" class="dropdown-item px-3 py-2 d-flex align-items-center gap-2 student-item"
+                        data-id="${esc(s.id)}" data-name="${esc(s.name)}" data-class="${esc(s.classId)}">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold"
+                         style="width:32px;height:32px;font-size:0.7rem;">${getInitials(s.name)}</div>
+                    <div>
+                        <div class="fw-bold small">${esc(s.name)}</div>
+                        <div class="text-muted" style="font-size:0.75rem;">${esc(s.id)} • ${esc(s.classId)}</div>
+                    </div>
+                </button>
+            `).join('');
+            showDropdown(html);
+
+            document.querySelectorAll('.student-item').forEach(btn => {
+                btn.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    selectStudent(btn.dataset.id, btn.dataset.name, btn.dataset.class);
+                });
+            });
+        } catch (err) {
+            showDropdown('<div class="px-3 py-2 text-danger small">Lỗi tìm kiếm</div>');
+        }
+    }
+
+    function selectStudent(id, name, classId) {
+        selectedStudent = { id, name, classId };
+        hideDropdown();
+        studentSearch.value = `${name} (${id})`;
+        studentSearch.disabled = true;
+
+        document.getElementById('selectedStudentName').textContent = name;
+        document.getElementById('selectedStudentId').textContent = id;
+        document.getElementById('selectedStudentClass').textContent = classId;
+        document.getElementById('studentInitials').textContent = getInitials(name);
+        selectedCard.classList.remove('d-none');
+
+        doFilter();
+    }
+
+    function showDropdown(html) {
+        studentDropdown.innerHTML = html;
+        studentDropdown.classList.add('show');
+        studentDropdown.style.display = 'block';
+    }
+
+    function hideDropdown() {
+        studentDropdown.classList.remove('show');
+        studentDropdown.style.display = 'none';
+    }
+
+    function getInitials(name) {
+        if (!name) return '--';
+        return name.split(' ').filter(Boolean).map(w => w[0].toUpperCase()).slice(-2).join('');
+    }
+
+    // ── Filter & Table ────────────────────────────────────────────────
+
+    const btnClearSearch = document.getElementById('btnClearSearch');
+
+    searchInput.addEventListener('input', () => {
+        btnClearSearch.classList.toggle('d-none', !searchInput.value);
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            if (allData.length > 0) renderRows(filterBySearch(allData));
+        }, 200);
+    });
+
+    btnClearSearch.addEventListener('click', () => {
+        searchInput.value = '';
+        btnClearSearch.classList.add('d-none');
+        searchInput.focus();
+        if (allData.length > 0) renderRows(filterBySearch(allData));
+    });
+
+    async function doFilter() {
+        if (!selectedStudent) {
+            showMessage('Vui lòng chọn sinh viên trước.', 'person-exclamation');
+            setFilterStatus('Chọn sinh viên để bắt đầu', 'text-muted');
+            return;
+        }
+
+        const year = FIXED_YEAR;
+        const semester = FIXED_SEMESTER;
+
+        setLoading(true);
+
+        try {
+            const res = await fetch(`${URL_FILTER}?year=${encodeURIComponent(year)}&semester=${semester}&studentId=${encodeURIComponent(selectedStudent.id)}`);
+            const json = await res.json();
+
+            if (!json.success) {
+                showMessage(json.message || 'Lỗi tải dữ liệu.', 'exclamation-triangle');
+                return;
+            }
+
+            allData = json.data;
+            renderRows(filterBySearch(allData));
+            setFilterStatus(`Đã tải ${allData.length} lớp cho SV ${selectedStudent.id}`, 'text-success fw-bold');
+        } catch (err) {
+            showMessage('Lỗi kết nối: ' + err.message, 'wifi-off');
+            setFilterStatus('Lỗi kết nối', 'text-danger');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    function setLoading(loading) {
+        filterSpinner.classList.toggle('d-none', !loading);
+        if (loading) filterMessage.textContent = 'Đang tải dữ liệu…';
+    }
+
+    function setFilterStatus(msg, cls) {
+        filterMessage.textContent = msg;
+        filterMessage.className = `small ${cls}`;
+    }
+
+    function filterBySearch(data) {
+        const q = searchInput.value.toLowerCase().trim();
+        if (!q) return data;
+        return data.filter(r =>
+            r.subjectCode.toLowerCase().includes(q) ||
+            r.subjectName.toLowerCase().includes(q) ||
+            r.lecturer.toLowerCase().includes(q)
+        );
+    }
+
+    function renderRows(data) {
+        if (data.length === 0) {
+            showMessage('Không tìm thấy lớp tín chỉ phù hợp.', 'search');
+            return;
+        }
+
+        const registeredSubjectCodes = new Set(
+            data.filter(x => x.isRegistered).map(x => x.subjectCode)
+        );
+
+        tbody.innerHTML = data.map(c => {
+            let statusBadge = '';
+            if (c.registered >= c.minStudents) {
+                statusBadge = '<span class="badge-status badge-success px-2 py-1 rounded-pill shadow-sm"><i class="bi bi-check-circle me-1"></i>Đủ SV</span>';
+            } else if (c.registered >= c.minStudents * 0.7) {
+                statusBadge = '<span class="badge-status badge-warning px-2 py-1 rounded-pill shadow-sm"><i class="bi bi-info-circle me-1"></i>Sắp đủ</span>';
+            } else {
+                statusBadge = '<span class="badge-status bg-light text-muted border px-2 py-1 rounded-pill shadow-sm">Đang mở</span>';
+            }
+
+            let btn = '';
+            if (c.hasGrades) {
+                btn = `<button class="btn btn-sm btn-outline-secondary px-3 rounded-pill shadow-none" disabled
+                               style="opacity: 0.5; cursor: not-allowed;"
+                               title="Không thể thay đổi — Lớp đã có điểm được nhập">
+                           <i class="bi bi-lock me-1"></i>Đã khóa
+                       </button>`;
+            } else if (c.isRegistered) {
+                btn = `<button class="btn btn-sm btn-outline-danger px-3 rounded-pill action-btn hover-scale shadow-none"
+                               data-id="${c.id}" data-action="unregister">
+                           <i class="bi bi-dash-circle me-1"></i>Hủy ĐK
+                       </button>`;
+            } else {
+                const isDuplicateSubject = registeredSubjectCodes.has(c.subjectCode);
+                const disabledAttr = isDuplicateSubject ? 'disabled' : '';
+                const styleAttr = isDuplicateSubject ? 'style="opacity: 0.5; cursor: not-allowed;"' : '';
+                const titleAttr = isDuplicateSubject ? 'title="SV đã đăng ký môn này ở nhóm khác"' : 'title="Đăng ký lớp này cho SV"';
+
+                btn = `<button class="btn btn-sm btn-primary px-3 rounded-pill action-btn hover-scale shadow-sm ${disabledAttr}"
+                               data-id="${c.id}" data-action="register" ${disabledAttr} ${styleAttr} ${titleAttr}>
+                           <i class="bi bi-plus-circle me-1"></i>Đăng ký
+                       </button>`;
+            }
+
+            const regBadge = c.isRegistered
+                ? `<span class="badge bg-success bg-opacity-10 text-success border border-success-subtle ms-2 small px-2 py-1" style="font-size: 0.65rem;">ĐÃ ĐK</span>`
+                : '';
+            const gradeBadge = c.hasGrades
+                ? `<span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle ms-2 small px-2 py-1" style="font-size: 0.65rem;"><i class="bi bi-lock-fill me-1"></i>Đã có điểm</span>`
+                : '';
+
+            return `<tr class="hover-row transition-base animate__animated animate__fadeIn" data-id="${c.id}">
+                <td class="ps-4">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill shadow-sm font-monospace tabular-nums">
+                        ${esc(c.subjectCode)}
+                    </span>
+                </td>
+                <td>
+                    <div class="fw-bold text-dark d-flex align-items-center flex-wrap">
+                        ${esc(c.subjectName)}${regBadge}${gradeBadge}
+                    </div>
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1 rounded-pill shadow-sm tabular-nums">${c.group}</span>
+                </td>
+                <td>
+                    <div class="text-dark fw-semibold small d-flex align-items-center">
+                        <i class="bi bi-person text-muted me-2"></i>${esc(c.lecturer)}
+                    </div>
+                </td>
+                <td class="text-center">
+                    <div class="d-flex flex-column align-items-center gap-1">
+                        <div class="fw-bold text-dark tabular-nums">${c.registered} / ${c.minStudents}</div>
+                        ${statusBadge}
+                    </div>
+                </td>
+                <td class="pe-4 text-center">${btn}</td>
+            </tr>`;
+        }).join('');
+
+        resultCount.innerHTML = `<i class="bi bi-list-stars me-1"></i> ${data.length} lớp`;
+        footerInfo.innerHTML = `<i class="bi bi-collection-play me-1"></i>Hiển thị <strong class="text-primary">${data.length}</strong> / ${allData.length} lớp tín chỉ • SV: <strong>${esc(selectedStudent?.id)}</strong>`;
+
+        tbody.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', () => handleAction(btn));
+        });
+    }
+
+    async function handleAction(btn) {
+        if (!selectedStudent) return;
+
+        const id     = parseInt(btn.dataset.id);
+        const action = btn.dataset.action;
+        const url    = action === 'register' ? URL_REGISTER : URL_UNREGISTER;
+
+        btn.disabled = true;
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ studentId: selectedStudent.id, creditClassId: id })
+            });
+            const json = await res.json();
+
+            if (json.success) {
+                window.showToast(json.message, 'success');
+                const item = allData.find(c => c.id === id);
+                if (item) {
+                    if (action === 'register') {
+                        item.isRegistered = true;
+                        item.registered++;
+                    } else {
+                        item.isRegistered = false;
+                        item.registered = Math.max(0, item.registered - 1);
+                    }
+                }
+                renderRows(filterBySearch(allData));
+            } else {
+                window.showToast(json.message, 'danger');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        } catch (err) {
+            window.showToast('Lỗi: ' + err.message, 'danger');
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    }
+
+    function showMessage(msg, icon) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-5 border-0">
+            <div class="animate__animated animate__fadeIn py-4">
+                <div class="icon-box-lg bg-light rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-${icon} fs-2 text-body-tertiary"></i>
+                </div>
+                <h6 class="text-dark fw-bold mb-1">${msg}</h6>
+                <p class="text-muted small">Hãy thử điều chỉnh bộ lọc hoặc tìm kiếm.</p>
+            </div>
+        </td></tr>`;
+        resultCount.textContent = '0 lớp';
+        footerInfo.innerHTML = `<i class="bi bi-info-circle me-1 text-warning"></i> ${msg}`;
+    }
+
+    function esc(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+})();
+</script>
+}

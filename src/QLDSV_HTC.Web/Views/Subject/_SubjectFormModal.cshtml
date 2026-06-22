@@ -75,11 +75,17 @@
         </text>,
 
         ExtraBodySection = @<text>
-            <h6 class="fw-bold mb-3 text-primary d-flex align-items-center gap-2">
-                <i class="bi bi-list-ul"></i>
-                <span>Danh sách Môn học hiện có</span>
-            </h6>
-            <div class="table-responsive rounded-3 border border-light-subtle shadow-sm overflow-hidden" style="max-height:240px; overflow-y:auto">
+            <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+                <h6 class="fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-list-ul"></i>
+                    <span>Danh sách Môn học hiện có</span>
+                </h6>
+                <div class="input-group input-group-sm" style="max-width: 250px;">
+                    <span class="input-group-text bg-white border-end-0 border-primary-subtle"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" id="modalSubjectSearch" class="form-control border-start-0 border-primary-subtle" placeholder="Tìm kiếm môn học...">
+                </div>
+            </div>
+            <div class="table-responsive rounded-3 border border-light-subtle shadow-sm" style="max-height:240px; overflow-y:auto">
                 <table class="table table-sm table-hover align-middle mb-0" id="miniSubjectTable">
                     <thead class="table-light sticky-top">
                         <tr class="text-uppercase small fw-bold text-muted border-bottom-0">
@@ -90,10 +96,11 @@
                         </tr>
                     </thead>
                     <tbody id="miniSubjectBody" class="small">
-                        @foreach (var s in Model.Subjects)
+                        @foreach (var s in Model.AllSubjects)
                         {
                             <tr class="mini-row transition-base" role="button"
-                                data-id="@s.Id" data-name="@s.Name" data-theory="@s.TheoryHours" data-practice="@s.PracticeHours">
+                                data-id="@s.Id" data-name="@s.Name" data-theory="@s.TheoryHours" data-practice="@s.PracticeHours"
+                                data-can-delete="@(s.CanDelete ? "true" : "false")">
                                 <td class="ps-3">
                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill font-monospace tabular-nums">
                                         @s.Id
