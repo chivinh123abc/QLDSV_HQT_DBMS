@@ -122,3 +122,74 @@ Mục đích: Biết được các thành phần thiết yếu của SQL SERVER.
 - i. Trigger: Thủ tục tự động thực hiện khi thay đổi dữ liệu qua lệnh Update, Insert, Delete, thường để kiểm tra ràng buộc toàn vẹn.
 
 - j. Hàm do người dùng định nghĩa (UDF): Có các hàm cài đặt sẵn (Built-in) và hàm do người dùng tự định nghĩa (cho phép định nghĩa bằng CREATE FUNCTION). Có thể nhận/không nhận tham số và trả về giá trị đơn giản hoặc tập records.
+
+---
+
+### GHI CHÚ TRÊN LỚP (Quicknote)
+
+> Các ghi chú bổ sung từ bài giảng trên lớp.
+
+**1. Về phiên bản SQL Server:**
+- Phải sử dụng SQL Server phiên bản **Standard** hoặc **Enterprise** (không phải Express) mới hỗ trợ tính năng **Nhân bản dữ liệu (Replication)**.
+
+**2. Giao tác (Transaction) trong Stored Procedure:**
+- Một giao tác yêu cầu **tất cả các lệnh** trong Stored Procedure đều phải thành công thì toàn bộ giao tác mới được tính là thành công.
+- Nếu bất kỳ lệnh nào thất bại → toàn bộ giao tác sẽ bị rollback.
+
+**3. Transact-SQL (T-SQL) và giao tác tự động:**
+- T-SQL hỗ trợ cơ chế **giao tác tự động (Autocommit Transaction)**: mỗi câu lệnh đơn lẻ được tự động xem là một giao tác riêng biệt.
+
+**4. Ba loại Server trong SQL Server:**
+
+| Loại | Mô tả |
+|---|---|
+| **Local Server** | Server SQL đang chạy trên chính máy hiện tại |
+| **Remote Server** | Server SQL chạy trên máy khác trong mạng, có giao diện quản lý |
+| **Linked Server** | Server liên kết, có thể truy xuất dữ liệu tương tự Remote Server nhưng **không có giao diện quản lý trực tiếp** |
+
+**5. Quy tắc đặt tên Table:**
+- Tên các Table trong cùng một Database **phải khác nhau**, vì chúng được lưu trữ trong cùng một bảng hệ thống (system catalog).
+
+**6. Table tạm (Temporary Table):**
+
+> **❓ Câu hỏi trên lớp:** Câu lệnh tạo table tạm? Tại sao cần dùng? Có mấy loại?
+
+- **Tại sao cần dùng?** Table tạm dùng để lưu trữ kết quả trung gian trong quá trình xử lý phức tạp (ví dụ: lưu kết quả trả về từ Stored Procedure, xử lý dữ liệu nhiều bước trước khi INSERT vào bảng chính). Chúng tự động bị xóa khi không còn cần thiết nên không gây "rác" trong database.
+
+- **Có 2 loại** table tạm:
+
+| Loại | Prefix | Phạm vi | Tự động xóa khi |
+|---|---|---|---|
+| **Table tạm cục bộ** | `#` | Chỉ session tạo ra nó thấy được | Session kết thúc (disconnect) |
+| **Table tạm toàn cục** | `##` | Tất cả session đều thấy | Session tạo ra nó kết thúc VÀ không còn session nào tham chiếu |
+
+- **Cú pháp tạo:**
+
+```sql
+-- Table tạm cục bộ (chỉ session hiện tại dùng được)
+CREATE TABLE #TempSinhVien (
+    MaSV    INT,
+    HoTen   NVARCHAR(100),
+    Diem    FLOAT
+)
+
+-- Table tạm toàn cục (mọi session đều dùng được)
+CREATE TABLE ##TempDiemTongKet (
+    MaSV    INT,
+    DiemTB  FLOAT
+)
+
+-- Sử dụng table tạm để lưu kết quả trung gian từ SP
+INSERT INTO #TempSinhVien (MaSV, HoTen, Diem)
+EXEC sp_LayDanhSachSinhVien @MaLop = 'D22CQCN01'
+```
+
+- Table tạm được lưu trong database `tempdb` và tự động bị xóa khi session kết thúc.
+
+**7. Lưu ý về hiệu suất Trigger:**
+- Trigger **làm chậm** quá trình xử lý của Database vì nó được kích hoạt tự động sau mỗi thao tác DML (INSERT, UPDATE, DELETE). Cần cân nhắc kỹ khi sử dụng.
+
+**8. Ba nhóm ngôn ngữ SQL cần nhớ:**
+- **DDL** (Data Definition Language): Định nghĩa cấu trúc (`CREATE`, `ALTER`, `DROP`).
+- **DML** (Data Manipulation Language): Thao tác dữ liệu (`SELECT`, `INSERT`, `UPDATE`, `DELETE`).
+- **DCL** (Data Control Language): Điều khiển quyền (`GRANT`, `REVOKE`, `DENY`).

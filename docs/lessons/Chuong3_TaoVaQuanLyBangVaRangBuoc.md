@@ -129,3 +129,84 @@ _Ví dụ thêm Khóa ngoại:_
 ALTER TABLE TenBang DROP CONSTRAINT TenRangBuoc;
 
 ```
+
+---
+
+### GHI CHÚ TRÊN LỚP (Quicknote)
+
+> Các ghi chú bổ sung từ bài giảng trên lớp.
+
+**1. Cấu trúc tập tin Database:**
+- Khi tạo Database, hệ thống tạo **2 tập tin** vật lý:
+  - `ten_file.mdf` — Tập tin dữ liệu chính.
+  - `ten_file_log.ldf` — Tập tin nhật ký giao dịch.
+
+**2. View (Khung nhìn):**
+
+- View **không chứa dữ liệu thực tế** mà chứa **câu lệnh SQL** truy vấn dữ liệu.
+- Các chức năng chính:
+  - Truy vấn trên **nhiều bảng** và trả kết quả tổng hợp.
+  - Chọn ra một **tập con** các records từ bảng cơ sở.
+  - Tạo ra **các cột mới** dựa trên biểu thức tính toán từ các cột đã có.
+  - Kết nối (JOIN) nhiều records từ các bảng thành một record trong View.
+  - Cho phép thay đổi dữ liệu trên bảng gốc thông qua View.
+
+> **⚠️ Hai trường hợp View chỉ là readonly (chỉ đọc):**
+> 1. View chứa **`GROUP BY`**
+> 2. View chứa **Subquery** (truy vấn con)
+
+**3. `WITH CHECK OPTION` trong View:**
+
+Khi khai báo `WITH CHECK OPTION`, View sẽ **từ chối** mọi thao tác INSERT/UPDATE nếu dữ liệu mới vi phạm điều kiện WHERE của View.
+
+```sql
+-- Tạo View chỉ hiển thị nhân viên Nam
+CREATE VIEW NV_nam AS
+  SELECT * FROM [QLVT].dbo.NhanVien
+  WHERE Phai = 'Nam'
+  WITH CHECK OPTION
+
+-- Câu lệnh sau sẽ BỊ TỪ CHỐI vì vi phạm điều kiện Phai = 'Nam'
+UPDATE NV_nam SET Phai = 'Nu'
+```
+
+**4. Index (Chỉ mục) — Mẹo hiệu suất:**
+
+- Trong câu lệnh `SELECT`, có **2 thao tác làm chậm truy vấn**:
+  - `ORDER BY` — Sắp xếp kết quả.
+  - `DISTINCT` — Loại bỏ trùng lặp.
+- **Giải pháp:** Tạo **Index** trên các cột thường xuyên dùng để sắp xếp hoặc lọc, giúp tăng tốc truy vấn đáng kể.
+
+**5. Restore Database — 3 điều kiện cần thiết:**
+
+> **❓ Ghi chú chưa đầy đủ trên lớp** — đã bổ sung chi tiết bên dưới.
+
+Để có thể **Restore (phục hồi)** database về một thời điểm cụ thể, cần đảm bảo **3 điều kiện** được thiết lập ngay khi tạo database:
+
+| # | Điều kiện | Cách thiết lập | Giải thích |
+|---|---|---|---|
+| 1 | **Recovery Model = FULL** | `ALTER DATABASE TenDB SET RECOVERY FULL` | Cho phép SQL Server ghi lại **toàn bộ** giao dịch vào Transaction Log, cần thiết cho Point-in-time recovery |
+| 2 | **Đã thực hiện Full Backup ít nhất 1 lần** | `BACKUP DATABASE TenDB TO DISK = 'path.bak'` | Full Backup là "mốc gốc" để tất cả các bản sao lưu tiếp theo (Differential, Log) tham chiếu đến |
+| 3 | **Đã thực hiện Transaction Log Backup** | `BACKUP LOG TenDB TO DISK = 'path.trn'` | Sao lưu nhật ký giao dịch cho phép phục hồi đến **bất kỳ thời điểm nào** giữa 2 lần backup |
+
+```sql
+-- Bước 1: Thiết lập Recovery Model = FULL (ngay khi tạo DB)
+ALTER DATABASE QLDSV_TC SET RECOVERY FULL;
+
+-- Bước 2: Full Backup lần đầu
+BACKUP DATABASE QLDSV_TC TO DISK = N'D:\Backup\QLDSV_TC_FULL.bak';
+
+-- Bước 3: Transaction Log Backup (có thể chạy định kỳ)
+BACKUP LOG QLDSV_TC TO DISK = N'D:\Backup\QLDSV_TC_LOG.trn';
+
+-- Restore về thời điểm cụ thể (Point-in-time Recovery)
+RESTORE DATABASE QLDSV_TC
+FROM DISK = N'D:\Backup\QLDSV_TC_FULL.bak'
+WITH NORECOVERY;
+
+RESTORE LOG QLDSV_TC
+FROM DISK = N'D:\Backup\QLDSV_TC_LOG.trn'
+WITH STOPAT = '2026-03-07 14:30:00', RECOVERY;
+```
+
+> **⚠️ Lưu ý:** Nếu Recovery Model là **SIMPLE**, Transaction Log sẽ tự động bị cắt bớt (truncate) → **không thể** khôi phục theo thời điểm (Point-in-time recovery).

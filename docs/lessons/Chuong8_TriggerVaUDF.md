@@ -115,3 +115,69 @@ BEGIN
 END
 
 ```
+
+---
+
+### GHI CHÚ TRÊN LỚP (Quicknote)
+
+> Các ghi chú bổ sung từ bài giảng trên lớp.
+
+**1. So sánh View, Stored Procedure và Hàm (UDF):**
+
+| Đặc điểm | View | Stored Procedure | Hàm (UDF) |
+|---|---|---|---|
+| **Nhận tham số** | ❌ Không | ✅ Có (tham trị + tham biến) | ✅ Có (chỉ tham trị, tối đa 2100) |
+| **Trả kết quả kế thừa được** | ✅ Đơn giản nhất (SELECT trực tiếp) | ✅ Có (qua `INSERT INTO...EXEC`) | ✅ Có (tương đương View, dùng trong SELECT) |
+| **Ưu điểm** | Đơn giản, kế thừa kết quả dễ dàng | Linh hoạt nhất, nhận cả tham biến | Kế thừa kết quả tương đương View + nhận tham số |
+| **Khuyết điểm** | Không nhận tham số | Kế thừa kết quả phức tạp hơn (cần table tạm) | Chỉ nhận tham trị, có lệnh `RETURN` |
+
+> **Kết luận:** Cả 3 đối tượng đều cho phép kế thừa kết quả trả về. View là đơn giản nhất nhưng không nhận tham số. SP có thể trả về bảng ảo (table tạm). Hàm linh hoạt hơn View nhưng hạn chế hơn SP.
+
+**2. Hai cách lấy kết quả từ Stored Procedure:**
+
+```sql
+-- Cách 1: INSERT INTO...EXEC (trực tiếp)
+INSERT INTO BangDich (Cot1, Cot2, Cot3) EXEC sp_TenSP
+
+-- Cách 2: Dùng Table tạm trung gian
+CREATE TABLE #KetQua (
+    HOCKY INT,
+    HELOP INT,
+    TONG FLOAT
+)
+INSERT INTO #KetQua (HOCKY, HELOP, TONG) EXEC SP_THONGKE
+
+-- Sau đó SELECT từ table tạm
+SELECT * FROM #KetQua
+```
+
+**3. Xử lý lỗi trong Stored Procedure:**
+
+Khi gặp lỗi trong SP, **mặc định SP vẫn chạy tiếp** các lệnh còn lại. Có 3 cách xử lý:
+
+| Phương pháp | Mô tả | Khi nào dùng |
+|---|---|---|
+| **`SET XACT_ABORT ON`** | Sai là dừng ngay, tự động rollback toàn bộ transaction | Khi ưu tiên **an toàn dữ liệu** và **ngắn gọn** |
+| **`TRY...CATCH`** | Bắt lỗi và xử lý logic phức tạp (ghi log, báo lỗi cụ thể cho User) | Khi cần **xử lý lỗi chi tiết** |
+| **`@@ERROR`** | Kiểm tra mã lỗi sau mỗi câu lệnh (cách cũ) | Chỉ dùng khi **bảo trì legacy code** |
+
+```sql
+-- Ví dụ: SET XACT_ABORT ON
+SET XACT_ABORT ON
+BEGIN TRANSACTION
+    UPDATE BangA SET ...
+    UPDATE BangB SET ...  -- Nếu lỗi ở đây → tự rollback cả 2 lệnh
+COMMIT TRANSACTION
+
+-- Ví dụ: TRY...CATCH
+BEGIN TRY
+    BEGIN TRANSACTION
+        UPDATE BangA SET ...
+        UPDATE BangB SET ...
+    COMMIT TRANSACTION
+END TRY
+BEGIN CATCH
+    ROLLBACK TRANSACTION
+    PRINT ERROR_MESSAGE()
+END CATCH
+```

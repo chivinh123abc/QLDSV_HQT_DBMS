@@ -115,3 +115,169 @@ GRANT SELECT, UPDATE ON BangLuong TO [Role_TruongPhong];
 ALTER ROLE [Role_TruongPhong] ADD MEMBER [NguyenVanA_User];
 
 ```
+
+---
+
+### GHI CHÚ TRÊN LỚP (Quicknote)
+
+> Các câu hỏi, bài tập từ bài giảng trên lớp (ngày 7/3/2026).
+
+**1. Câu hỏi: Login có được trùng không? Vì sao?**
+
+> **❓ Câu hỏi trên lớp:** Nếu 1 Server có 10 Database, mỗi DB có 10 users → 100 username. Vậy Login có được trùng không?
+
+**Trả lời:** Login **KHÔNG được trùng** vì tất cả Login đều nằm trong bảng hệ thống chung `master.sys.server_principals` (cấp Server). Mỗi Login là duy nhất trên toàn bộ SQL Server instance.
+
+```sql
+-- Kiểm tra danh sách Login trên Server
+SELECT name, type_desc, create_date
+FROM master.sys.server_principals
+WHERE type IN ('S', 'U')  -- S = SQL Login, U = Windows Login
+ORDER BY name;
+```
+
+**2. Câu hỏi: Username có được trùng không? Vì sao?**
+
+**Trả lời:** Username **ĐƯỢC trùng nếu thuộc các Database khác nhau**, nhưng **KHÔNG được trùng trong cùng 1 Database**. Lý do: mỗi Database có bảng `sys.database_principals` riêng (cấp Database), nên tên User chỉ cần duy nhất trong phạm vi Database đó.
+
+```sql
+-- Xem danh sách User trong Database hiện tại
+USE QLDSV_TC;
+SELECT name, type_desc, authentication_type_desc
+FROM sys.database_principals
+WHERE type IN ('S', 'U')
+ORDER BY name;
+```
+
+**3. Bài tập 1: Truy vấn lịch sử Backup gần nhất trên Device**
+
+Sử dụng CTE (Common Table Expression) để lấy lịch sử backup từ lần ghi đè (overwrite) gần nhất trở đi:
+
+```sql
+WITH LatestInit AS (
+    -- Tìm ID của lần backup ghi đè (position = 1) gần nhất trên Device này
+    SELECT MAX(bs.backup_set_id) AS Last_Init_ID
+    FROM msdb.dbo.backupset bs
+    INNER JOIN msdb.dbo.backupmediafamily bmf
+        ON bs.media_set_id = bmf.media_set_id
+    WHERE bs.database_name = 'qldsv_htc'
+      AND bmf.logical_device_name = 'DEVICE_QLDSV_TC'
+      AND bs.position = 1
+)
+-- Chỉ hiển thị các backup từ lần ghi đè gần nhất trở đi
+SELECT
+    bs.backup_set_id,
+    bs.media_set_id,
+    bs.position,
+    bs.backup_start_date
+FROM msdb.dbo.backupset bs
+INNER JOIN msdb.dbo.backupmediafamily bmf
+    ON bs.media_set_id = bmf.media_set_id
+WHERE bs.database_name = 'qldsv_htc'
+  AND bmf.logical_device_name = 'DEVICE_QLDSV_TC'
+  AND bs.backup_set_id >= (SELECT Last_Init_ID FROM LatestInit)
+ORDER BY bs.backup_set_id;
+```
+
+> **Ghi chú thầy:** Cách tối ưu là lấy `MAX(bs.backup_start_date)` thay vì `MAX(bs.backup_set_id)`.
+
+**4. Bài tập 2: SP lấy thông tin đăng nhập theo Login**
+
+Cần JOIN giữa `sys.server_principals` (Login cấp Server) → `sys.database_principals` (User cấp DB) → `sys.database_role_members` (Role membership):
+
+```sql
+CREATE PROCEDURE sp_ThongTinDangNhap
+    @tenlogin NVARCHAR(128)
+AS
+BEGIN
+    SELECT
+        u.name AS Username,
+        u.name AS HoTen,
+        r.name AS Rolename
+    FROM sys.server_principals l
+    JOIN sys.database_principals u ON l.sid = u.sid
+    JOIN sys.database_role_members rm ON u.principal_id = rm.member_principal_id
+    JOIN sys.database_principals r ON rm.role_principal_id = r.principal_id
+    WHERE l.name = @tenlogin;
+END
+GO
+```
+
+> **Ghi chú thầy:** Cần tối ưu lại — lấy thêm `HoTen` từ bảng giảng viên (JOIN thêm bảng GiangVien), và có thể dùng `sys.sysusers` hoặc `sys.database_principals` tùy phiên bản.
+
+**5. Bài tập 3: SP lấy thông tin tài khoản**
+
+> **❓ Chưa ghi kịp đáp án trên lớp.** Dưới đây là đáp án bổ sung:
+
+```sql
+CREATE PROCEDURE sp_LayThongTinTaiKhoan
+    @tenlogin NVARCHAR(128)
+AS
+BEGIN
+    -- Lấy thông tin Login + User + Role + Họ tên giảng viên
+    SELECT
+        l.name AS LoginName,
+        u.name AS Username,
+        r.name AS RoleName,
+        gv.HOTEN AS HoTenGiangVien
+    FROM sys.server_principals l
+    JOIN sys.database_principals u ON l.sid = u.sid
+    LEFT JOIN sys.database_role_members rm ON u.principal_id = rm.member_principal_id
+    LEFT JOIN sys.database_principals r ON rm.role_principal_id = r.principal_id
+    LEFT JOIN GiangVien gv ON u.name = gv.MAGV  -- Liên kết với bảng nghiệp vụ
+    WHERE l.name = @tenlogin;
+END
+GO
+
+-- Test:
+EXEC sp_LayThongTinTaiKhoan @tenlogin = 'GV001';
+```
+
+**6. Bài tập 4: SP tạo tài khoản mới (Login + User + Role)**
+
+```sql
+CREATE PROCEDURE sp_TaoTaiKhoan
+    @LGNAME   VARCHAR(50),
+    @PASS     VARCHAR(50),
+    @USERNAME VARCHAR(50),
+    @ROLE     VARCHAR(50)
+AS
+BEGIN
+    DECLARE @ret INT
+
+    -- Bước 1: Tạo Login (cấp Server)
+    EXEC @ret = sp_addlogin @LGNAME, @PASS, 'QLDSV_TC'
+    IF @ret = 1
+    BEGIN
+        RAISERROR (N'Login name bị trùng', 16, 1)
+        RETURN
+    END
+
+    -- Bước 2: Tạo User trong Database (cấp Database)
+    EXEC @ret = sp_grantdbaccess @LGNAME, @USERNAME
+    IF @ret = 1
+    BEGIN
+        -- Rollback: xóa Login vừa tạo nếu User bị trùng
+        EXEC sp_droplogin @LGNAME
+        RAISERROR (N'User name bị trùng', 16, 1)
+        RETURN
+    END
+
+    -- Bước 3: Gán Role cho User (cấp Database)
+    EXEC sp_addrolemember @ROLE, @USERNAME
+
+    -- Bước 4: Nếu Role là Admin → cấp thêm quyền Server-level
+    IF (@ROLE = 'Admin')
+        EXEC sp_addsrvrolemember @LGNAME, 'securityadmin'
+END
+GO
+
+-- Test:
+EXEC sp_TaoTaiKhoan
+    @LGNAME   = 'GV001',
+    @PASS     = 'P@ssw0rd123',
+    @USERNAME = 'GV001_User',
+    @ROLE     = 'GiangVien';
+```
+
+> **⚠️ Lưu ý:** `sp_addlogin`, `sp_grantdbaccess`, `sp_droplogin` là các SP hệ thống **đã deprecated**. Trong SQL Server hiện đại, nên dùng `CREATE LOGIN`, `CREATE USER`, `ALTER ROLE` thay thế. Tuy nhiên, các SP cũ vẫn hoạt động và thầy sử dụng trong bài giảng để minh họa.

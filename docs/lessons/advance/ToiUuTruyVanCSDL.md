@@ -80,3 +80,44 @@ Tài liệu cung cấp một bài thử nghiệm (Demo) sinh ra **10.000.000 dò
 - **Tình huống 3: Đã tạo Index trên cột `lastname**`
 - Khi truy vấn và sắp xếp lại, SQL Server sử dụng Index để lấy kết quả đã được cây B-Tree xếp sẵn.
 - _Thời gian thực thi:_ Nhanh hơn đáng kể, dao động từ **1 phút 18 giây - 1 phút 31 giây**. Mức độ đọc I/O đĩa cứng cũng giảm rõ rệt (dựa vào thông số _Logical Reads_).
+
+---
+
+### GHI CHÚ TRÊN LỚP (Quicknote)
+
+> Các ghi chú bổ sung từ bài giảng trên lớp về tối ưu truy vấn.
+
+**1. Thứ tự thực hiện các phép toán đại số quan hệ:**
+- **Phép chọn (σ) / Phép chiếu (π)** nên thực hiện **TRƯỚC**, phép kết nối (⋈) thực hiện **SAU**.
+- Lý do: Giảm kích thước tập dữ liệu trước khi join sẽ giảm đáng kể số lượng phép so sánh.
+
+**2. Khử phép nối (JOIN) khi có thể:**
+- Nếu kết quả truy vấn chỉ cần dữ liệu từ một bảng, hãy dùng `EXISTS` hoặc `IN` thay vì `JOIN` để tránh tạo tập kết quả trung gian không cần thiết.
+
+**3. Giảm thiểu điều kiện trùng lặp:**
+- Nếu một điều kiện xuất hiện nhiều lần, hãy tái cấu trúc (refactor) mệnh đề WHERE.
+
+```sql
+-- ❌ Chưa tối ưu (điều kiện phai = 'Nam' bị lặp)
+WHERE (malop = 'x' AND phai = 'Nam') OR (malop = 'y' AND phai = 'Nam')
+
+-- ✅ Đã tối ưu (rút gọn điều kiện chung)
+WHERE phai = 'Nam' AND malop IN ('x', 'y')
+```
+
+**4. Sắp xếp điều kiện theo xác suất:**
+
+| Toán tử | Quy tắc |
+|---|---|
+| **AND** | Đặt điều kiện có **xác suất SAI cao** lên **đầu** (short-circuit nhanh hơn) |
+| **OR** | Đặt điều kiện có **xác suất ĐÚNG cao** lên **đầu** (short-circuit nhanh hơn) |
+
+**5. Sử dụng Index Hint (`WITH (INDEX=...)`):**
+- Các field tham gia trong điều kiện truy vấn nên được đánh Index trước.
+- Thứ tự sắp xếp Index phải được sử dụng đúng trong mệnh đề truy vấn:
+
+```sql
+-- Ép SQL Server dùng Index cụ thể (thay vì để Query Optimizer tự chọn)
+SELECT * FROM NhanVien WITH (INDEX = IX_NhanVien_MaPhong)
+WHERE MaPhong = 'P01'
+```
