@@ -53,3 +53,43 @@ CREATE NONCLUSTERED INDEX IX_SINHVIEN_MALOP
 ON [dbo].[SINHVIEN] ([MALOP])
 INCLUDE ([MASV], [HO], [TEN]);
 GO
+
+-- =======================================================================
+-- INDEX TỐI ƯU ORDER BY CHO CÁC SP DANH MỤC
+-- =======================================================================
+
+-- 6. Index hỗ trợ sp_LayDanhSachLop
+-- ORDER BY KHOAHOC DESC, MAKHOA, MALOP — lớp mới nhất hiện trước
+-- INCLUDE TENLOP để Optimizer không cần Look-up về bảng LOP
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID('LOP') AND name = 'IX_LOP_KhoaHoc_Khoa_MaLop')
+CREATE NONCLUSTERED INDEX IX_LOP_KhoaHoc_Khoa_MaLop
+ON [dbo].[LOP] ([KHOAHOC] DESC, [MAKHOA], [MALOP])
+INCLUDE ([TENLOP]);
+GO
+
+-- 7. Index hỗ trợ sp_LayDanhSachGiangVien
+-- ORDER BY MAKHOA, MAGV — PK là MAGV (clustered), nhưng sort theo MAKHOA trước
+-- INCLUDE các cột SELECT: HO, TEN, HOCVI, HOCHAM, CHUYENMON
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID('GIANGVIEN') AND name = 'IX_GIANGVIEN_Khoa_MaGV')
+CREATE NONCLUSTERED INDEX IX_GIANGVIEN_Khoa_MaGV
+ON [dbo].[GIANGVIEN] ([MAKHOA], [MAGV])
+INCLUDE ([HO], [TEN], [HOCVI], [HOCHAM], [CHUYENMON]);
+GO
+
+-- 8. Index hỗ trợ sp_LayDanhSachMonHoc
+-- ORDER BY TENMH — PK là MAMH, nhưng sort theo tên
+-- INCLUDE SOTIET_LT, SOTIET_TH để covering query hoàn toàn
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID('MONHOC') AND name = 'IX_MONHOC_TenMH')
+CREATE NONCLUSTERED INDEX IX_MONHOC_TenMH
+ON [dbo].[MONHOC] ([TENMH])
+INCLUDE ([MAMH], [SOTIET_LT], [SOTIET_TH]);
+GO
+
+-- 9. Index hỗ trợ sp_LayDanhSachSinhVien
+-- ORDER BY MASV — nhưng khi lọc theo MALOP cần sort nhanh
+-- Bổ sung TEN, HO vào INCLUDE cho sp sort theo TEN (SP 006)
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID('SINHVIEN') AND name = 'IX_SINHVIEN_MALOP_MASV')
+CREATE NONCLUSTERED INDEX IX_SINHVIEN_MALOP_MASV
+ON [dbo].[SINHVIEN] ([MALOP], [MASV])
+INCLUDE ([HO], [TEN], [PHAI], [NGAYSINH], [DIACHI], [DANGHIHOC]);
+GO

@@ -105,6 +105,31 @@ GRANT EXECUTE ON OBJECT::dbo.sp_CapNhatDiem TO [KHOA];
 
 GRANT EXECUTE, REFERENCES ON TYPE::dbo.GradeEntryType TO [KHOA];
 
+-- Xem danh sách các module (Khoa, Giảng viên, Môn học, Lớp tín chỉ)
+GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachKhoa TO [KHOA];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachGiangVien TO [KHOA];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachMonHoc TO [KHOA];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachLopTinChi TO [KHOA];
+
+-- Báo cáo điểm
+GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachSinhVienDangKyLopTinChi TO [KHOA];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_LayBangDiemMonHocCuaMotLopTinChi TO [KHOA];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_LayBangDiemTongKet TO [KHOA];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_LayPhieuDiem TO [KHOA];
+
+-- Quản lý tài khoản (KHOA chỉ tạo/sửa tài khoản nhóm KHOA)
+GRANT EXECUTE ON OBJECT::dbo.sp_LayDanhSachTaiKhoan TO [KHOA];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_TaoTaiKhoan TO [KHOA];
+
+GRANT EXECUTE ON OBJECT::dbo.sp_SuaTaiKhoan TO [KHOA];
+
 GRANT VIEW DEFINITION TO [KHOA];
 
 -- (D) Đảm bảo KHOA không có quyền CUD (Xóa/Sửa/Thêm) Lớp và Sinh viên
