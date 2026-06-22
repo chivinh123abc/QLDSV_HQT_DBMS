@@ -11,5 +11,6 @@ namespace QLDSV_HTC.Application.DTOs
         public string? Degree { get; set; }
         public string? AcademicRank { get; set; }
         public string? Specialty { get; set; }
+        public int CreditClassCount { get; set; }
     }
 }
