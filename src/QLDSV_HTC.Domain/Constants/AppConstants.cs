@@ -30,6 +30,7 @@ namespace QLDSV_HTC.Domain.Constants
             public const string AddStudent = "sp_ThemSinhVien";
             public const string UpdateStudent = "sp_SuaSinhVien";
             public const string DeleteStudent = "sp_XoaSinhVien";
+            public const string ResetStudentPassword = "sp_ResetPasswordSinhVien";
 
             public const string GetSubjectList = "sp_LayDanhSachMonHoc";
             public const string AddSubject = "sp_ThemMonHoc";

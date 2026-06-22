@@ -146,10 +146,10 @@ namespace QLDSV_HTC.Infrastructure.Repositories
         public async Task ResetPasswordAsync(string studentId, string newPassword)
         {
             await ExecuteNonQueryAsync(
-                "UPDATE SINHVIEN SET PASSWORD = @Password WHERE MASV = @MASV",
-                CommandType.Text,
-                new SqlParameter("@Password", newPassword),
-                new SqlParameter("@MASV", studentId)
+                AppConstants.SpNames.ResetStudentPassword,
+                CommandType.StoredProcedure,
+                new SqlParameter(StoredProcedureConstants.ResetPasswordSinhVien.StudentId, studentId),
+                new SqlParameter(StoredProcedureConstants.ResetPasswordSinhVien.Password, newPassword)
             );
         }
     }

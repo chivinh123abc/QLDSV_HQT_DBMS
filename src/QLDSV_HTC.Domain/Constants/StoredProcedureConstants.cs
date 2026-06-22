@@ -83,6 +83,12 @@ namespace QLDSV_HTC.Domain.Constants
             public const string Password = "@PASSWORD";
         }
 
+        public static class ResetPasswordSinhVien
+        {
+            public const string StudentId = "@MASV";
+            public const string Password = "@PASSWORD";
+        }
+
         public static class SubjectCrud
         {
             public const string OldSubjectId = "@MAMH_OLD";

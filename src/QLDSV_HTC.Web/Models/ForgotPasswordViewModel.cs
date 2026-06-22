@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace QLDSV_HTC.Models
+namespace QLDSV_HTC.Web.Models
 {
     public class ForgotPasswordViewModel
     {

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using System.Net;
 using System.Net.Mail;
 using Microsoft.AspNetCore.Authentication;
@@ -11,7 +12,6 @@ using QLDSV_HTC.Infrastructure.Helpers;
 using QLDSV_HTC.Application.DTOs;
 using QLDSV_HTC.Application.Interfaces;
 using QLDSV_HTC.Domain.Constants;
-using QLDSV_HTC.Models;
 using QLDSV_HTC.Web.Models;
 
 namespace QLDSV_HTC.Web.Controllers
@@ -21,9 +21,20 @@ namespace QLDSV_HTC.Web.Controllers
         IAuthRepository authRepository,
         IAccountRepository accountRepository,
         ILecturerRepository lecturerRepository,
-        IStudentRepository studentRepository) : Controller
+        IStudentRepository studentRepository,
+        IWebHostEnvironment webHostEnvironment) : Controller
     {
-        private static readonly ConcurrentDictionary<string, (string Otp, DateTime Expiry)> ResetOtpCache = new();
+        private sealed class OtpState
+        {
+            public string Otp { get; set; } = string.Empty;
+            public DateTime Expiry { get; set; }
+            public int RequestCount { get; set; }
+            public DateTime FirstRequestTime { get; set; }
+            public int FailedAttempts { get; set; }
+            public DateTime? LockedUntil { get; set; }
+        }
+
+        private static readonly ConcurrentDictionary<string, OtpState> ResetOtpCache = new();
 
         [HttpGet]
         [AllowAnonymous]
@@ -54,66 +65,63 @@ namespace QLDSV_HTC.Web.Controllers
                     return View(model);
                 }
 
-                var student = await studentRepository.GetStudentByIdAsync(model.LoginName);
-                if (student == null)
-                {
-                    ViewBag.ErrorMessage = "Mã sinh viên không tồn tại trong hệ thống.";
-                    model.Step = 1;
-                    ModelState.Clear();
-                    return View(model);
-                }
-
                 var loginNameClean = model.LoginName.Trim().ToLower();
                 var email = $"{loginNameClean}@student.ptithcm.edu.vn";
                 model.Email = email;
 
-                var random = new Random();
-                var otp = random.Next(100000, 999999).ToString();
-
-                ResetOtpCache[loginNameClean] = (otp, DateTime.UtcNow.AddMinutes(5));
-
-                try
+                var now = DateTime.UtcNow;
+                var state = ResetOtpCache.GetOrAdd(loginNameClean, _ => new OtpState
                 {
-                    var host = Environment.GetEnvironmentVariable("MAIL_HOST") ?? "smtp.gmail.com";
-                    var portStr = Environment.GetEnvironmentVariable("MAIL_PORT") ?? "587";
-                    var user = Environment.GetEnvironmentVariable("MAIL_USER");
-                    var pass = Environment.GetEnvironmentVariable("MAIL_PASSWORD");
-                    var fromAddress = Environment.GetEnvironmentVariable("MAIL_FROM_ADDRESS") ?? user;
+                    FirstRequestTime = now,
+                    RequestCount = 0,
+                    FailedAttempts = 0
+                });
 
-                    if (!string.IsNullOrEmpty(user) && !string.IsNullOrEmpty(pass))
+                if (state.LockedUntil.HasValue && state.LockedUntil.Value > now)
+                {
+                    ViewBag.ErrorMessage = $"Tài khoản của bạn tạm thời bị khóa xác thực OTP. Vui lòng thử lại sau {Math.Ceiling((state.LockedUntil.Value - now).TotalMinutes)} phút.";
+                    model.Step = 2;
+                    model.ResendOtp = false;
+                    ModelState.Clear();
+                    return View(model);
+                }
+
+                if (now - state.FirstRequestTime > TimeSpan.FromMinutes(15))
+                {
+                    state.FirstRequestTime = now;
+                    state.RequestCount = 0;
+                }
+
+                if (state.RequestCount >= 3)
+                {
+                    var timeLeft = TimeSpan.FromMinutes(15) - (now - state.FirstRequestTime);
+                    ViewBag.ErrorMessage = $"Bạn đã yêu cầu OTP quá 3 lần. Vui lòng đợi {Math.Ceiling(timeLeft.TotalMinutes)} phút trước khi gửi yêu cầu mới.";
+                    model.Step = 2;
+                    model.ResendOtp = false;
+                    ModelState.Clear();
+                    return View(model);
+                }
+
+                var student = await studentRepository.GetStudentByIdAsync(model.LoginName);
+                if (student != null)
+                {
+                    var otp = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+                    state.Otp = otp;
+                    state.Expiry = now.AddMinutes(5);
+                    state.RequestCount++;
+
+                    bool isSent = await SendOtpEmailAsync(webHostEnvironment.ContentRootPath, email, otp, isResend: true);
+                    if (!isSent)
                     {
-                        int port = int.TryParse(portStr, out var p) ? p : 587;
-
-                        using var message = new MailMessage();
-                        message.From = new MailAddress(fromAddress ?? user, "Hệ Thống Quản Lý Đào Tạo");
-                        message.To.Add(new MailAddress(email));
-                        message.Subject = "Mã Xác Nhận Khôi Phục Mật Khẩu (Gửi Lại)";
-                        message.Body = $@"
-                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>
-                                <h3 style='color: #2563eb; margin-bottom: 20px;'>Mã Xác Nhận Khôi Phục Mật Khẩu (Gửi Lại)</h3>
-                                <p>Xin chào,</p>
-                                <p>Chúng tôi nhận được yêu cầu gửi lại mã xác nhận đặt lại mật khẩu cho tài khoản của bạn.</p>
-                                <p>Mã xác nhận (OTP) mới của bạn là: <strong style='font-size: 24px; color: #2563eb; letter-spacing: 2px; background: #eff6ff; padding: 5px 15px; border-radius: 4px; display: inline-block;'>{otp}</strong></p>
-                                <p>Mã này có hiệu lực trong vòng 5 phút. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
-                                <p style='color: #64748b; font-size: 12px; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px;'>Trân trọng,<br/>Phòng Giáo vụ</p>
-                            </div>";
-                        message.IsBodyHtml = true;
-
-                        using var client = new SmtpClient(host, port);
-                        client.Credentials = new NetworkCredential(user, pass);
-                        client.EnableSsl = true;
-
-                        await client.SendMailAsync(message);
+                        state.RequestCount = Math.Max(0, state.RequestCount - 1);
+                        state.Otp = string.Empty;
+                        ViewBag.ErrorMessage = "Gửi email OTP thất bại. Vui lòng thử lại hoặc liên hệ Phòng Giáo vụ.";
+                        model.Step = 2;
+                        model.ResendOtp = false;
+                        ModelState.Clear();
+                        return View(model);
                     }
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[SMTP ERROR]: {ex.Message}");
-                }
-
-                Console.WriteLine("==================================================");
-                Console.WriteLine($"[RESEND OTP]: {otp} for student {loginNameClean}");
-                Console.WriteLine("==================================================");
 
                 ViewBag.SuccessMessage = $"Mã xác nhận (OTP) mới đã được gửi lại đến email: {email}.";
                 model.Step = 2;
@@ -131,67 +139,54 @@ namespace QLDSV_HTC.Web.Controllers
                     return View(model);
                 }
 
-                var student = await studentRepository.GetStudentByIdAsync(model.LoginName);
-                bool exists = student != null;
+                var loginNameClean = model.LoginName.Trim().ToLower();
+                var email = $"{loginNameClean}@student.ptithcm.edu.vn";
+                model.Email = email;
 
-                if (!exists)
+                var now = DateTime.UtcNow;
+                var state = ResetOtpCache.GetOrAdd(loginNameClean, _ => new OtpState
                 {
-                    ViewBag.ErrorMessage = "Mã sinh viên không tồn tại trong hệ thống.";
+                    FirstRequestTime = now,
+                    RequestCount = 0,
+                    FailedAttempts = 0
+                });
+
+                if (state.LockedUntil.HasValue && state.LockedUntil.Value > now)
+                {
+                    ViewBag.ErrorMessage = $"Tài khoản của bạn tạm thời bị khóa xác thực OTP. Vui lòng thử lại sau {Math.Ceiling((state.LockedUntil.Value - now).TotalMinutes)} phút.";
                     return View(model);
                 }
 
-                var loginNameClean = model.LoginName.Trim().ToLower();
-                var email = $"{loginNameClean}@student.ptithcm.edu.vn";
-
-                model.Email = email;
-
-                var random = new Random();
-                var otp = random.Next(100000, 999999).ToString();
-
-                ResetOtpCache[loginNameClean] = (otp, DateTime.UtcNow.AddMinutes(5));
-
-                try
+                if (now - state.FirstRequestTime > TimeSpan.FromMinutes(15))
                 {
-                    var host = Environment.GetEnvironmentVariable("MAIL_HOST") ?? "smtp.gmail.com";
-                    var portStr = Environment.GetEnvironmentVariable("MAIL_PORT") ?? "587";
-                    var user = Environment.GetEnvironmentVariable("MAIL_USER");
-                    var pass = Environment.GetEnvironmentVariable("MAIL_PASSWORD");
-                    var fromAddress = Environment.GetEnvironmentVariable("MAIL_FROM_ADDRESS") ?? user;
+                    state.FirstRequestTime = now;
+                    state.RequestCount = 0;
+                }
 
-                    if (!string.IsNullOrEmpty(user) && !string.IsNullOrEmpty(pass))
+                if (state.RequestCount >= 3)
+                {
+                    var timeLeft = TimeSpan.FromMinutes(15) - (now - state.FirstRequestTime);
+                    ViewBag.ErrorMessage = $"Bạn đã yêu cầu OTP quá 3 lần. Vui lòng đợi {Math.Ceiling(timeLeft.TotalMinutes)} phút trước khi gửi yêu cầu mới.";
+                    return View(model);
+                }
+
+                var student = await studentRepository.GetStudentByIdAsync(model.LoginName);
+                if (student != null)
+                {
+                    var otp = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+                    state.Otp = otp;
+                    state.Expiry = now.AddMinutes(5);
+                    state.RequestCount++;
+
+                    bool isSent = await SendOtpEmailAsync(webHostEnvironment.ContentRootPath, email, otp, isResend: false);
+                    if (!isSent)
                     {
-                        int port = int.TryParse(portStr, out var p) ? p : 587;
-
-                        using var message = new MailMessage();
-                        message.From = new MailAddress(fromAddress ?? user, "Hệ Thống Quản Lý Đào Tạo");
-                        message.To.Add(new MailAddress(email));
-                        message.Subject = "Mã Xác Nhận Khôi Phục Mật Khẩu";
-                        message.Body = $@"
-                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>
-                                <h3 style='color: #2563eb; margin-bottom: 20px;'>Mã Xác Nhận Khôi Phục Mật Khẩu</h3>
-                                <p>Xin chào,</p>
-                                <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn trên hệ thống Quản lý Đào tạo.</p>
-                                <p>Mã xác nhận (OTP) của bạn là: <strong style='font-size: 24px; color: #2563eb; letter-spacing: 2px; background: #eff6ff; padding: 5px 15px; border-radius: 4px; display: inline-block;'>{otp}</strong></p>
-                                <p>Mã này có hiệu lực trong vòng 5 phút. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
-                                <p style='color: #64748b; font-size: 12px; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px;'>Trân trọng,<br/>Phòng Giáo vụ</p>
-                            </div>";
-                        message.IsBodyHtml = true;
-
-                        using var client = new SmtpClient(host, port);
-                        client.Credentials = new NetworkCredential(user, pass);
-                        client.EnableSsl = true;
-
-                        await client.SendMailAsync(message);
+                        state.RequestCount = Math.Max(0, state.RequestCount - 1);
+                        state.Otp = string.Empty;
+                        ViewBag.ErrorMessage = "Gửi email OTP thất bại. Vui lòng thử lại hoặc liên hệ Phòng Giáo vụ.";
+                        return View(model);
                     }
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[SMTP ERROR]: {ex.Message}");
-                }
-
-                Console.WriteLine("==================================================");
-                Console.WriteLine($"[RESET PASSWORD OTP]: {otp} for student {loginNameClean}");
-                Console.WriteLine("==================================================");
 
                 ViewBag.SuccessMessage = $"Mã xác nhận (OTP) đã được gửi đến email: {email}. Vui lòng nhập mã để tiếp tục.";
                 model.Step = 2;
@@ -214,8 +209,6 @@ namespace QLDSV_HTC.Web.Controllers
                     return View(model);
                 }
 
-
-
                 if (string.IsNullOrWhiteSpace(model.NewPassword) || model.NewPassword.Length < 8)
                 {
                     ViewBag.ErrorMessage = "Mật khẩu mới phải chứa ít nhất 8 ký tự.";
@@ -228,15 +221,39 @@ namespace QLDSV_HTC.Web.Controllers
                     return View(model);
                 }
 
-                if (!ResetOtpCache.TryGetValue(loginNameClean, out var cachedData) || cachedData.Otp != model.Otp.Trim())
+                var now = DateTime.UtcNow;
+                if (!ResetOtpCache.TryGetValue(loginNameClean, out var state))
                 {
-                    ViewBag.ErrorMessage = "Mã xác nhận OTP không đúng hoặc đã hết hạn.";
+                    ViewBag.ErrorMessage = "Yêu cầu khôi phục mật khẩu không hợp lệ. Vui lòng thực hiện lại từ đầu.";
+                    model.Step = 1;
+                    ModelState.Clear();
                     return View(model);
                 }
 
-                if (DateTime.UtcNow > cachedData.Expiry)
+                if (state.LockedUntil.HasValue && state.LockedUntil.Value > now)
                 {
-                    ResetOtpCache.TryRemove(loginNameClean, out _);
+                    ViewBag.ErrorMessage = $"Tài khoản của bạn tạm thời bị khóa xác thực OTP. Vui lòng thử lại sau {Math.Ceiling((state.LockedUntil.Value - now).TotalMinutes)} phút.";
+                    return View(model);
+                }
+
+                if (string.IsNullOrEmpty(state.Otp) || state.Otp != model.Otp.Trim())
+                {
+                    state.FailedAttempts++;
+                    if (state.FailedAttempts >= 5)
+                    {
+                        state.LockedUntil = now.AddMinutes(15);
+                        ViewBag.ErrorMessage = "Bạn nhập sai OTP quá 5 lần. Tài khoản của bạn đã bị khóa xác thực OTP trong 15 phút.";
+                    }
+                    else
+                    {
+                        ViewBag.ErrorMessage = $"Mã xác nhận OTP không đúng. Bạn còn {5 - state.FailedAttempts} lần thử.";
+                    }
+                    return View(model);
+                }
+
+                if (now > state.Expiry)
+                {
+                    state.Otp = string.Empty;
                     ViewBag.ErrorMessage = "Mã xác nhận OTP đã hết hạn. Vui lòng yêu cầu gửi lại mã.";
                     model.Step = 1;
                     ModelState.Clear();
@@ -514,6 +531,73 @@ namespace QLDSV_HTC.Web.Controllers
             catch (SqlException ex)
             {
                 return BadRequest(new { success = false, message = SqlErrorHelper.GetFriendlyMessage(ex) });
+            }
+        }
+
+        private static async Task<bool> SendOtpEmailAsync(string contentRootPath, string email, string otp, bool isResend)
+        {
+            try
+            {
+                var host = Environment.GetEnvironmentVariable("MAIL_HOST") ?? "smtp.gmail.com";
+                var portStr = Environment.GetEnvironmentVariable("MAIL_PORT") ?? "587";
+                var user = Environment.GetEnvironmentVariable("MAIL_USER");
+                var pass = Environment.GetEnvironmentVariable("MAIL_PASSWORD");
+                var fromAddress = Environment.GetEnvironmentVariable("MAIL_FROM_ADDRESS") ?? user;
+
+                if (!string.IsNullOrEmpty(user) && !string.IsNullOrEmpty(pass))
+                {
+                    int port = int.TryParse(portStr, out var p) ? p : 587;
+
+                    using var message = new MailMessage();
+                    message.From = new MailAddress(fromAddress ?? user, "Hệ Thống Quản Lý Đào Tạo");
+                    message.To.Add(new MailAddress(email));
+                    message.Subject = isResend ? "Mã Xác Nhận Khôi Phục Mật Khẩu (Gửi Lại)" : "Mã Xác Nhận Khôi Phục Mật Khẩu";
+
+                    var title = isResend ? "Mã Xác Nhận Khôi Phục Mật Khẩu (Gửi Lại)" : "Mã Xác Nhận Khôi Phục Mật Khẩu";
+                    var bodyText = isResend
+                        ? "Chúng tôi nhận được yêu cầu gửi lại mã xác nhận đặt lại mật khẩu cho tài khoản của bạn."
+                        : "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn trên hệ thống Quản lý Đào tạo.";
+                    var otpText = isResend ? "Mã xác nhận (OTP) mới của bạn là:" : "Mã xác nhận (OTP) của bạn là:";
+
+                    var templatePath = Path.Combine(contentRootPath, "EmailTemplates", "OtpEmailTemplate.html");
+                    string bodyTemplate;
+                    if (System.IO.File.Exists(templatePath))
+                    {
+                        bodyTemplate = await System.IO.File.ReadAllTextAsync(templatePath);
+                    }
+                    else
+                    {
+                        bodyTemplate = @"
+                            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>
+                                <h3 style='color: #2563eb; margin-bottom: 20px;'>{Title}</h3>
+                                <p>Xin chào,</p>
+                                <p>{BodyText}</p>
+                                <p>{OtpText} <strong style='font-size: 24px; color: #2563eb; letter-spacing: 2px; background: #eff6ff; padding: 5px 15px; border-radius: 4px; display: inline-block;'>{Otp}</strong></p>
+                                <p>Mã này có hiệu lực trong vòng 5 phút. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+                                <p style='color: #64748b; font-size: 12px; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px;'>Trân trọng,<br/>Phòng Giáo vụ</p>
+                            </div>";
+                    }
+
+                    message.Body = bodyTemplate
+                        .Replace("{Title}", title)
+                        .Replace("{BodyText}", bodyText)
+                        .Replace("{OtpText}", otpText)
+                        .Replace("{Otp}", otp);
+                    message.IsBodyHtml = true;
+
+                    using var client = new SmtpClient(host, port);
+                    client.Credentials = new NetworkCredential(user, pass);
+                    client.EnableSsl = true;
+
+                    await client.SendMailAsync(message);
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SMTP ERROR]: {ex.Message}");
+                return false;
             }
         }
     }

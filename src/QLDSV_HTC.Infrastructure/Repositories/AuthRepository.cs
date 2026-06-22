@@ -69,7 +69,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                     };
                 }
 
-                return new UserSession { ErrorMessage = "Tài khoản không tồn tại trong CSDL." };
+                return new UserSession { ErrorMessage = "Tên đăng nhập hoặc mật khẩu không chính xác." };
             }
             catch (SqlException ex)
             {
