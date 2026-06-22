@@ -9,7 +9,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
     public class GradeRepository(IDbConnectionProvider connectionProvider)
         : BaseSqlRepository(connectionProvider), IGradeRepository
     {
-        public async Task<IEnumerable<GradeEntryDto>> GetGradesAsync(string year, int semester, string subjectId, int group, string? masv = null, string? tensv = null)
+        public async Task<IEnumerable<GradeEntryDto>> GetGradesAsync(string year, int semester, string subjectId, int group, string? masv = null, string? tensv = null, string? classId = null, string? facultyId = null)
         {
             var dt = await ExecuteQueryAsync(
                 AppConstants.SpNames.GetSubjectGrades,
@@ -19,7 +19,9 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                 new SqlParameter(StoredProcedureConstants.GetSubjectGrades.SubjectId, subjectId),
                 new SqlParameter(StoredProcedureConstants.GetSubjectGrades.Group, group),
                 new SqlParameter(StoredProcedureConstants.GetSubjectGrades.StudentId, masv ?? (object)DBNull.Value),
-                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.StudentName, tensv ?? (object)DBNull.Value)
+                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.StudentName, tensv ?? (object)DBNull.Value),
+                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.ClassId, classId ?? (object)DBNull.Value),
+                new SqlParameter(StoredProcedureConstants.GetSubjectGrades.FacultyId, facultyId ?? (object)DBNull.Value)
             );
 
             return dt.AsEnumerable().Select(row => new GradeEntryDto
@@ -28,6 +30,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                 StudentId = row[DbConstants.Columns.Grade.StudentId]?.ToString() ?? string.Empty,
                 LastName = row[DbConstants.Columns.Student.FirstName]?.ToString() ?? string.Empty,
                 FirstName = row[DbConstants.Columns.Student.LastName]?.ToString() ?? string.Empty,
+                SubjectName = row[DbConstants.Columns.Subject.Name]?.ToString() ?? string.Empty,
                 AttendanceGrade = row[DbConstants.Columns.Grade.AttendanceGrade] != DBNull.Value ? Convert.ToSingle(row[DbConstants.Columns.Grade.AttendanceGrade]) : null,
                 MidtermGrade = row[DbConstants.Columns.Grade.MidtermGrade] != DBNull.Value ? Convert.ToSingle(row[DbConstants.Columns.Grade.MidtermGrade]) : null,
                 FinalGrade = row[DbConstants.Columns.Grade.FinalGrade] != DBNull.Value ? Convert.ToSingle(row[DbConstants.Columns.Grade.FinalGrade]) : null,
