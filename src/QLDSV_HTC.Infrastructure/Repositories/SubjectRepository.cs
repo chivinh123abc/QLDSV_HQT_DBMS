@@ -19,16 +19,17 @@ namespace QLDSV_HTC.Infrastructure.Repositories
 
             return dt.AsEnumerable().Select(row => new SubjectDto
             {
-                SubjectId = row[DbConstants.Columns.Subject.Id]?.ToString() ?? string.Empty,
-                SubjectName = row[DbConstants.Columns.Subject.Name]?.ToString() ?? string.Empty,
+                SubjectId = row[DbConstants.Columns.Subject.Id]?.ToString()?.Trim() ?? string.Empty,
+                SubjectName = row[DbConstants.Columns.Subject.Name]?.ToString()?.Trim() ?? string.Empty,
                 TheoryHours = row[DbConstants.Columns.Subject.TheoryHours] == DBNull.Value ? 0 : Convert.ToInt32(row[DbConstants.Columns.Subject.TheoryHours]),
-                PracticeHours = row[DbConstants.Columns.Subject.PracticeHours] == DBNull.Value ? 0 : Convert.ToInt32(row[DbConstants.Columns.Subject.PracticeHours])
+                PracticeHours = row[DbConstants.Columns.Subject.PracticeHours] == DBNull.Value ? 0 : Convert.ToInt32(row[DbConstants.Columns.Subject.PracticeHours]),
+                CanDelete = !row.Table.Columns.Contains("HAS_CREDIT_CLASSES") || row["HAS_CREDIT_CLASSES"] == DBNull.Value || Convert.ToInt32(row["HAS_CREDIT_CLASSES"]) == 0
             });
         }
 
         public async Task<PagedResult<SubjectDto>> GetPagedSubjectListAsync(PaginationQuery paging)
         {
-            const string selectCols = "MAMH, TENMH, SOTIET_LT, SOTIET_TH";
+            const string selectCols = "MAMH, TENMH, SOTIET_LT, SOTIET_TH, (SELECT COUNT(1) FROM LOPTINCHI l WHERE l.MAMH = MONHOC.MAMH) AS HAS_CREDIT_CLASSES";
             const string tableName = "MONHOC";
             const string joinClause = "";
             const string whereClause = "1=1";
@@ -50,10 +51,11 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             {
                 Items = dt.AsEnumerable().Select(row => new SubjectDto
                 {
-                    SubjectId = row[DbConstants.Columns.Subject.Id]?.ToString() ?? string.Empty,
-                    SubjectName = row[DbConstants.Columns.Subject.Name]?.ToString() ?? string.Empty,
+                    SubjectId = row[DbConstants.Columns.Subject.Id]?.ToString()?.Trim() ?? string.Empty,
+                    SubjectName = row[DbConstants.Columns.Subject.Name]?.ToString()?.Trim() ?? string.Empty,
                     TheoryHours = row[DbConstants.Columns.Subject.TheoryHours] == DBNull.Value ? 0 : Convert.ToInt32(row[DbConstants.Columns.Subject.TheoryHours]),
-                    PracticeHours = row[DbConstants.Columns.Subject.PracticeHours] == DBNull.Value ? 0 : Convert.ToInt32(row[DbConstants.Columns.Subject.PracticeHours])
+                    PracticeHours = row[DbConstants.Columns.Subject.PracticeHours] == DBNull.Value ? 0 : Convert.ToInt32(row[DbConstants.Columns.Subject.PracticeHours]),
+                    CanDelete = !row.Table.Columns.Contains("HAS_CREDIT_CLASSES") || row["HAS_CREDIT_CLASSES"] == DBNull.Value || Convert.ToInt32(row["HAS_CREDIT_CLASSES"]) == 0
                 }),
                 TotalCount = totalCount,
                 PageNumber = paging.PageNumber,
