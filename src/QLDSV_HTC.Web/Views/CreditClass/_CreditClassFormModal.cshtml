@@ -161,11 +161,17 @@
                     <i class="bi bi-list-ul"></i>
                     <span class="text-uppercase small">Danh sách tham chiếu</span>
                 </h6>
-                @if (hasFaculty) { 
-                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10 px-2 fw-medium" style="font-size:0.7rem">
-                        KHOA: @Model.CurrentFacultyId?.Trim()
-                    </span> 
-                }
+                <div class="d-flex align-items-center gap-2">
+                    @if (hasFaculty) { 
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10 px-2 fw-medium animate__animated animate__fadeIn" style="font-size:0.7rem; height: fit-content; padding-top: 0.35rem; padding-bottom: 0.35rem;">
+                            KHOA: @Model.CurrentFacultyId?.Trim()
+                        </span> 
+                    }
+                    <div class="input-group input-group-sm" style="max-width: 250px;">
+                        <span class="input-group-text bg-white border-end-0 border-primary-subtle"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="modalCreditClassSearch" class="form-control border-start-0 border-primary-subtle" placeholder="Tìm kiếm LTC...">
+                    </div>
+                </div>
             </div>
             <div class="table-responsive rounded-3 border border-light-subtle shadow-sm" style="max-height:240px; overflow-y:auto">
                 <table class="table table-sm table-hover align-middle mb-0" id="miniCreditClassTable">
