@@ -112,7 +112,8 @@
                     <tr class="hover-row animate__animated animate__fadeIn"
                         data-id="@l.Id?.Trim()" data-first="@l.FirstName" data-last="@l.LastName"
                         data-degree="@l.Degree" data-rank="@l.Rank" data-spec="@l.Specialty"
-                        data-faculty="@l.FacultyId?.Trim()" data-faculty-filter="@l.FacultyId?.Trim()">
+                        data-faculty="@l.FacultyId?.Trim()" data-faculty-filter="@l.FacultyId?.Trim()"
+                        data-credit-class-count="@l.CreditClassCount">
                         <td class="ps-4">
                             <span class="fw-bold font-monospace text-primary bg-primary-subtle px-2 py-1 rounded small border border-primary-subtle shadow-sm">
                                 @l.Id?.Trim()
@@ -141,12 +142,14 @@
                                             title="Sửa giảng viên"
                                             data-id="@l.Id?.Trim()" data-first="@l.FirstName" data-last="@l.LastName"
                                             data-degree="@l.Degree" data-rank="@l.Rank" data-spec="@l.Specialty"
-                                            data-faculty="@l.FacultyId?.Trim()">
+                                            data-faculty="@l.FacultyId?.Trim()"
+                                            data-credit-class-count="@l.CreditClassCount">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-none hover-scale rounded-3"
-                                            title="Xóa giảng viên"
-                                            data-id="@l.Id?.Trim()" data-first="@l.FirstName" data-last="@l.LastName">
+                                    <button class="btn btn-sm btn-outline-danger shadow-none rounded-3 @(l.CreditClassCount == 0 ? "btn-delete-row hover-scale" : "disabled opacity-50")"
+                                            title="@(l.CreditClassCount > 0 ? $"Không thể xóa giảng viên vì đang phụ trách lớp tín chỉ ({l.CreditClassCount} lớp)" : "Xóa giảng viên")"
+                                            data-id="@l.Id?.Trim()" data-first="@l.FirstName" data-last="@l.LastName"
+                                            @(l.CreditClassCount > 0 ? "disabled" : "")>
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>

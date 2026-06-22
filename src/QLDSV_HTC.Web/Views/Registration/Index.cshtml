@@ -41,46 +41,25 @@
         </div>
     </div>
 
-    @* ── Bộ lọc (auto-filter, no button) ── *@
+    @* ── Học kỳ đăng ký (readonly) ── *@
     <div class="card border-0 shadow-sm mb-4 rounded-4 bg-white overflow-hidden">
         <div class="card-body p-4">
-            <div class="d-flex align-items-center gap-2 mb-3">
+            <div class="d-flex align-items-center gap-2">
                 <div class="icon-box-sm bg-primary-subtle text-primary rounded-circle">
-                    <i class="bi bi-funnel-fill"></i>
+                    <i class="bi bi-calendar-check"></i>
                 </div>
-                <h6 class="fw-bold mb-0 text-dark">Lọc lớp tín chỉ</h6>
-            </div>
-            
-            <div class="row g-3 align-items-end">
-                <div class="col-sm-6 col-md-4 col-lg-3">
-                    <label for="selYear" class="form-label small fw-bold text-muted">Niên khóa</label>
-                    <div class="input-group input-group-merge shadow-none border rounded-3 overflow-hidden">
-                        <span class="input-group-text bg-light border-0"><i class="bi bi-calendar3 text-primary"></i></span>
-                        <select id="selYear" class="form-select border-0 bg-white shadow-none ps-0">
-                            @foreach (var y in Model.Years)
-                            {
-                                <option value="@y" selected="@(y == Model.CurrentYear)">@y</option>
-                            }
-                        </select>
-                    </div>
+                <h6 class="fw-bold mb-0 text-dark">Học kỳ đăng ký</h6>
+                <div class="ms-2 d-flex align-items-center gap-2">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill shadow-sm">
+                        <i class="bi bi-calendar3 me-1"></i> @Model.CurrentYear
+                    </span>
+                    <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2 rounded-pill shadow-sm">
+                        <i class="bi bi-clock-history me-1"></i> Học kỳ @Model.CurrentSemester
+                    </span>
                 </div>
-                <div class="col-sm-6 col-md-4 col-lg-2">
-                    <label for="selSemester" class="form-label small fw-bold text-muted">Học kỳ</label>
-                    <div class="input-group input-group-merge shadow-none border rounded-3 overflow-hidden">
-                        <span class="input-group-text bg-light border-0"><i class="bi bi-clock-history text-primary"></i></span>
-                        <select id="selSemester" class="form-select border-0 bg-white shadow-none ps-0">
-                            @foreach (var s in Model.Semesters)
-                            {
-                                <option value="@s" selected="@(s == Model.CurrentSemester)">Học kỳ @s</option>
-                            }
-                        </select>
-                    </div>
-                </div>
-                <div class="col-sm-12 col-md-4 col-lg-4">
-                    <div id="filterStatus" class="d-flex align-items-center gap-2 py-2">
-                        <div class="spinner-border spinner-border-sm text-primary d-none" id="filterSpinner" role="status"></div>
-                        <span class="small text-muted" id="filterMessage">Sẵn sàng lọc</span>
-                    </div>
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <div class="spinner-border spinner-border-sm text-primary d-none" id="filterSpinner" role="status"></div>
+                    <span class="small text-muted" id="filterMessage">Sẵn sàng</span>
                 </div>
             </div>
         </div>
@@ -104,8 +83,8 @@
     const CURRENT_YEAR     = '@Model.CurrentYear';
     const CURRENT_SEMESTER = @Model.CurrentSemester;
 
-    const selYear       = document.getElementById('selYear');
-    const selSemester   = document.getElementById('selSemester');
+    const FIXED_YEAR     = '@Model.CurrentYear';
+    const FIXED_SEMESTER = @Model.CurrentSemester;
     const searchInput   = document.getElementById('searchInput');
     const tbody         = document.getElementById('classTableBody');
     const resultCount   = document.getElementById('resultCount');
@@ -116,46 +95,11 @@
     let allData = [];
     let debounceTimer = null;
 
-    disablePastOptions();
-    selYear.addEventListener('change', () => { disablePastSemesters(); doFilter(); });
-    selSemester.addEventListener('change', () => doFilter());
-
     doFilter();
 
-    function disablePastOptions() {
-        Array.from(selYear.options).forEach(opt => {
-            if (opt.value && opt.value < CURRENT_YEAR) {
-                opt.disabled = true;
-                opt.textContent = opt.value + ' (Quá khứ)';
-            }
-        });
-        disablePastSemesters();
-    }
-
-    function disablePastSemesters() {
-        const selectedYear = selYear.value;
-        Array.from(selSemester.options).forEach(opt => {
-            const sem = parseInt(opt.value);
-            if (selectedYear === CURRENT_YEAR && sem < CURRENT_SEMESTER) {
-                opt.disabled = true;
-            } else {
-                opt.disabled = false;
-            }
-        });
-
-        const currentOpt = selSemester.options[selSemester.selectedIndex];
-        if (currentOpt && currentOpt.disabled) {
-            selSemester.value = CURRENT_SEMESTER.toString();
-        }
-    }
-
     async function doFilter() {
-        const year     = selYear.value;
-        const semester = parseInt(selSemester.value);
-        if (!year || isNaN(semester)) {
-            showMessage('Vui lòng chọn đầy đủ Niên khóa và Học kỳ.', 'filter-circle');
-            return;
-        }
+        const year     = FIXED_YEAR;
+        const semester = FIXED_SEMESTER;
 
         setLoading(true);
 
@@ -237,7 +181,22 @@
             }
 
             let btn = '';
-            if (c.isRegistered) {
+            if (c.hasGrades) {
+                // Lớp đã có điểm → không cho đăng ký/hủy
+                if (c.isRegistered) {
+                    btn = `<button class="btn btn-sm btn-outline-secondary px-3 rounded-pill shadow-none" disabled
+                                   style="opacity: 0.5; cursor: not-allowed;"
+                                   title="Không thể hủy ĐK — Lớp đã có điểm được nhập">
+                               <i class="bi bi-lock me-1"></i>Đã khóa
+                           </button>`;
+                } else {
+                    btn = `<button class="btn btn-sm btn-outline-secondary px-3 rounded-pill shadow-none" disabled
+                                   style="opacity: 0.5; cursor: not-allowed;"
+                                   title="Không thể đăng ký — Lớp đã có điểm được nhập">
+                               <i class="bi bi-lock me-1"></i>Đã khóa
+                           </button>`;
+                }
+            } else if (c.isRegistered) {
                 btn = `<button class="btn btn-sm btn-outline-danger px-3 rounded-pill action-btn hover-scale shadow-none"
                                data-id="${c.id}" data-action="unregister">
                            <i class="bi bi-dash-circle me-1"></i>Hủy ĐK
@@ -257,6 +216,9 @@
             const regBadge = c.isRegistered
                 ? `<span class="badge bg-success bg-opacity-10 text-success border border-success-subtle ms-2 small px-2 py-1" style="font-size: 0.65rem;">ĐÃ ĐK</span>`
                 : '';
+            const gradeBadge = c.hasGrades
+                ? `<span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle ms-2 small px-2 py-1" style="font-size: 0.65rem;"><i class="bi bi-lock-fill me-1"></i>Đã có điểm</span>`
+                : '';
 
             return `<tr class="hover-row transition-base animate__animated animate__fadeIn" data-id="${c.id}">
                 <td class="ps-4">
@@ -265,8 +227,8 @@
                     </span>
                 </td>
                 <td>
-                    <div class="fw-bold text-dark d-flex align-items-center">
-                        ${esc(c.subjectName)}${regBadge}
+                    <div class="fw-bold text-dark d-flex align-items-center flex-wrap">
+                        ${esc(c.subjectName)}${regBadge}${gradeBadge}
                     </div>
                 </td>
                 <td class="text-center">

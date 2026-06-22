@@ -82,6 +82,65 @@
             getSelectedId: () => selectedStudentId,
         });
 
+        function getFormChanges() {
+            const changes = [];
+            const currentMode = helpers.getMode();
+            if (currentMode === 'view') return changes;
+
+            const idVal = fldStudentId.value.trim();
+            const firstNameVal = fldFirstName.value.trim();
+            const lastNameVal = fldLastName.value.trim();
+            const genderVal = fldGender.value === 'true';
+            const dobVal = fldDob.value.trim();
+            const addressVal = fldAddress.value.trim();
+            const onLeaveVal = fldOnLeave.checked;
+
+            if (currentMode === 'add') {
+                if (idVal) changes.push(`• <b>Mã sinh viên</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(idVal)}"</span>`);
+                if (firstNameVal) changes.push(`• <b>Họ</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(firstNameVal)}"</span>`);
+                if (lastNameVal) changes.push(`• <b>Tên</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(lastNameVal)}"</span>`);
+                changes.push(`• <b>Phái</b>: (Mới) → <span class="text-success fw-bold">${genderVal ? "Nữ" : "Nam"}</span>`);
+                if (dobVal) changes.push(`• <b>Ngày sinh</b>: (Mới) → <span class="text-success fw-bold">${escapeHtml(dobVal)}</span>`);
+                if (addressVal) changes.push(`• <b>Địa chỉ</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(addressVal)}"</span>`);
+                changes.push(`• <b>Trạng thái</b>: (Mới) → <span class="text-success fw-bold">${onLeaveVal ? "Nghỉ học" : "Đang học"}</span>`);
+            } else if (currentMode === 'edit' && snapshotData) {
+                const oldId = (snapshotData.studentId ?? snapshotData.StudentId ?? '').toString().trim();
+                const oldFirstName = (snapshotData.firstName ?? snapshotData.FirstName ?? '').toString().trim();
+                const oldLastName = (snapshotData.lastName ?? snapshotData.LastName ?? '').toString().trim();
+                const oldGender = snapshotData.gender !== undefined ? !!snapshotData.gender : !!snapshotData.Gender;
+                const oldDob = (snapshotData.dob ?? snapshotData.Dob ?? '').toString().trim();
+                const oldAddress = (snapshotData.address ?? snapshotData.Address ?? '').toString().trim();
+                const oldOnLeave = snapshotData.onLeave !== undefined ? !!snapshotData.onLeave : !!snapshotData.OnLeave;
+
+                if (idVal !== oldId) {
+                    changes.push(`• <b>Mã sinh viên</b>: <span class="text-muted">"${escapeHtml(oldId)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(idVal)}"</span>`);
+                }
+                if (firstNameVal !== oldFirstName) {
+                    changes.push(`• <b>Họ</b>: <span class="text-muted">"${escapeHtml(oldFirstName)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(firstNameVal)}"</span>`);
+                }
+                if (lastNameVal !== oldLastName) {
+                    changes.push(`• <b>Tên</b>: <span class="text-muted">"${escapeHtml(oldLastName)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(lastNameVal)}"</span>`);
+                }
+                if (genderVal !== oldGender) {
+                    changes.push(`• <b>Phái</b>: <span class="text-muted">${oldGender ? "Nữ" : "Nam"}</span> → <span class="text-warning fw-bold">${genderVal ? "Nữ" : "Nam"}</span>`);
+                }
+                if (dobVal !== oldDob) {
+                    changes.push(`• <b>Ngày sinh</b>: <span class="text-muted">${escapeHtml(oldDob)}</span> → <span class="text-warning fw-bold">${escapeHtml(dobVal)}</span>`);
+                }
+                if (addressVal !== oldAddress) {
+                    changes.push(`• <b>Địa chỉ</b>: <span class="text-muted">"${escapeHtml(oldAddress)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(addressVal)}"</span>`);
+                }
+                if (onLeaveVal !== oldOnLeave) {
+                    changes.push(`• <b>Trạng thái</b>: <span class="text-muted">${oldOnLeave ? "Nghỉ học" : "Đang học"}</span> → <span class="text-warning fw-bold">${onLeaveVal ? "Nghỉ học" : "Đang học"}</span>`);
+                }
+            }
+            return changes;
+        }
+
+        function isFormDirty() {
+            return getFormChanges().length > 0;
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             const modalEl = document.getElementById('studentFormModal');
             if (modalEl) {
@@ -96,66 +155,27 @@
                     forceClose = false;
                 });
 
-                modalEl.addEventListener('hide.bs.modal', async (e) => {
-                    if (undoStack.length > 0 && !forceClose) {
-                        e.preventDefault();
-                        const isConfirmed = await window.showConfirmDialog(
-                            "Xác nhận Thoát",
-                            "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?",
-                            { confirmText: "Xác nhận Thoát", cancelText: "Trở lại", isDanger: true }
-                        );
-                        if (isConfirmed) {
-                            forceClose = true;
-                            studentModalInstance.hide();
-                        }
-                    }
+                // Đóng modal → xóa stack (giữ lại thay đổi đã ghi)
+                modalEl.addEventListener('hide.bs.modal', (e) => {
+                    if (forceClose) return;
+                    undoStack = [];
                 });
 
-                btnSaveModal?.addEventListener('click', async () => {
-                    if (undoStack.length === 0) {
-                        forceClose = true;
-                        studentModalInstance.hide();
-                        return;
-                    }
-
-                    const message = "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?";
-
-                    const isConfirmed = await window.showConfirmDialog(
-                        "Xác nhận Thoát", message,
-                        { confirmText: "Xác nhận", cancelText: "Trở lại" }
-                    );
-
-                    if (isConfirmed) {
-                        undoStack = [];
-                        forceClose = true;
-                        studentModalInstance.hide();
-                    }
+                btnSaveModal?.addEventListener('click', () => {
+                    undoStack = [];
+                    forceClose = true;
+                    studentModalInstance?.hide();
                 });
 
+                // "Hoàn tác tất cả và thoát" → undo rồi đóng
                 btnCancelModal?.addEventListener('click', async () => {
-                    if (undoStack.length === 0) {
-                        forceClose = true;
-                        studentModalInstance.hide();
-                        return;
-                    }
-
-                    const message = "Hành động này sẽ <b>Hoàn Tác toàn bộ</b> các thay đổi bạn vừa thực hiện trong phiên này.<br>Bạn có chắc chắn muốn xóa bỏ công sức vừa làm?";
-
-                    const isConfirmed = await window.showConfirmDialog(
-                        "Hoàn Tác & Đóng", message,
-                        { confirmText: "Xác nhận Hoàn tác", cancelText: "Giữ lại", isDanger: true }
-                    );
-
-                    if (isConfirmed) {
-                        btnCancelModal.disabled = true;
+                    if (undoStack.length > 0) {
                         while (undoStack.length > 0) {
                             await executeUndo();
                         }
-                        undoStack = [];
-                        forceClose = true;
-                        btnCancelModal.disabled = false;
-                        studentModalInstance.hide();
                     }
+                    forceClose = true;
+                    studentModalInstance?.hide();
                 });
 
                 // Modal Quick Search
@@ -189,7 +209,9 @@
                 deleteStudent(selectedStudentId);
             });
 
-            btnGhi?.addEventListener('click', submitStudentForm);
+            btnGhi?.addEventListener('click', async () => {
+                await saveStudent();
+            });
 
             btnPhucHoi?.addEventListener('click', async () => {
                 if (undoStack.length === 0) {
@@ -561,8 +583,8 @@
         }
 
         // SUBMIT
-        function submitStudentForm() {
-            if (!helpers.validateForm()) return;
+        async function saveStudent() {
+            if (!helpers.validateForm()) return false;
 
             const url = helpers.getMode() === 'add' ? '@RouteConstants.Student.AddPath' : '@RouteConstants.Student.EditPath';
 
@@ -579,59 +601,60 @@
                 password: fldPassword.value
             };
 
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'RequestVerificationToken': token
-                },
-                body: JSON.stringify(dataObj)
-            })
-                .then(res => res.json())
-                .then(res => {
-                    if (res.success) {
-                        window.showToast(res.message, 'success');
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(dataObj)
+                }).then(r => r.json());
 
-                        // UNDO LOGIC
-                        if (helpers.getMode() === 'add') {
-                            undoStack.push({ action: 'delete', payload: { studentId: dataObj.StudentId } });
-                        } else {
-                            if (snapshotData) {
-                                undoStack.push({
-                                    action: 'edit', payload: {
-                                        OldStudentId: dataObj.StudentId,
-                                        StudentId: snapshotData.studentId || snapshotData.StudentId,
-                                        FirstName: snapshotData.firstName || snapshotData.FirstName,
-                                        LastName: snapshotData.lastName || snapshotData.LastName,
-                                        Gender: snapshotData.gender !== undefined ? snapshotData.gender : snapshotData.Gender,
-                                        Dob: snapshotData.dob || snapshotData.Dob || '',
-                                        Address: snapshotData.address || snapshotData.Address || '',
-                                        ClassId: snapshotData.classId || snapshotData.ClassId,
-                                        OnLeave: snapshotData.onLeave !== undefined ? snapshotData.onLeave : snapshotData.OnLeave,
-                                        Password: snapshotData.password || snapshotData.Password || ''
-                                    }
-                                });
-                            }
-                        }
+                if (res.success) {
+                    window.showToast(res.message, 'success');
 
-                        // Reload table
-                        const className = document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', '').split(' (')[0];
-                        window.loadStudentsForClass(currentSelectedClassId, className);
-
-                        // Update snapshot
-                        snapshotData = { ...dataObj };
-                        selectedStudentId = dataObj.StudentId;
-                        originalStudentId = dataObj.StudentId;
-                        helpers.setMode('edit');
-                        helpers.showAlert('Ghi dữ liệu thành công', 'success');
+                    // UNDO LOGIC
+                    if (helpers.getMode() === 'add') {
+                        undoStack.push({ action: 'delete', payload: { studentId: dataObj.studentId } });
+                        resetToView();
                     } else {
-                        helpers.showAlert('Lỗi: ' + res.message, 'danger');
+                        if (snapshotData) {
+                            undoStack.push({
+                                action: 'edit', payload: {
+                                    oldStudentId: dataObj.studentId,
+                                    studentId: snapshotData.studentId || snapshotData.StudentId,
+                                    firstName: snapshotData.firstName || snapshotData.FirstName,
+                                    lastName: snapshotData.lastName || snapshotData.LastName,
+                                    gender: snapshotData.gender !== undefined ? snapshotData.gender : snapshotData.Gender,
+                                    dob: snapshotData.dob || snapshotData.Dob || '',
+                                    address: snapshotData.address || snapshotData.Address || '',
+                                    classId: snapshotData.classId || snapshotData.ClassId,
+                                    onLeave: snapshotData.onLeave !== undefined ? snapshotData.onLeave : snapshotData.OnLeave,
+                                    password: ''
+                                }
+                            });
+                        }
+                        // Update snapshot and switch back to view mode
+                        snapshotData = { ...dataObj };
+                        selectedStudentId = dataObj.studentId;
+                        originalStudentId = dataObj.studentId;
+                        helpers.setMode('view');
                     }
-                })
-                .catch(err => {
-                    console.error(err);
-                    helpers.showAlert("Lỗi kết nối.", 'danger');
-                });
+
+                    // Reload table
+                    const className = document.getElementById('lblSelectedClass').innerText.replace('- Lớp: ', '').split(' (')[0];
+                    window.loadStudentsForClass(currentSelectedClassId, className);
+                    return true;
+                } else {
+                    helpers.showAlert('Lỗi: ' + res.message, 'danger');
+                    return false;
+                }
+            } catch (err) {
+                console.error(err);
+                helpers.showAlert("Lỗi kết nối.", 'danger');
+                return false;
+            }
         }
 
         // DELETE

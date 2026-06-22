@@ -324,6 +324,20 @@
                     reportForm.action = actionUrl;
                     reportFormBody.innerHTML = formHtml;
 
+                    // Auto-fill niên khóa mới nhất
+                    const schoolYearInput = reportFormBody.querySelector('input[name="schoolYear"]');
+                    if (schoolYearInput) {
+                        const datalist = document.getElementById('schoolYearsDataList');
+                        if (datalist) {
+                            const options = Array.from(datalist.options).map(o => o.value).filter(v => v);
+                            if (options.length > 0) {
+                                // Sort descending and pick the latest
+                                options.sort((a, b) => b.localeCompare(a));
+                                schoolYearInput.value = options[0];
+                            }
+                        }
+                    }
+
                     // Initialize Select2 on the injected selects
                     $('#reportFormBody .form-select').select2({
                         theme: 'bootstrap-5',

@@ -75,67 +75,69 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
                 forceClose = false;
             });
 
-            // Chặn đóng modal nếu còn stack
-            modalEl.addEventListener('hide.bs.modal', async (e) => {
-                if (undoStack.length > 0 && !forceClose) {
-                    e.preventDefault();
-                    const isConfirmed = await window.showConfirmDialog(
-                        "Xác nhận Thoát",
-                        "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?",
-                        { confirmText: "Xác nhận Thoát", cancelText: "Trở lại", isDanger: true }
-                    );
-                    if (isConfirmed) {
-                        forceClose = true;
-                        subjectModalInstance.hide();
+            function getFormChanges() {
+                const changes = [];
+                const mode = helpers.getMode();
+                if (mode === 'view') return changes;
+
+                const idVal = fldSubjectId.value.trim();
+                const nameVal = fldSubjectName.value.trim();
+                const theoryVal = fldTheoryHours.value.trim();
+                const practiceVal = fldPracticeHours.value.trim();
+
+                if (mode === 'add') {
+                    if (idVal) changes.push(`• <b>Mã môn học</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(idVal)}"</span>`);
+                    if (nameVal) changes.push(`• <b>Tên môn học</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(nameVal)}"</span>`);
+                    if (theoryVal) changes.push(`• <b>Số tiết Lý thuyết</b>: (Mới) → <span class="text-success fw-bold">${escapeHtml(theoryVal)}</span>`);
+                    if (practiceVal) changes.push(`• <b>Số tiết Thực hành</b>: (Mới) → <span class="text-success fw-bold">${escapeHtml(practiceVal)}</span>`);
+                } else if (mode === 'edit' && snapshotData) {
+                    const oldId = (snapshotData.subjectId ?? '').toString().trim();
+                    const oldName = (snapshotData.subjectName ?? '').toString().trim();
+                    const oldTheory = (snapshotData.theoryHours ?? '').toString().trim();
+                    const oldPractice = (snapshotData.practiceHours ?? '').toString().trim();
+
+                    if (idVal !== oldId) {
+                        changes.push(`• <b>Mã môn học</b>: <span class="text-muted">"${escapeHtml(oldId)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(idVal)}"</span>`);
+                    }
+                    if (nameVal !== oldName) {
+                        changes.push(`• <b>Tên môn học</b>: <span class="text-muted">"${escapeHtml(oldName)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(nameVal)}"</span>`);
+                    }
+                    if (theoryVal !== oldTheory) {
+                        changes.push(`• <b>Số tiết Lý thuyết</b>: <span class="text-muted">${escapeHtml(oldTheory)}</span> → <span class="text-warning fw-bold">${escapeHtml(theoryVal)}</span>`);
+                    }
+                    if (practiceVal !== oldPractice) {
+                        changes.push(`• <b>Số tiết Thực hành</b>: <span class="text-muted">${escapeHtml(oldPractice)}</span> → <span class="text-warning fw-bold">${escapeHtml(practiceVal)}</span>`);
                     }
                 }
+
+                return changes;
+            }
+
+            function isFormDirty() {
+                return getFormChanges().length > 0;
+            }
+
+            // Đóng modal → xóa stack (giữ lại thay đổi đã ghi)
+            modalEl.addEventListener('hide.bs.modal', (e) => {
+                if (forceClose) return;
+                undoStack = [];
             });
 
-            btnSaveModal?.addEventListener('click', async () => {
-                if (undoStack.length === 0) {
-                    forceClose = true;
-                    subjectModalInstance?.hide();
-                    return;
-                }
-
-                const message = "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?";
-                
-                const isConfirmed = await window.showConfirmDialog(
-                    "Xác nhận Thoát", message,
-                    { confirmText: "Xác nhận", cancelText: "Trở lại" }
-                );
-                
-                if (isConfirmed) {
-                    undoStack = [];
-                    forceClose = true;
-                    subjectModalInstance?.hide();
-                }
+            btnSaveModal?.addEventListener('click', () => {
+                undoStack = [];
+                forceClose = true;
+                subjectModalInstance?.hide();
             });
 
+            // "Hoàn tác tất cả và thoát" → undo rồi đóng
             btnCancelModal?.addEventListener('click', async () => {
-                if (undoStack.length === 0) {
-                    forceClose = true;
-                    subjectModalInstance?.hide();
-                    return;
-                }
-
-                const message = "Hành động này sẽ <b>Hoàn Tác toàn bộ</b> các thay đổi bạn vừa thực hiện trong phiên này.<br>Bạn có chắc chắn muốn xóa bỏ công sức vừa làm?";
-                
-                const isConfirmed = await window.showConfirmDialog(
-                    "Hoàn Tác & Đóng", message,
-                    { confirmText: "Xác nhận Hoàn tác", cancelText: "Giữ lại", isDanger: true }
-                );
-
-                if (isConfirmed) {
-                    btnCancelModal.disabled = true;
-                    while(undoStack.length > 0) {
+                if (undoStack.length > 0) {
+                    while (undoStack.length > 0) {
                         await executeUndo();
                     }
-                    undoStack = [];
-                    forceClose = true;
-                    btnCancelModal.disabled = false;
-                    subjectModalInstance?.hide();
                 }
+                forceClose = true;
+                subjectModalInstance?.hide();
             });
 
             // Reset khi đóng modal
@@ -168,16 +170,14 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
                 deleteSubject(selectedId, fldSubjectName.value);
             });
 
-            // ── Nút Ghi ──────────────────────────────────────────────
-            btnGhi?.addEventListener('click', async () => {
-                if (!helpers.validateForm() || isSubmitting) return;
+            async function saveSubject() {
+                if (!helpers.validateForm() || isSubmitting) return false;
 
                 isSubmitting = true;
-                btnGhi.disabled = true;
+                if (btnGhi) btnGhi.disabled = true;
 
                 const safeHours = (el, fallback) => {
                     const v = parseInt(el.value, 10);
-                    // Use fallback if current value is NaN (empty)
                     return isNaN(v) ? (parseInt(fallback, 10) || 0) : v;
                 };
 
@@ -196,6 +196,7 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
                         if (helpers.getMode() === 'add') {
                             addRowToTables(payload);
                             undoStack.push({ action: 'delete', payload: { subjectId: payload.subjectId } });
+                            resetToView();
                         } else {
                             updateRowInTables(payload, originalId);
                             if (snapshotData) {
@@ -210,22 +211,29 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
                                     } 
                                 });
                             }
+                            snapshotData = { ...payload };
+                            selectedId = payload.subjectId;
+                            originalId = payload.subjectId;
+                            helpers.setMode('view');
+                            highlightMiniRow(selectedId);
                         }
-
-                        snapshotData = { ...payload };
-                        selectedId = payload.subjectId;
-                        originalId = payload.subjectId;
-                        helpers.setMode('edit');
-                        highlightMiniRow(selectedId);
+                        return true;
                     } else {
                         helpers.showAlert(res.message, 'danger');
+                        return false;
                     }
                 } catch (err) {
                     helpers.showAlert('Lỗi: ' + err.message, 'danger');
+                    return false;
                 } finally {
                     isSubmitting = false;
-                    btnGhi.disabled = false;
+                    if (btnGhi) btnGhi.disabled = false;
                 }
+            }
+
+            // ── Nút Ghi ──────────────────────────────────────────────
+            btnGhi?.addEventListener('click', async () => {
+                await saveSubject();
             });
 
             // ── Nút Phục hồi ─────────────────────────────────────────
@@ -252,10 +260,15 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
                     const name = editBtn.dataset.name;
                     const theo = editBtn.dataset.theory;
                     const prac = editBtn.dataset.practice;
+                    const canDelete = editBtn.dataset.canDelete !== 'false';
                     subjectModalInstance?.show();
                     setTimeout(() => {
-                        helpers.setMode('edit');
                         populateFields(id, name, theo, prac);
+                        helpers.setMode('edit');
+                        if (btnXoa) {
+                            btnXoa.disabled = !canDelete;
+                            btnXoa.title = canDelete ? "Xóa bản ghi đang chọn" : "Không thể xóa môn học này vì đã có Lớp Tín Chỉ mở môn này";
+                        }
                         highlightMiniRow(id);
                         helpers.hideAlert();
                     }, 200);
@@ -294,8 +307,13 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
             function selectMiniRow(row) {
                 deselectMiniRow();
                 row.classList.add('table-active', 'fw-semibold');
-                helpers.setMode('edit');
                 populateFields(row.dataset.id, row.dataset.name, row.dataset.theory, row.dataset.practice);
+                helpers.setMode('edit');
+                const canDelete = row.dataset.canDelete !== 'false';
+                if (btnXoa) {
+                    btnXoa.disabled = !canDelete;
+                    btnXoa.title = canDelete ? "Xóa bản ghi đang chọn" : "Không thể xóa môn học này vì đã có Lớp Tín Chỉ mở môn này";
+                }
                 helpers.hideAlert();
             }
 
@@ -313,7 +331,7 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
             async function deleteSubject(id, name) {
                 const isConfirmed = await window.showConfirmDialog(
                     "Xác nhận xóa môn học",
-                    `Bạn có chắc chắn muốn xóa môn học <b>${name} (${id})</b>?<br>Thuộc tính này không thể khôi phục tự động theo Stack.`,
+                    `Bạn có chắc chắn muốn xóa môn học <b>${name} (${id})</b>?<br>Hành động này không thể hoàn tác.`,
                     { confirmText: "Xóa", cancelText: "Hủy", isDanger: true }
                 );
                 
@@ -374,12 +392,42 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
             // ── DOM table helpers ─────────────────────────────────────
 
             function addRowToTables(p) {
+                // Main table: insert in alphabetical order by subject name
                 const tbody = document.getElementById('subjectTableBody');
                 const empty = tbody.querySelector('td[colspan]');
                 if (empty) empty.closest('tr').remove();
                 
-                tbody.insertAdjacentHTML('beforeend', mainRowHtml(p));
-                document.getElementById('miniSubjectBody').insertAdjacentHTML('beforeend', miniRowHtml(p));
+                const newName = (p.subjectName || '').toLowerCase();
+                const existingRows = [...tbody.querySelectorAll('tr[data-id]')];
+                let inserted = false;
+                for (const row of existingRows) {
+                    const rowName = (row.dataset.name || '').toLowerCase();
+                    if (newName.localeCompare(rowName, 'vi') < 0) {
+                        row.insertAdjacentHTML('beforebegin', mainRowHtml(p));
+                        inserted = true;
+                        break;
+                    }
+                }
+                if (!inserted) {
+                    tbody.insertAdjacentHTML('beforeend', mainRowHtml(p));
+                }
+
+                // Mini table: same sorted insert
+                const miniBody = document.getElementById('miniSubjectBody');
+                const miniRows = [...miniBody.querySelectorAll('tr[data-id]')];
+                let miniInserted = false;
+                for (const row of miniRows) {
+                    const rowName = (row.dataset.name || '').toLowerCase();
+                    if (newName.localeCompare(rowName, 'vi') < 0) {
+                        row.insertAdjacentHTML('beforebegin', miniRowHtml(p));
+                        miniInserted = true;
+                        break;
+                    }
+                }
+                if (!miniInserted) {
+                    miniBody.insertAdjacentHTML('beforeend', miniRowHtml(p));
+                }
+
                 updateCount(1);
             }
 
@@ -397,37 +445,46 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
             }
 
             function updateCount(delta) {
-                const el = document.getElementById('visibleCount');
-                if (el) el.textContent = String(parseInt(el.textContent || '0', 10) + delta);
+                ['visibleCount', 'visibleCountFilter'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = String(parseInt(el.textContent || '0', 10) + delta);
+                });
+                const tc = document.getElementById('totalCount');
+                if (tc) tc.textContent = String(parseInt(tc.textContent || '0', 10) + delta);
             }
 
             function mainRowHtml(p) {
-                return `<tr data-id="${escapeHtml(p.subjectId)}" data-name="${escapeHtml(p.subjectName)}"
-                            data-theory="${escapeHtml(p.theoryHours)}" data-practice="${escapeHtml(p.practiceHours)}"
-                            class="hover-row transition-base animate__animated animate__fadeIn">
+                return `<tr class="hover-row animate__animated animate__fadeIn transition-base" 
+                            data-id="${escapeHtml(p.subjectId)}" data-name="${escapeHtml(p.subjectName)}"
+                            data-theory="${escapeHtml(p.theoryHours)}" data-practice="${escapeHtml(p.practiceHours)}">
                         <td class="ps-4">
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2 py-1 rounded-pill shadow-sm">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill shadow-sm font-monospace tabular-nums">
                                 ${escapeHtml(p.subjectId)}
                             </span>
                         </td>
                         <td>
-                            <div class="fw-bold text-dark">${escapeHtml(p.subjectName)}</div>
-                            <div class="small text-muted"><i class="bi bi-clock-history me-1"></i>Tổng: ${parseInt(p.theoryHours) + parseInt(p.practiceHours)} tiết</div>
+                            <div class="fw-bold text-dark mb-1">${escapeHtml(p.subjectName)}</div>
+                            <div class="small text-muted d-flex align-items-center gap-2 opacity-75">
+                                <i class="bi bi-clock-history"></i>
+                                <span>Tổng: <strong class="text-dark">${parseInt(p.theoryHours) + parseInt(p.practiceHours)}</strong> tiết</span>
+                            </div>
                         </td>
                         <td class="text-center">
-                            <span class="badge bg-light text-dark border tabular-nums rounded-3 px-2 py-1">${escapeHtml(p.theoryHours)}</span>
+                            <span class="badge bg-info-subtle text-info border border-info-subtle tabular-nums rounded-pill px-3 py-1 shadow-sm">${escapeHtml(p.theoryHours)}</span>
                         </td>
                         <td class="text-center">
-                            <span class="badge bg-light text-dark border tabular-nums rounded-3 px-2 py-1">${escapeHtml(p.practiceHours)}</span>
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle tabular-nums rounded-pill px-3 py-1 shadow-sm">${escapeHtml(p.practiceHours)}</span>
                         </td>
                         <td class="text-end pe-4">
                             <div class="d-flex justify-content-end gap-1">
-                                <button class="btn btn-sm btn-outline-primary btn-edit-row shadow-none hover-scale rounded-3" title="Sửa"
+                                <button class="btn btn-sm btn-outline-primary btn-edit-row shadow-none hover-scale rounded-3" 
+                                        title="Sửa môn học"
                                         data-id="${escapeHtml(p.subjectId)}" data-name="${escapeHtml(p.subjectName)}"
                                         data-theory="${escapeHtml(p.theoryHours)}" data-practice="${escapeHtml(p.practiceHours)}">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-none hover-scale rounded-3" title="Xóa"
+                                <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-none hover-scale rounded-3" 
+                                        title="Xóa môn học"
                                         data-id="${escapeHtml(p.subjectId)}" data-name="${escapeHtml(p.subjectName)}">
                                     <i class="bi bi-trash"></i>
                                 </button>
@@ -440,14 +497,14 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
                 return `<tr class="mini-row transition-base" role="button"
                             data-id="${escapeHtml(p.subjectId)}" data-name="${escapeHtml(p.subjectName)}" 
                             data-theory="${escapeHtml(p.theoryHours)}" data-practice="${escapeHtml(p.practiceHours)}">
-                        <td class="fw-bold font-monospace text-primary">
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2">
+                        <td class="ps-3">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill font-monospace tabular-nums">
                                 ${escapeHtml(p.subjectId)}
                             </span>
                         </td>
-                        <td class="fw-medium">${escapeHtml(p.subjectName)}</td>
-                        <td class="text-center text-muted tabular-nums">${escapeHtml(p.theoryHours)}</td>
-                        <td class="text-center text-muted tabular-nums">${escapeHtml(p.practiceHours)}</td>
+                        <td class="fw-bold text-dark">${escapeHtml(p.subjectName)}</td>
+                        <td class="text-center tabular-nums text-muted">${escapeHtml(p.theoryHours)}</td>
+                        <td class="text-center tabular-nums text-muted pe-3">${escapeHtml(p.practiceHours)}</td>
                     </tr>`;
             }
 
@@ -472,8 +529,24 @@ MODAL: Nhập danh mục môn học / Xác nhận xóa
                     row.style.display = match ? '' : 'none';
                     if (match) vis++;
                 });
-                const vc = document.getElementById('visibleCount');
-                if (vc) vc.textContent = String(vis);
+                ['visibleCount', 'visibleCountFilter'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = String(vis);
+                });
+            });
+
+            // Modal Client side search
+            const modalSubjectSearch = document.getElementById('modalSubjectSearch');
+            modalSubjectSearch?.addEventListener('input', () => {
+                const q = modalSubjectSearch.value.trim().toLowerCase();
+                document.querySelectorAll('#miniSubjectBody tr.mini-row').forEach(row => {
+                    const id = (row.dataset.id ?? '').toLowerCase();
+                    const name = (row.dataset.name ?? '').toLowerCase();
+                    const theory = (row.dataset.theory ?? '').toLowerCase();
+                    const practice = (row.dataset.practice ?? '').toLowerCase();
+                    const match = id.includes(q) || name.includes(q) || theory.includes(q) || practice.includes(q);
+                    row.style.display = match ? '' : 'none';
+                });
             });
 
             // Utils
