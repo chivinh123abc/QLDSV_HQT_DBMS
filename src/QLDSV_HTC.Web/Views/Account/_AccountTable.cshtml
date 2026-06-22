@@ -159,9 +159,11 @@
                                 </button>
                                 @if (isPGV)
                                 {
-                                    <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-none hover-scale rounded-3" 
-                                            title="Xóa tài khoản"
-                                            data-login="@a.LoginName" data-user="@a.UserName">
+                                    var isSelf = currentLoginName != null && a.UserName != null && a.UserName.Trim().Equals(currentLoginName, StringComparison.OrdinalIgnoreCase);
+                                    <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-none hover-scale rounded-3 @(isSelf ? "disabled" : "")" 
+                                            title="@(isSelf ? "Không thể xóa chính mình" : "Xóa tài khoản")"
+                                            data-login="@a.LoginName" data-user="@a.UserName"
+                                            @(isSelf ? "disabled" : "")>
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 }
@@ -266,11 +268,27 @@
                 accountModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
             }
 
+            const btnSaveModal = modalEl?.querySelector('.btn-save-modal');
+            const btnCancelModal = modalEl?.querySelector('.btn-cancel-modal');
+
             const fldLecturer = document.getElementById('fldLecturer');
             const fldLecturerId = document.getElementById('fldAccLecturerId');
             const fldLoginName = document.getElementById('fldLoginName');
             const fldPassword = document.getElementById('fldPassword');
             const fldRole = document.getElementById('fldRole');
+            const btnTogglePassword = document.getElementById('btnTogglePassword');
+
+            // ── Toggle hiện/ẩn mật khẩu ──
+            if (btnTogglePassword && fldPassword) {
+                btnTogglePassword.addEventListener('click', () => {
+                    const isPassword = fldPassword.type === 'password';
+                    fldPassword.type = isPassword ? 'text' : 'password';
+                    const icon = btnTogglePassword.querySelector('i');
+                    if (icon) {
+                        icon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+                    }
+                });
+            }
 
             const btnThem = document.getElementById('btnAccountFormThem');
             const btnXoa = document.getElementById('btnAccountFormXoa');
@@ -283,78 +301,78 @@
                 modeLabelEl: document.getElementById('accFormModeLabel'),
                 buttons: { them: btnThem, xoa: btnXoa, ghi: btnGhi, phucHoi: btnPhucHoi, huy: btnHuy },
                 allFields: [fldLecturer, fldLoginName, fldPassword, fldRole],
-                requiredFields: [fldLoginName, fldPassword],
+                requiredFields: [fldLoginName, fldPassword, fldRole],
                 getSelectedId: () => selectedLogin,
             });
 
+            function getFormChanges() {
+                const changes = [];
+                const currentMode = helpers.getMode();
+                if (currentMode === 'view') return changes;
+
+                const loginNameVal = fldLoginName.value.trim();
+                const passwordVal = fldPassword.value.trim();
+                const roleVal = fldRole ? fldRole.value.trim() : '';
+                const lecturerIdVal = fldLecturerId ? fldLecturerId.value.trim() : '';
+
+                if (currentMode === 'add') {
+                    if (loginNameVal) changes.push(`• <b>Tên đăng nhập</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(loginNameVal)}"</span>`);
+                    if (passwordVal) changes.push(`• <b>Mật khẩu</b>: (Mới) → <span class="text-success fw-bold">"******"</span>`);
+                    if (roleVal) changes.push(`• <b>Nhóm quyền</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(roleVal)}"</span>`);
+                    if (lecturerIdVal) {
+                        const opt = fldLecturer ? fldLecturer.options[fldLecturer.selectedIndex] : null;
+                        changes.push(`• <b>Giảng viên</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(opt ? opt.text : lecturerIdVal)}"</span>`);
+                    }
+                } else if (currentMode === 'edit' && snapshotData) {
+                    const oldLoginName = (snapshotData.loginName ?? '').toString().trim();
+                    const oldRole = (snapshotData.group ?? '').toString().trim();
+                    const oldLecturerId = (snapshotData.userName ?? '').toString().trim();
+
+                    if (loginNameVal !== oldLoginName) {
+                        changes.push(`• <b>Tên đăng nhập</b>: <span class="text-muted">"${escapeHtml(oldLoginName)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(loginNameVal)}"</span>`);
+                    }
+                    if (passwordVal) {
+                        changes.push(`• <b>Mật khẩu</b>: <span class="text-warning fw-bold">(Thay đổi)</span>`);
+                    }
+                    if (roleVal !== oldRole) {
+                        changes.push(`• <b>Nhóm quyền</b>: <span class="text-muted">"${escapeHtml(oldRole)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(roleVal)}"</span>`);
+                    }
+                    if (lecturerIdVal !== oldLecturerId) {
+                        const optOld = fldLecturer ? fldLecturer.querySelector(`option[value="${oldLecturerId}"]`) : null;
+                        const optNew = fldLecturer ? fldLecturer.options[fldLecturer.selectedIndex] : null;
+                        changes.push(`• <b>Giảng viên</b>: <span class="text-muted">"${escapeHtml(optOld ? optOld.text : oldLecturerId)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(optNew ? optNew.text : lecturerIdVal)}"</span>`);
+                    }
+                }
+                return changes;
+            }
+
+            function isFormDirty() {
+                return getFormChanges().length > 0;
+            }
+
             if (!modalEl) return;
 
-            const btnCancelModal = modalEl.querySelector('.btn-cancel-modal');
-            const btnSaveModal = modalEl.querySelector('.btn-save-modal');
+             // Đóng modal → xóa stack (giữ lại thay đổi đã ghi)
+             modalEl.addEventListener('hide.bs.modal', (e) => {
+                 if (forceClose) return;
+                 undoStack = [];
+             });
 
-            // Mở modal → reset
-            document.getElementById('btnOpenAccountForm')?.addEventListener('click', resetToView);
-
-            // Mở modal → clear stack
-            modalEl.addEventListener('show.bs.modal', () => {
+            btnSaveModal?.addEventListener('click', () => {
                 undoStack = [];
-                forceClose = false;
+                forceClose = true;
+                accountModalInstance?.hide();
             });
 
-            // Chặn đóng modal nếu còn stack
-            modalEl.addEventListener('hide.bs.modal', async (e) => {
-                if (undoStack.length > 0 && !forceClose) {
-                    e.preventDefault();
-                    const isConfirmed = await window.showConfirmDialog(
-                        "Xác nhận Thoát",
-                        "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?",
-                        { confirmText: "Xác nhận Thoát", cancelText: "Trở lại", isDanger: true }
-                    );
-                    if (isConfirmed) {
-                        forceClose = true;
-                        accountModalInstance.hide();
-                    }
-                }
-            });
-
-            btnSaveModal?.addEventListener('click', async () => {
-                const message = undoStack.length > 0 
-                    ? "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?"
-                    : "Bạn có chắc chắn muốn đóng cửa sổ không?";
-                
-                const isConfirmed = await window.showConfirmDialog(
-                    "Xác nhận Thoát", message,
-                    { confirmText: "Xác nhận", cancelText: "Trở lại" }
-                );
-                
-                if (isConfirmed) {
-                    undoStack = [];
-                    forceClose = true;
-                    accountModalInstance.hide();
-                }
-            });
-
+            // "Hoàn tác tất cả và thoát" → undo rồi đóng
             btnCancelModal?.addEventListener('click', async () => {
-                const isDanger = undoStack.length > 0;
-                const message = isDanger
-                    ? "Hành động này sẽ <b>Hoàn Tác toàn bộ</b> các thay đổi bạn vừa thực hiện trong phiên này.<br>Bạn có chắc chắn muốn xóa bỏ công sức vừa làm?"
-                    : "Bạn chưa thực hiện thay đổi nào cần hoàn tác.<br>Đóng cửa sổ ngay bây giờ?";
-                
-                const isConfirmed = await window.showConfirmDialog(
-                    "Hoàn Tác & Đóng", message,
-                    { confirmText: isDanger ? "Xác nhận Hoàn tác" : "Đóng cửa sổ", cancelText: "Giữ lại", isDanger: isDanger }
-                );
-
-                if (isConfirmed) {
-                    btnCancelModal.disabled = true;
-                    while(undoStack.length > 0) {
+                if (undoStack.length > 0) {
+                    while (undoStack.length > 0) {
                         await executeUndo();
                     }
-                    undoStack = [];
-                    forceClose = true;
-                    btnCancelModal.disabled = false;
-                    accountModalInstance.hide();
                 }
+                forceClose = true;
+                accountModalInstance?.hide();
             });
 
             modalEl.addEventListener('hidden.bs.modal', resetToView);
@@ -391,6 +409,9 @@
                 toggleAddFields(true);
                 fldLoginName.disabled = false;
 
+                // Ẩn GV đã có tài khoản
+                filterLecturerOptions();
+
                 // Ràng buộc cho nhóm KHOA: Chỉ được tạo nhóm KHOA
                 if (CURRENT_GROUP === 'KHOA') {
                     if (fldRole) {
@@ -399,8 +420,11 @@
                     }
                 }
 
+                // Mật khẩu mặc định
+                fldPassword.value = '12345678';
+
                 fldLoginName.focus();
-                helpers.showAlert('Nhập thông tin tài khoản mới rồi nhấn <b>Ghi</b> để lưu.', 'info');
+                helpers.showAlert('Nhập thông tin tài khoản mới rồi nhấn <b>Ghi</b> để lưu. Mật khẩu mặc định: <b>12345678</b>.', 'info');
             });
 
             // ── Nút Xóa ──
@@ -409,9 +433,7 @@
                 doDelete(selectedLogin);
             });
 
-            // ── Nút Ghi ──
-            btnGhi?.addEventListener('click', async () => {
-                if (isSubmitting) return;
+            async function saveAccount() {
                 const mode = helpers.getMode();
 
                 let tempPassword = null;
@@ -430,10 +452,34 @@
                     fldPassword.value = ''; // Khôi phục lại
                 }
 
-                if (!isValid) return;
+                if (!isValid || isSubmitting) return false;
+
+                // Validate cụ thể cho mode add
+                if (mode === 'add') {
+                    if (!fldLoginName.value.trim()) {
+                        helpers.showAlert('Vui lòng nhập <b>Tên đăng nhập</b>.', 'danger');
+                        fldLoginName.focus();
+                        return false;
+                    }
+                    if (!fldPassword.value.trim()) {
+                        helpers.showAlert('Vui lòng nhập <b>Mật khẩu</b>.', 'danger');
+                        fldPassword.focus();
+                        return false;
+                    }
+                    if (fldPassword.value.trim().length < 8) {
+                        helpers.showAlert('Mật khẩu phải chứa <b>ít nhất 8 ký tự</b>.', 'danger');
+                        fldPassword.focus();
+                        return false;
+                    }
+                    if (!fldRole.value) {
+                        helpers.showAlert('Vui lòng chọn <b>Nhóm quyền</b>.', 'danger');
+                        fldRole.focus();
+                        return false;
+                    }
+                }
 
                 isSubmitting = true;
-                btnGhi.disabled = true;
+                if (btnGhi) btnGhi.disabled = true;
                 
                 let url, payload;
 
@@ -449,7 +495,7 @@
                     payload = {
                         oldLoginName: originalLogin,
                         newLoginName: fldLoginName.value.trim() !== snapshotData.loginName ? fldLoginName.value.trim() : null,
-                        newPassword: fldPassword.value,
+                        newPassword: fldPassword.value.trim() || null,
                         newUserName: fldLecturerId?.value.trim() !== snapshotData.userName ? fldLecturerId?.value.trim() : null,
                         newRole: fldRole.value !== snapshotData.group ? fldRole.value : null
                     };
@@ -460,11 +506,48 @@
                     const res = await fetchJson(url, payload);
 
                     if (res.forceLogout === true) {
-                        window.showToast(res.message || "Mật khẩu của bạn đã thay đổi. Đang đăng xuất...", 'warning');
+                        // Hiển thị modal xác nhận đăng xuất
+                        const logoutUrl = '@Url.Action("Login", "Account")';
+                        let modalEl = document.getElementById('forceLogoutModal');
+                        if (!modalEl) {
+                            modalEl = document.createElement('div');
+                            modalEl.id = 'forceLogoutModal';
+                            modalEl.className = 'modal fade';
+                            modalEl.setAttribute('data-bs-backdrop', 'static');
+                            modalEl.setAttribute('data-bs-keyboard', 'false');
+                            modalEl.setAttribute('tabindex', '-1');
+                            modalEl.innerHTML = `
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow-lg">
+                                        <div class="modal-header bg-warning text-dark border-0">
+                                            <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Thông báo</h5>
+                                        </div>
+                                        <div class="modal-body py-4">
+                                            <p class="fs-5 mb-2 text-center" id="forceLogoutMsg"></p>
+                                            <p class="text-muted text-center mb-0">Nhấn <b>Đồng ý</b> để đăng nhập lại.</p>
+                                        </div>
+                                        <div class="modal-footer border-0 justify-content-center">
+                                            <button type="button" class="btn btn-primary px-4 fw-bold" id="btnForceLogoutOk">
+                                                <i class="bi bi-box-arrow-right me-1"></i> Đồng ý
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>`;
+                            document.body.appendChild(modalEl);
+                            document.getElementById('btnForceLogoutOk').addEventListener('click', () => {
+                                window.location.href = logoutUrl;
+                            });
+                        }
+                        document.getElementById('forceLogoutMsg').textContent = res.message || "Thông tin tài khoản đã thay đổi. Vui lòng đăng nhập lại.";
+                        
+                        // Đóng modal tài khoản trước
+                        const accModal = bootstrap.Modal.getInstance(document.getElementById('accountFormModal'));
+                        if (accModal) accModal.hide();
+                        
                         setTimeout(() => {
-                            window.location.href = '@Url.Action("Login", "Account")';
-                        }, 3000);
-                        return;
+                            new bootstrap.Modal(modalEl).show();
+                        }, 300);
+                        return true;
                     }
 
                     if (res.success) {
@@ -472,12 +555,7 @@
                         if (mode === 'add') {
                             addRowToTable(payload);
                             undoStack.push({ action: 'delete', payload: { loginName: payload.loginName } });
-                            
-                            snapshotData = { ...payload, group: payload.role };
-                            selectedLogin = payload.loginName;
-                            originalLogin = payload.loginName;
-                            helpers.setMode('edit');
-                            highlightMiniRow(selectedLogin);
+                            resetToView();
                         } else {
                             if (res.message !== "Không có thay đổi nào được thực hiện.") {
                                 const newPayload = { ...snapshotData };
@@ -503,18 +581,26 @@
                                 selectedLogin = newPayload.loginName;
                                 originalLogin = newPayload.loginName;
                             }
-                            helpers.setMode('edit');
+                            helpers.setMode('view');
                             highlightMiniRow(selectedLogin);
                         }
+                        return true;
                     } else {
                         helpers.showAlert(res.message, 'danger');
+                        return false;
                     }
                 } catch (err) {
                     helpers.showAlert('Lỗi: ' + err.message, 'danger');
+                    return false;
                 } finally {
                     isSubmitting = false;
-                    btnGhi.disabled = false;
+                    if (btnGhi) btnGhi.disabled = false;
                 }
+            }
+
+            // ── Nút Ghi ──
+            btnGhi?.addEventListener('click', async () => {
+                await saveAccount();
             });
 
             // ── Nút Phục hồi ──
@@ -556,15 +642,31 @@
                 clearFields(); helpers.clearValidation(); helpers.hideAlert(); deselectMiniRow();
                 helpers.setMode('view');
                 toggleAddFields(false);
+                resetLecturerOptions();
             }
 
             function toggleAddFields(show) {
                 const reqPasswordStar = document.getElementById('reqPasswordStar');
+                const mode = helpers.getMode();
+
+                if (mode === 'view') {
+                    // Chế độ Xem: khóa tất cả
+                    fldLoginName.disabled = true;
+                    fldPassword.disabled = true;
+                    if(fldLecturer) fldLecturer.disabled = true;
+                    if(fldRole) fldRole.disabled = true;
+                    if(reqPasswordStar) reqPasswordStar.style.display = '';
+                    fldPassword.placeholder = "Nhập mật khẩu";
+                    return;
+                }
+
+                // Chế độ Thêm / Sửa: mở khóa
                 fldLoginName.disabled = false;
+                fldPassword.disabled = false;
                 if(fldLecturer) fldLecturer.disabled = false;
                 if(fldRole) fldRole.disabled = false;
 
-                if (!show && helpers.getMode() === 'edit') {
+                if (!show && mode === 'edit') {
                     if(reqPasswordStar) reqPasswordStar.style.display = 'none';
                     fldPassword.placeholder = "Bỏ trống nếu không muốn đổi mật khẩu";
                 } else {
@@ -596,9 +698,44 @@
             function clearFields() {
                 fldLoginName.value = '';
                 fldPassword.value = '';
+                fldPassword.type = 'password';
+                if (btnTogglePassword) {
+                    const icon = btnTogglePassword.querySelector('i');
+                    if (icon) icon.className = 'bi bi-eye';
+                }
                 if (fldRole) fldRole.value = '';
                 if (fldLecturer) fldLecturer.value = '';
                 if (fldLecturerId) fldLecturerId.value = '';
+            }
+
+            function filterLecturerOptions(excludeId) {
+                if (!fldLecturer) return;
+                const exclude = (excludeId || '').trim().toUpperCase();
+                // Collect GV IDs already linked to accounts
+                const usedGvIds = new Set();
+                document.querySelectorAll('#miniAccountBody tr.mini-row').forEach(row => {
+                    const gvId = (row.dataset.gvId || '').trim();
+                    if (gvId) usedGvIds.add(gvId.toUpperCase());
+                });
+                Array.from(fldLecturer.options).forEach(opt => {
+                    if (!opt.value) return; // skip placeholder
+                    const optId = opt.value.trim().toUpperCase();
+                    if (usedGvIds.has(optId) && optId !== exclude) {
+                        opt.style.display = 'none';
+                        opt.disabled = true;
+                    } else {
+                        opt.style.display = '';
+                        opt.disabled = false;
+                    }
+                });
+            }
+
+            function resetLecturerOptions() {
+                if (!fldLecturer) return;
+                Array.from(fldLecturer.options).forEach(opt => {
+                    opt.style.display = '';
+                    opt.disabled = false;
+                });
             }
 
             function selectMiniRow(row) {
@@ -610,6 +747,7 @@
                 populateForEdit(ds.login, ds.user, ds.group, ds.gvId, ds.gvName);
                 helpers.setMode('edit');
                 highlightMiniRow(ds.login);
+                filterLecturerOptions(ds.gvId);
                 
                 // Ràng buộc 1: Nếu là nhóm KHOA thì không được sửa quyền (cho bất kỳ ai)
                 if (CURRENT_GROUP === 'KHOA') {
@@ -783,10 +921,15 @@
                                         data-gv-id="${escapeHtml(p.userName)}" data-gv-name="${escapeHtml(gvName)}">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-                                ${isPGVUser ? `<button class="btn btn-sm btn-outline-danger shadow-none hover-scale rounded-3 btn-delete-row" title="Xóa"
-                                        data-login="${escapeHtml(p.loginName)}" data-user="${escapeHtml(p.userName)}">
-                                    <i class="bi bi-trash"></i>
-                                </button>` : ''}
+                                ${isPGVUser ? (() => {
+                                    const isSelf = p.userName && CURRENT_LOGIN_NAME && p.userName.trim().toLowerCase() === CURRENT_LOGIN_NAME.toLowerCase();
+                                    return `<button class="btn btn-sm btn-outline-danger shadow-none hover-scale rounded-3 btn-delete-row ${isSelf ? 'disabled' : ''}" 
+                                            title="${isSelf ? 'Không thể xóa chính mình' : 'Xóa tài khoản'}"
+                                            data-login="${escapeHtml(p.loginName)}" data-user="${escapeHtml(p.userName)}"
+                                            ${isSelf ? 'disabled' : ''}>
+                                        <i class="bi bi-trash"></i>
+                                    </button>`;
+                                })() : ''}
                             </div>
                         </td>
                     </tr>`;
@@ -862,6 +1005,16 @@
                     searchInput.focus();
                 });
             }
+
+            // Modal Client side search
+            const modalAccountSearch = document.getElementById('modalAccountSearch');
+            modalAccountSearch?.addEventListener('input', () => {
+                const q = modalAccountSearch.value.trim().toLowerCase();
+                document.querySelectorAll('#miniAccountBody tr.mini-row').forEach(row => {
+                    const match = row.innerText.toLowerCase().includes(q);
+                    row.style.display = match ? '' : 'none';
+                });
+            });
 
         })();
     </script>
