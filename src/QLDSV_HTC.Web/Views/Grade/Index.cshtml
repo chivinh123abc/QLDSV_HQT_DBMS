@@ -1,5 +1,8 @@
+@using QLDSV_HTC.Domain.Constants
 @{
     ViewData["Title"] = "Nhập điểm môn học";
+    var currentGroup = ViewBag.CurrentGroup as string ?? "";
+    var classes = ViewBag.Classes as IEnumerable<QLDSV_HTC.Application.DTOs.ClassDto> ?? Enumerable.Empty<QLDSV_HTC.Application.DTOs.ClassDto>();
 }
 
 <div class="dashboard-container animate__animated animate__fadeIn">
@@ -71,10 +74,34 @@
                     <label class="form-label fw-semibold text-dark small">Tên Sinh Viên</label>
                     <input type="text" class="form-control border-0 bg-light" id="filterStudentName" placeholder="VD: Nguyễn Văn A..." />
                 </div>
+                @* Dropdown lọc theo Lớp *@
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-dark small">
+                        <i class="bi bi-people-fill text-primary me-1"></i>Lớp
+                        @if (currentGroup == AppConstants.Groups.KHOA)
+                        {
+                            <span class="badge bg-primary-subtle text-primary ms-1 small">Khoa của bạn</span>
+                        }
+                    </label>
+                    <select class="form-select border-0 bg-light" id="filterClass">
+                        <option value="">-- Tất cả lớp --</option>
+                        @foreach (var cls in classes)
+                        {
+                            <option value="@cls.ClassId">@cls.ClassId — @cls.ClassName</option>
+                        }
+                    </select>
+                </div>
                 <div class="col-12 mt-3">
                     <button type="button" class="btn btn-outline-primary" id="btnLoadStudents">
                         <i class="bi bi-search me-1"></i> Tải danh sách
                     </button>
+                    @if (currentGroup == AppConstants.Groups.KHOA)
+                    {
+                        <span class="ms-3 text-muted small">
+                            <i class="bi bi-info-circle text-primary me-1"></i>
+                            Chỉ hiển thị sinh viên thuộc khoa của bạn
+                        </span>
+                    }
                 </div>
             </form>
         </div>
@@ -101,6 +128,12 @@
                             <div class="d-flex align-items-center gap-2">
                                 <i class="bi bi-person text-primary"></i>
                                 <span>Họ và Tên</span>
+                            </div>
+                        </th>
+                        <th style="min-width: 160px;">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-book text-primary"></i>
+                                <span>Môn học</span>
                             </div>
                         </th>
                         <th class="text-center" style="width: 140px;">
@@ -193,5 +226,5 @@
 </style>
 
 @section Scripts {
-    <script src="~/js/pages/grade/index.js"></script>
+    <script src="~/js/pages/grade/index.js" asp-append-version="true"></script>
 }
