@@ -90,3 +90,23 @@ BEGIN TRAN;
 COMMIT TRAN;
 
 ```
+
+---
+
+### 📌 CÁC LƯU Ý QUAN TRỌNG (HỎI ĐÁP THỰC TẾ)
+
+#### 1. Tại Sao Lại Đọc Được Dữ Liệu Chưa Commit ở Mức `READ UNCOMMITTED`? (Dưới Góc Độ Vật Lý)
+*   **Buffer Pool (RAM):** Khi Giao dịch A chạy lệnh `UPDATE`, SQL Server không ghi ngay xuống đĩa cứng (file `.mdf`) mà nạp trang dữ liệu lên **RAM (Buffer Pool)** và sửa trực tiếp trên đó, tạo ra các **Dirty Page (Trang bẩn)**.
+*   **Write-Ahead Logging (WAL):** Thay đổi này đồng thời được ghi tuần tự vào nhật ký giao dịch (file `.ldf` trên đĩa) để đảm bảo an toàn nếu mất điện.
+*   **Không dùng "Góc riêng tư":** Để tối ưu hiệu năng và tiết kiệm RAM, SQL Server cho phép tất cả các Transaction dùng chung một bộ đệm Buffer Pool chứ không nhân bản dữ liệu ra từng góc riêng cho từng transaction. 
+*   **Vượt rào khóa:** SQL Server mặc định dùng cơ chế **Khóa (Locking)** để giấu dữ liệu chưa commit (cắm biển khóa Exclusive Lock không cho ai đọc). Nhưng nếu Giao dịch B dùng mức `READ UNCOMMITTED` hoặc hint `NOLOCK`, Giao dịch B sẽ không xin khóa chia sẻ (S-Lock) $\rightarrow$ lách qua biển cấm để đọc thẳng giá trị thô đang có trên RAM.
+
+#### 2. Tại Sao Phải `SELECT` Trước Khi `UPDATE`?
+Trong các giao dịch như rút tiền, nhập điểm, chuyển khoản, ta luôn thấy code chạy `SELECT` trước rồi mới `UPDATE` vì:
+*   **Kiểm tra điều kiện nghiệp vụ (Validation):** Cần đọc số dư lên để check xem có đủ tiền trừ không (`SoDu >= X`), tài khoản có bị khóa hay không. Nếu không kiểm tra mà chạy `UPDATE` ngay, số dư tài khoản có thể bị âm hoặc bị sửa trái phép.
+*   **Giữ tài nguyên từ sớm (Concurrency Control):** Ở mức cô lập cao, câu lệnh `SELECT` đầu tiên sẽ đặt khóa đọc (S-Lock/Range Lock) trên dòng dữ liệu đó và giữ chặt đến cuối transaction. Nó đảm bảo trong suốt quá trình xử lý logic ở giữa, **không ai được phép xen vào sửa dòng này**.
+
+#### 3. Cơ Chế Khóa của `READ COMMITTED` Khác Gì `REPEATABLE READ`?
+*   **`READ COMMITTED`:** Khi đọc một dòng, SQL Server xin khóa đọc S-Lock. Nhưng **ngay sau khi đọc xong dòng đó, nó nhả khóa ra luôn**. Do đó, ở khoảng giữa (trước khi giao dịch kết thúc), giao dịch khác hoàn toàn có thể nhảy vào `UPDATE` hoặc `DELETE` dòng này $\rightarrow$ Gây lỗi *Non-repeatable Read*.
+*   **`REPEATABLE READ`:** Khi đọc một dòng, nó xin khóa S-Lock và **ôm chặt khóa này cho đến khi giao dịch kết thúc hoàn toàn (COMMIT/ROLLBACK)**. Giao dịch khác muốn `UPDATE`/`DELETE` ở giữa sẽ bị block (chờ đợi) $\rightarrow$ Ngăn chặn hoàn toàn lỗi *Non-repeatable Read*.
+
