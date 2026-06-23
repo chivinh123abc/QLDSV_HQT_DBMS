@@ -5,6 +5,40 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnLoadStudents = document.getElementById('btnLoadStudents');
     const btnSaveGrades = document.getElementById('btnSaveGrades');
 
+    function setDefaultFilters() {
+        const date = new Date();
+        const month = date.getMonth() + 1; // 1-12
+        let year = date.getFullYear();
+        
+        // Match DateTimeHelper.cs logic
+        if (month < 9) {
+            year--;
+        }
+        const targetYearStr = `${year}-${year + 1}`;
+        
+        // Match DateTimeHelper.cs logic: HK1=Sep-Jan, HK2=Feb-May, HK3=Jun-Aug
+        let targetSemester = "3";
+        if (month >= 9 || month <= 1) {
+            targetSemester = "1";
+        } else if (month >= 2 && month <= 5) {
+            targetSemester = "2";
+        }
+
+        const filterYear = document.getElementById('filterYear');
+        const filterSemester = document.getElementById('filterSemester');
+
+        let yearExists = Array.from(filterYear.options).some(opt => opt.value === targetYearStr);
+        if (!yearExists) {
+            const newOption = new Option(targetYearStr, targetYearStr);
+            filterYear.add(newOption);
+        }
+        filterYear.value = targetYearStr;
+
+        filterSemester.value = targetSemester;
+    }
+
+    // Set default when opened for the first time (called at end of script)
+
     function getGpaInfo(tb) {
         if (tb === null || isNaN(tb)) return { gpa: '-', letter: '-' };
         if (tb >= 9.0) return { gpa: 4.0, letter: 'A+' };
@@ -26,9 +60,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const group = document.getElementById('filterGroup').value;
         const studentIdFilter = document.getElementById('filterStudentId').value;
         const studentNameFilter = document.getElementById('filterStudentName').value;
+        const classFilter = document.getElementById('filterClass')?.value ?? '';
 
         statusMsg.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Đang tải dữ liệu...';
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></td></tr>';
 
         try {
             const queryParams = new URLSearchParams({
@@ -37,7 +72,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 subjectId: subjectId || '',
                 group: group || '0',
                 studentId: studentIdFilter || '',
-                studentName: studentNameFilter || ''
+                studentName: studentNameFilter || '',
+                classId: classFilter || ''
             });
 
             const response = await fetch('/api/grades/students?' + queryParams.toString(), {
@@ -95,6 +131,12 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="fw-semibold text-dark">${student.lastName} ${student.firstName}</div>
                         </td>
                         <td>
+                            <div class="text-dark small">
+                                <i class="bi bi-book text-primary me-1"></i>
+                                <span class="fw-semibold">${student.subjectName || ''}</span>
+                            </div>
+                        </td>
+                        <td>
                             <div class="input-group input-group-sm justify-content-center">
                                 <input type="number" class="form-control text-center shadow-none border-dashed grade-input cc" 
                                        value="${attVal}" min="0" max="10" step="0.5" style="max-width: 70px; border-radius: 6px;">
@@ -130,11 +172,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 statusMsg.innerHTML = `<i class="bi bi-check-circle text-success me-1"></i> Tải thành công ${data.length} sinh viên.`;
                 bindEvents();
             } else {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Không tìm thấy sinh viên nào cho lớp này.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">Không tìm thấy sinh viên nào cho lớp này.</td></tr>';
                 statusMsg.innerHTML = '<i class="bi bi-info-circle me-1"></i> Không tìm thấy dữ liệu.';
             }
         } catch (error) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Đã xảy ra lỗi khi tải dữ liệu.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-danger">Đã xảy ra lỗi khi tải dữ liệu.</td></tr>';
             statusMsg.innerHTML = '<i class="bi bi-exclamation-circle text-danger me-1"></i> Lỗi hệ thống.';
             console.error(error);
         }
@@ -270,4 +312,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+
+    // Initialize: Set defaults and trigger load
+    setDefaultFilters();
+    btnLoadStudents.click();
 });
