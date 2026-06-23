@@ -43,7 +43,7 @@
                 <div class="ms-auto text-muted small d-none d-md-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill shadow-sm border">
                     <i class="bi bi-info-circle text-primary"></i>
                     <span>
-                        Hiển thị <strong id="visibleCount" class="text-primary tabular-nums">@Model.Subjects.Count()</strong> môn học
+                        Hiển thị <strong id="visibleCountFilter" class="text-primary tabular-nums">@Model.Subjects.Count()</strong> môn học
                     </span>
                 </div>
             </div>
@@ -129,12 +129,14 @@
                                 <div class="d-flex justify-content-end gap-1">
                                     <button class="btn btn-sm btn-outline-primary btn-edit-row shadow-none hover-scale rounded-3" 
                                             title="Sửa môn học"
-                                            data-id="@s.Id" data-name="@s.Name" data-theory="@s.TheoryHours" data-practice="@s.PracticeHours">
+                                            data-id="@s.Id" data-name="@s.Name" data-theory="@s.TheoryHours" data-practice="@s.PracticeHours"
+                                            data-can-delete="@(s.CanDelete ? "true" : "false")">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-none hover-scale rounded-3" 
-                                            title="Xóa môn học"
-                                            data-id="@s.Id" data-name="@s.Name">
+                                    <button class="btn btn-sm btn-outline-danger shadow-none rounded-3 @(s.CanDelete ? "btn-delete-row hover-scale" : "")" 
+                                            title="@(s.CanDelete ? "Xóa môn học" : "Không thể xóa môn học này vì đã có Lớp Tín Chỉ mở môn này")"
+                                            data-id="@s.Id" data-name="@s.Name"
+                                            @(s.CanDelete ? "" : "disabled")>
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
@@ -151,7 +153,7 @@
                     <i class="bi bi-info-circle-fill text-primary opacity-75"></i>
                     <span>
                         Hiển thị <strong id="visibleCount" class="text-primary tabular-nums">@Model.Subjects.Count()</strong>
-                        / <span class="tabular-nums">@Model.Pagination.TotalCount</span> môn học
+                        / <span id="totalCount" class="tabular-nums">@Model.Pagination.TotalCount</span> môn học
                     </span>
                 </div>
                 
