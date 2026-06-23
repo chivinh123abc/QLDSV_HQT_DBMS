@@ -11,25 +11,37 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- [TỐI ƯU] P3: Factor out điều kiện lặp
+    -- EXISTS check (dùng 2 lần ở L22, L43 cũ) → biến @HAS_DK
+    -- TOP 1 subquery (dùng 2 lần ở L53-54 cũ) → biến @CUR_NK, @CUR_HK
+    DECLARE @HAS_DK BIT = 0;
+    DECLARE @CUR_NK NVARCHAR(9), @CUR_HK INT;
+
+    IF EXISTS (SELECT 1 FROM DANGKY WHERE MASV = @MASV AND HUYDANGKY = 0)
+    BEGIN
+        SET @HAS_DK = 1;
+        -- Truy vấn 1 lần duy nhất, lưu NK/HK mới nhất
+        SELECT TOP 1 @CUR_NK = ltc.NIENKHOA, @CUR_HK = ltc.HOCKY
+        FROM DANGKY dk
+        INNER JOIN LOPTINCHI ltc ON ltc.MALTC = dk.MALTC
+        WHERE dk.MASV = @MASV AND dk.HUYDANGKY = 0
+        ORDER BY ltc.NIENKHOA DESC, ltc.HOCKY DESC;
+    END
+
     -- 1. Thông tin sinh viên + niên khóa lớp
     SELECT sv.MASV, sv.HO, sv.TEN, sv.MALOP, l.TENLOP, l.KHOAHOC, sv.DANGHIHOC
     FROM SINHVIEN sv
     LEFT JOIN LOP l ON l.MALOP = sv.MALOP
     WHERE sv.MASV = @MASV;
 
-    -- 2. Học kỳ hiện tại: ưu tiên NK/HK mới nhất mà SV có đăng ký, 
-    --    nếu chưa đăng ký thì lấy NK/HK mới nhất trong LOPTINCHI
-    IF EXISTS (SELECT 1 FROM DANGKY WHERE MASV = @MASV AND HUYDANGKY = 0)
+    -- 2. Học kỳ hiện tại
+    IF @HAS_DK = 1
     BEGIN
-        SELECT TOP 1 ltc.NIENKHOA, ltc.HOCKY,
+        SELECT @CUR_NK AS NIENKHOA, @CUR_HK AS HOCKY,
                (SELECT COUNT(*) FROM DANGKY dk2
                 INNER JOIN LOPTINCHI ltc2 ON ltc2.MALTC = dk2.MALTC
                 WHERE dk2.MASV = @MASV AND dk2.HUYDANGKY = 0 
-                  AND ltc2.NIENKHOA = ltc.NIENKHOA AND ltc2.HOCKY = ltc.HOCKY) AS SoMon
-        FROM DANGKY dk
-        INNER JOIN LOPTINCHI ltc ON ltc.MALTC = dk.MALTC
-        WHERE dk.MASV = @MASV AND dk.HUYDANGKY = 0
-        ORDER BY ltc.NIENKHOA DESC, ltc.HOCKY DESC;
+                  AND ltc2.NIENKHOA = @CUR_NK AND ltc2.HOCKY = @CUR_HK) AS SoMon;
     END
     ELSE
     BEGIN
@@ -39,8 +51,8 @@ BEGIN
         ORDER BY NIENKHOA DESC, HOCKY DESC;
     END
 
-    -- 3. Danh sách môn đã đăng ký ở HK hiện tại (chỉ trả khi có đăng ký)
-    IF EXISTS (SELECT 1 FROM DANGKY WHERE MASV = @MASV AND HUYDANGKY = 0)
+    -- 3. Danh sách môn đã đăng ký ở HK hiện tại
+    IF @HAS_DK = 1
     BEGIN
         SELECT ltc.MALTC, mh.MAMH, mh.TENMH, mh.SOTIET_LT, mh.SOTIET_TH,
                ISNULL(gv.HO + ' ' + gv.TEN, ltc.MAGV) AS HOTEN_GV,
@@ -50,8 +62,8 @@ BEGIN
         INNER JOIN MONHOC mh ON mh.MAMH = ltc.MAMH
         LEFT JOIN GIANGVIEN gv ON gv.MAGV = ltc.MAGV
         WHERE dk.MASV = @MASV AND dk.HUYDANGKY = 0
-          AND ltc.NIENKHOA = (SELECT TOP 1 ltc2.NIENKHOA FROM DANGKY dk2 INNER JOIN LOPTINCHI ltc2 ON ltc2.MALTC = dk2.MALTC WHERE dk2.MASV = @MASV AND dk2.HUYDANGKY = 0 ORDER BY ltc2.NIENKHOA DESC, ltc2.HOCKY DESC)
-          AND ltc.HOCKY = (SELECT TOP 1 ltc2.HOCKY FROM DANGKY dk2 INNER JOIN LOPTINCHI ltc2 ON ltc2.MALTC = dk2.MALTC WHERE dk2.MASV = @MASV AND dk2.HUYDANGKY = 0 ORDER BY ltc2.NIENKHOA DESC, ltc2.HOCKY DESC)
+          AND ltc.NIENKHOA = @CUR_NK
+          AND ltc.HOCKY = @CUR_HK
         ORDER BY mh.TENMH;
     END
     ELSE
@@ -69,3 +81,4 @@ GO
 -- Cấp quyền EXEC cho nhóm SV
 GRANT EXECUTE ON sp_LayThongTinDashboardSinhVien TO SV;
 GO
+
