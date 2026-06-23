@@ -23,6 +23,28 @@ public class DynamicQueryRequestDto
 
     public List<FilterCondition> Filters { get; set; } = [];
 
+    public List<OrderByDefinition> OrderByColumns { get; set; } = [];
+
+    /// <summary>
+    /// Logic operator for HAVING clauses: "AND" or "OR".
+    /// </summary>
+    public string HavingLogic { get; set; } = "AND";
+
+    /// <summary>
+    /// When true, PDF report will render grouped sections with headers/footers.
+    /// </summary>
+    public bool PrintByGroup { get; set; } = false;
+
+    /// <summary>
+    /// The column to group by for Print by Group feature.
+    /// </summary>
+    public string? GroupByColumn { get; set; }
+
+    /// <summary>
+    /// When true with PrintByGroup, each group starts on a new page.
+    /// </summary>
+    public bool PageBreakPerGroup { get; set; } = false;
+
     public int PageNumber { get; set; } = 1;
     public int PageSize { get; set; } = 50;
 }

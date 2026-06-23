@@ -42,6 +42,27 @@ export const SELECTORS = {
     fileNamePreview: '#fileNamePreview',
     selectedColumnsOrderContainer: '#selectedColumnsOrderContainer',
     sortableColumns: '#sortableColumns',
+    // F2: Sort
+    // F3: HAVING logic
+    havingLogicToggle: '#havingLogicToggle',
+    // F5: Print by Group
+    printByGroupCheck: '#printByGroupCheck',
+    groupByColumnSelect: '#groupByColumnSelect',
+    pageBreakCheck: '#pageBreakCheck',
+    printByGroupOptions: '#printByGroupOptions',
+    // F6: Pagination
+    paginationBar: '#paginationBar',
+    pageSizeSelect: '#pageSizeSelect',
+    prevPageBtn: '#prevPageBtn',
+    nextPageBtn: '#nextPageBtn',
+    pageIndicator: '#pageIndicator',
+    totalCountLabel: '#totalCountLabel',
+    // F8: Guide
+    guideToggleBtn: '#guideToggleBtn',
+    guidePanel: '#guidePanel',
+    guidePanelClose: '#guidePanelClose',
+    reportTitlePreview: '#reportTitlePreview',
+    reportTitlePreviewText: '#reportTitlePreviewText',
 };
 
 export const API_ENDPOINTS = {

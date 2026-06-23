@@ -88,6 +88,7 @@ export const UIManager = {
                                 ${col}
                             </label>
                             ${checked ? `<input type="text" class="alias-input" data-table="${table}" data-column="${col}" value="${aliasVal}" placeholder="Alias..." title="Nhập Alias" />` : ''}
+                            ${checked ? `<button type="button" class="sort-toggle-btn" data-sort-key="${table}.${col}" title="Click để sắp xếp ASC"><i class="bi bi-arrow-down-up"></i></button>` : ''}
                         </div>
                     </div>
                 `;
@@ -248,7 +249,7 @@ export const UIManager = {
         DOM.aggregationContainer.innerHTML = html;
     },
 
-    renderPreviewTable(data, columns) {
+    renderPreviewTable(data, columns, groupByColumn = null) {
         DOM.recordCountBadge.textContent = `${data.length} dòng`;
 
         if (data.length === 0) {
@@ -259,14 +260,36 @@ export const UIManager = {
 
         DOM.previewTableHead.innerHTML = `<tr>${columns.map(col => `<th>${escapeHtml(col)}</th>`).join('')}</tr>`;
 
-        DOM.previewTableBody.innerHTML = data.map(row => `
-            <tr>
-                ${columns.map(col => {
+        // If grouping is active, insert group header rows
+        if (groupByColumn) {
+            // Find the column key in data (could be "Column" from "Table.Column")
+            const colKey = groupByColumn.includes('.') ? groupByColumn.split('.').pop() : groupByColumn;
+            const matchedKey = columns.find(c => c.toUpperCase() === colKey.toUpperCase()) || colKey;
+
+            let html = '';
+            let lastGroupVal = null;
+            for (const row of data) {
+                const groupVal = row[matchedKey];
+                if (groupVal !== lastGroupVal) {
+                    html += `<tr class="dr-group-header-row"><td colspan="${columns.length}"><i class="bi bi-caret-right-fill me-1"></i><strong>► ${groupVal !== null && groupVal !== undefined ? escapeHtml(String(groupVal)) : 'NULL'}</strong></td></tr>`;
+                    lastGroupVal = groupVal;
+                }
+                html += `<tr>${columns.map(col => {
                     const val = row[col];
                     return `<td>${val !== null && val !== undefined ? escapeHtml(String(val)) : '<em class="text-muted">NULL</em>'}</td>`;
-                }).join('')}
-            </tr>
-        `).join('');
+                }).join('')}</tr>`;
+            }
+            DOM.previewTableBody.innerHTML = html;
+        } else {
+            DOM.previewTableBody.innerHTML = data.map(row => `
+                <tr>
+                    ${columns.map(col => {
+                        const val = row[col];
+                        return `<td>${val !== null && val !== undefined ? escapeHtml(String(val)) : '<em class="text-muted">NULL</em>'}</td>`;
+                    }).join('')}
+                </tr>
+            `).join('');
+        }
     },
 
     updateButtonStates(state, hasSelectedColumns) {

@@ -7,8 +7,20 @@ export const State = {
     tableName: '',
     columnsByTable: {},
     availableRelations: [],
-    selectedColumns: [], // Array of { TableName, ColumnName, Expression, Aggregate, AliasName, HavingOperator, HavingValue, IsComputed }
+    selectedColumns: [], // Array of { TableName, ColumnName, Expression, Aggregate, AliasName, HavingOperator, HavingValue, IsComputed, SortDirection }
     isAggregationEnabled: false,
+    // F2: Sort directions per column (key: "Table.Column", value: null|"ASC"|"DESC")
+    sortDirections: {},
+    // F3: HAVING logic
+    havingLogic: 'AND',
+    // F5: Print by group
+    printByGroup: false,
+    groupByColumn: '',
+    pageBreakPerGroup: false,
+    // F6: Pagination
+    currentPage: 1,
+    pageSize: 50,
+    totalCount: 0,
 
     reset(tableName = '') {
         this.tableName = tableName;
@@ -16,6 +28,14 @@ export const State = {
         this.availableRelations = [];
         this.selectedColumns = [];
         this.isAggregationEnabled = false;
+        this.sortDirections = {};
+        this.havingLogic = 'AND';
+        this.printByGroup = false;
+        this.groupByColumn = '';
+        this.pageBreakPerGroup = false;
+        this.currentPage = 1;
+        this.pageSize = 50;
+        this.totalCount = 0;
     },
 
     setColumns(tableName, columns) {

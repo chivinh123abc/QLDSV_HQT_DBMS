@@ -32,11 +32,11 @@ namespace QLDSV_HTC.Web.Reports
             float totalWidth = PageWidth - Margins.Left - Margins.Right;
 
             // ------- REPORT HEADER -------
+            string title = BuildTitle(request);
+
             XRLabel lblTitle = new()
             {
-                Text = !string.IsNullOrWhiteSpace(request.ReportTitle)
-                    ? request.ReportTitle.ToUpper()
-                    : $"BÁO CÁO TÙY CHỈNH: {request.TableName.ToUpper()}",
+                Text = title.ToUpper(),
                 Font = new("Arial", 18, DevExpress.Drawing.DXFontStyle.Bold),
                 TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleCenter,
                 SizeF = new(totalWidth, 40f),
@@ -125,7 +125,122 @@ namespace QLDSV_HTC.Web.Reports
             detailTable.Rows.Add(detailRow);
             detailBand.Controls.Add(detailTable);
 
+            // ------- F5: PRINT BY GROUP -------
+            if (request.PrintByGroup && !string.IsNullOrWhiteSpace(request.GroupByColumn))
+            {
+                // GroupByColumn comes as "Table.Column" from frontend — extract column part
+                string rawGroupCol = request.GroupByColumn;
+                string colPart = rawGroupCol.Contains('.') ? rawGroupCol.Split('.').Last() : rawGroupCol;
+
+                // Find matching column in DataTable (could be exact name or alias)
+                string? matchedCol = null;
+                foreach (DataColumn col in dt.Columns)
+                {
+                    if (col.ColumnName.Equals(colPart, StringComparison.OrdinalIgnoreCase)
+                        || col.ColumnName.Equals(rawGroupCol, StringComparison.OrdinalIgnoreCase))
+                    {
+                        matchedCol = col.ColumnName;
+                        break;
+                    }
+                }
+
+                if (matchedCol != null)
+                {
+                    request.GroupByColumn = matchedCol; // normalize for ApplyGroupedLayout
+                    ApplyGroupedLayout(request, totalWidth);
+                }
+            }
+
+            // ------- F6: PAGE FOOTER WITH PAGE NUMBERS -------
+            var pageFooterBand = new PageFooterBand() { HeightF = 30f };
+            var lblPageNumber = new XRPageInfo()
+            {
+                Format = "Trang {0} / {1}",
+                TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleRight,
+                SizeF = new SizeF(totalWidth / 2, 20f),
+                LocationF = new PointF(totalWidth / 2, 5f),
+                Font = new DevExpress.Drawing.DXFont("Arial", 9, DevExpress.Drawing.DXFontStyle.Italic)
+            };
+            pageFooterBand.Controls.Add(lblPageNumber);
+            Bands.Add(pageFooterBand);
+
             this.DataSource = dt;
+        }
+
+        /// <summary>
+        /// F4: Build title with @PARAM interpolation from filter values
+        /// </summary>
+        private static string BuildTitle(DynamicQueryRequestDto request)
+        {
+            string title = !string.IsNullOrWhiteSpace(request.ReportTitle)
+                ? request.ReportTitle
+                : $"BÁO CÁO TÙY CHỈNH: {request.TableName}";
+
+            if (request.Filters == null || request.Filters.Count == 0) return title;
+
+            foreach (var filter in request.Filters)
+            {
+                if (string.IsNullOrWhiteSpace(filter.Value)) continue;
+                string placeholder = $"@{filter.ColumnName.Trim().ToUpper()}";
+                if (title.Contains(placeholder, StringComparison.OrdinalIgnoreCase))
+                {
+                    title = title.Replace(placeholder, filter.Value.Trim(), StringComparison.OrdinalIgnoreCase);
+                }
+            }
+
+            return title;
+        }
+
+        /// <summary>
+        /// F5: Apply grouped layout with GroupHeaderBand and GroupFooterBand
+        /// </summary>
+        private void ApplyGroupedLayout(DynamicQueryRequestDto request, float totalWidth)
+        {
+            string groupCol = request.GroupByColumn!;
+
+            var groupHeader = new GroupHeaderBand()
+            {
+                HeightF = 35f,
+                GroupFields = { new GroupField(groupCol, XRColumnSortOrder.Ascending) },
+                RepeatEveryPage = true
+            };
+
+            if (request.PageBreakPerGroup)
+            {
+                groupHeader.PageBreak = PageBreak.BeforeBand;
+            }
+
+            var lblGroupHeader = new XRLabel()
+            {
+                Font = new DevExpress.Drawing.DXFont("Arial", 12, DevExpress.Drawing.DXFontStyle.Bold),
+                TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleLeft,
+                SizeF = new SizeF(totalWidth, 30f),
+                LocationF = new PointF(0f, 2f),
+                BackColor = Color.FromArgb(230, 240, 255),
+                Padding = new DevExpress.XtraPrinting.PaddingInfo(10, 0, 0, 0)
+            };
+            lblGroupHeader.ExpressionBindings.Add(new("BeforePrint", "Text", $"'► ' + [{groupCol}]"));
+            groupHeader.Controls.Add(lblGroupHeader);
+
+            var groupFooter = new GroupFooterBand() { HeightF = 25f };
+            var lblGroupCount = new XRLabel()
+            {
+                Font = new DevExpress.Drawing.DXFont("Arial", 9, DevExpress.Drawing.DXFontStyle.Italic),
+                TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleRight,
+                SizeF = new SizeF(totalWidth, 20f),
+                LocationF = new PointF(0f, 2f),
+                ForeColor = Color.Gray,
+                Summary = new XRSummary()
+                {
+                    Running = SummaryRunning.Group,
+                    Func = SummaryFunc.RecordNumber,
+                    FormatString = "Tổng cộng nhóm: {0} dòng"
+                }
+            };
+            groupFooter.Controls.Add(lblGroupCount);
+
+            Bands.Add(groupHeader);
+            Bands.Add(groupFooter);
         }
     }
 }
