@@ -4,6 +4,7 @@ using QLDSV_HTC.Application.DTOs;
 using QLDSV_HTC.Application.Helpers;
 using QLDSV_HTC.Application.Interfaces;
 using QLDSV_HTC.Domain.Constants;
+using QLDSV_HTC.Infrastructure.Helpers;
 
 namespace QLDSV_HTC.Infrastructure.Repositories
 {
@@ -68,11 +69,11 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                     };
                 }
 
-                return new UserSession { ErrorMessage = "Tài khoản không tồn tại trong CSDL." };
+                return new UserSession { ErrorMessage = "Tên đăng nhập hoặc mật khẩu không chính xác." };
             }
             catch (SqlException ex)
             {
-                return new UserSession { ErrorMessage = ex.Message };
+                return new UserSession { ErrorMessage = SqlErrorHelper.GetFriendlyMessage(ex) };
             }
         }
     }

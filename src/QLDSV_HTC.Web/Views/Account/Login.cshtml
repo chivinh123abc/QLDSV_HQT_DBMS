@@ -1,4 +1,4 @@
-@model QLDSV_HTC.Models.LoginViewModel
+@model QLDSV_HTC.Web.Models.LoginViewModel
 @{
     ViewData["Title"] = "Đăng nhập";
 }
@@ -13,10 +13,38 @@
                         <i class="bi bi-mortarboard-fill"></i>
                     </div>
                     <h2 class="display-4 fw-bold text-gradient mb-3">Hệ Thống <br />Quản Lý Đào Tạo</h2>
-                    <p class="fs-5 text-muted-foreground max-w-md">
+                    <p class="fs-5 text-muted-foreground max-w-md mb-4">
                         Cổng thông tin tích hợp dành cho sinh viên và giảng viên. Quản lý điểm, thời khóa biểu và đăng
                         ký tín chỉ một cách thông minh.
                     </p>
+
+                    <!-- Support Card for Desktop -->
+                    <div id="desktop-support-card" class="support-card animate__animated animate__fadeIn animate__delay-1 max-w-md">
+                        <h5 class="fw-bold text-primary mb-3 d-flex align-items-center gap-2">
+                            <i class="bi bi-info-circle-fill"></i> Hỗ Trợ & Quên Mật Khẩu
+                        </h5>
+                        <p class="small text-muted mb-3">
+                            Vui lòng liên hệ trực tiếp <strong>Phòng Giáo vụ</strong> để được hỗ trợ cấp tài khoản hoặc khôi phục mật khẩu:
+                        </p>
+                        <div class="d-flex flex-column gap-2 small">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-geo-alt-fill text-primary mt-1"></i>
+                                <span><strong>Địa chỉ:</strong> 97 Man Thiện, P. Hiệp Phú, TP. Thủ Đức, TP. HCM (Cơ sở 2)</span>
+                            </div>
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-telephone-fill text-primary mt-1"></i>
+                                <span><strong>Điện thoại:</strong> (028) 3829 3829</span>
+                            </div>
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-envelope-fill text-primary mt-1"></i>
+                                <span><strong>Email:</strong> <a href="mailto:phonggiaovu@ptithcm.edu.vn" class="text-decoration-none hover-primary transition-base">phonggiaovu@ptithcm.edu.vn</a></span>
+                            </div>
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-clock-fill text-primary mt-1"></i>
+                                <span><strong>Giờ làm việc:</strong> Thứ 2 - Thứ 6<br/><span class="text-muted">(Sáng: 07:30 - 11:30 | Chiều: 13:30 - 17:00)</span></span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -34,21 +62,23 @@
                         <p class="text-muted small">Vui lòng đăng nhập để tiếp tục</p>
                     </div>
 
-                    @if (ViewBag.ErrorMessage != null)
+                    @if (ViewBag.ErrorMessage != null || TempData["ErrorMessage"] != null)
                     {
+                        var errMsg = ViewBag.ErrorMessage ?? TempData["ErrorMessage"];
                         <div class="alert alert-danger border-0 shadow-sm mb-4 py-3 rounded-pill d-flex align-items-center gap-2"
                             role="alert">
                             <i class="bi bi-exclamation-triangle-fill"></i>
-                            <span class="small fw-medium">@ViewBag.ErrorMessage</span>
+                            <span class="small fw-medium">@errMsg</span>
                         </div>
                     }
 
-                    @if (TempData["SuccessMessage"] != null)
+                    @if (ViewBag.SuccessMessage != null || TempData["SuccessMessage"] != null)
                     {
+                        var successMsg = ViewBag.SuccessMessage ?? TempData["SuccessMessage"];
                         <div class="alert alert-success border-0 shadow-sm mb-4 py-3 rounded-pill d-flex align-items-center gap-2"
                             role="alert">
                             <i class="bi bi-check-circle-fill"></i>
-                            <span class="small fw-medium">@TempData["SuccessMessage"]</span>
+                            <span class="small fw-medium">@successMsg</span>
                         </div>
                     }
 
@@ -96,7 +126,7 @@
                                 <label class="form-check-label small text-muted" for="rememberMe">Ghi nhớ đăng
                                     nhập</label>
                             </div>
-                            <a href="@RouteConstants.Home.ComingSoonPath"
+                            <a href="/account/forgot-password"
                                 class="small text-primary text-decoration-none fw-medium">Quên mật khẩu?</a>
                         </div>
 
@@ -105,11 +135,33 @@
                             Đăng nhập ngay <i class="bi bi-box-arrow-in-right ms-2 font-bold"></i>
                         </button>
                     </form>
+                </div>
 
-                    <div class="mt-5 pt-3 border-top text-center">
-                        <p class="text-muted small mb-0">Chưa có tài khoản? <a
-                                href="@RouteConstants.Home.ComingSoonPath"
-                                class="text-primary fw-bold text-decoration-none">Yêu cầu cấp tài khoản</a></p>
+                <!-- Support Card for Mobile -->
+                <div id="mobile-support-card" class="support-card d-block d-lg-none mt-4 animate__animated animate__fadeInUp">
+                    <h5 class="fw-bold text-primary mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-info-circle-fill"></i> Hỗ Trợ & Quên Mật Khẩu
+                    </h5>
+                    <p class="small text-muted mb-3">
+                        Vui lòng liên hệ trực tiếp <strong>Phòng Giáo vụ</strong> để được hỗ trợ cấp tài khoản hoặc khôi phục mật khẩu:
+                    </p>
+                    <div class="d-flex flex-column gap-2 small">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-geo-alt-fill text-primary mt-1"></i>
+                            <span><strong>Địa chỉ:</strong> 97 Man Thiện, P. Hiệp Phú, TP. Thủ Đức, TP. HCM (Cơ sở 2)</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-telephone-fill text-primary mt-1"></i>
+                            <span><strong>Điện thoại:</strong> (028) 3829 3829</span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-envelope-fill text-primary mt-1"></i>
+                            <span><strong>Email:</strong> <a href="mailto:phonggiaovu@ptithcm.edu.vn" class="text-decoration-none hover-primary transition-base">phonggiaovu@ptithcm.edu.vn</a></span>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-clock-fill text-primary mt-1"></i>
+                            <span><strong>Giờ làm việc:</strong> Thứ 2 - Thứ 6<br/><span class="text-muted">(Sáng: 07:30 - 11:30 | Chiều: 13:30 - 17:00)</span></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -124,19 +176,27 @@
             const lblLoginName = document.getElementById('lblLoginName');
             const inputLoginName = document.getElementById('LoginName');
 
-            roleSwitches.forEach(radio => {
-                radio.addEventListener('change', function () {
-                    if (this.value === 'true') {
+            function updateLoginLabels() {
+                const activeRadio = document.querySelector('.role-switch:checked');
+                if (activeRadio && lblLoginName && inputLoginName) {
+                    if (activeRadio.value === 'true') {
                         // Nếu chọn Sinh viên
                         lblLoginName.innerText = 'Mã SV';
-                        inputLoginName.placeholder = 'Nhập mã sinh viên (VD: N15DCCN001)...';
+                        inputLoginName.placeholder = 'Nhập mã sinh viên (VD: N23DCCN067)...';
                     } else {
                         // Nếu chọn Giảng viên
                         lblLoginName.innerText = 'Tên đăng nhập';
                         inputLoginName.placeholder = 'Nhập tên đăng nhập giảng viên...';
                     }
-                });
+                }
+            }
+
+            roleSwitches.forEach(radio => {
+                radio.addEventListener('change', updateLoginLabels);
             });
+
+            // Khởi tạo nhãn và placeholder ngay khi tải trang dựa trên lựa chọn mặc định
+            updateLoginLabels();
 
             // Password visibility toggle logic
             const togglePassword = document.getElementById('togglePassword');
@@ -153,6 +213,8 @@
                     this.innerHTML = '<i class="bi bi-eye-slash"></i>';
                 }
             });
+
+            // Quên mật khẩu chuyển hướng trực tiếp tới trang riêng biệt
         });
     </script>
 }

@@ -16,6 +16,12 @@ BEGIN
     DECLARE @stmt NVARCHAR(MAX);
 
     -- 1. Kiểm tra trước (Pre-validation) để tránh văng lỗi hệ thống
+    IF LEN(@PASS) < 8
+    BEGIN
+        RAISERROR ('Mật khẩu phải chứa ít nhất 8 ký tự!', 16, 1);
+        RETURN;
+    END
+
     IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = @LGNAME)
     BEGIN
         RAISERROR ('Login name đã tồn tại trên Server!', 16, 1);
@@ -132,6 +138,13 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = @OLD_LGNAME AND type = 'S')
     BEGIN
         RAISERROR (N'Login [%s] không tồn tại trên Server!', 16, 1, @OLD_LGNAME);
+        RETURN;
+    END
+
+    -- Kiểm tra mật khẩu mới tối thiểu 8 ký tự nếu có đổi
+    IF @NEW_PASS IS NOT NULL AND @NEW_PASS <> '' AND LEN(@NEW_PASS) < 8
+    BEGIN
+        RAISERROR ('Mật khẩu mới phải chứa ít nhất 8 ký tự!', 16, 1);
         RETURN;
     END
 

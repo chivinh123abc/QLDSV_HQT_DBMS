@@ -12,6 +12,7 @@ namespace QLDSV_HTC.Web.Models
         public string? Specialty { get; set; }
         public string FacultyId { get; set; } = string.Empty;
         public string FacultyName { get; set; } = string.Empty;
+        public int CreditClassCount { get; set; }
     }
 
     public class LecturerManagementViewModel

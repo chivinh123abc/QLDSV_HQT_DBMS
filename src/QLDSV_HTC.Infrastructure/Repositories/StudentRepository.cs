@@ -142,5 +142,15 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                 new SqlParameter(StoredProcedureConstants.StudentCrud.StudentId, studentId)
             );
         }
+
+        public async Task ResetPasswordAsync(string studentId, string newPassword)
+        {
+            await ExecuteNonQueryAsync(
+                AppConstants.SpNames.ResetStudentPassword,
+                CommandType.StoredProcedure,
+                new SqlParameter(StoredProcedureConstants.ResetPasswordSinhVien.StudentId, studentId),
+                new SqlParameter(StoredProcedureConstants.ResetPasswordSinhVien.Password, newPassword)
+            );
+        }
     }
 }

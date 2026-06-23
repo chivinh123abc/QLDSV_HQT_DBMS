@@ -44,7 +44,7 @@ BEGIN
             ISNULL(k.TENKHOA, l.MAKHOA) AS TENKHOA
         FROM LOP l
         LEFT JOIN KHOA k ON k.MAKHOA = l.MAKHOA
-        ORDER BY l.MAKHOA, l.MALOP;
+        ORDER BY l.KHOAHOC DESC, l.MAKHOA, l.MALOP;
     END
     ELSE IF IS_MEMBER('KHOA') = 1
     BEGIN
@@ -61,7 +61,7 @@ BEGIN
         FROM LOP l
         LEFT JOIN KHOA k ON k.MAKHOA = l.MAKHOA
         WHERE l.MAKHOA = @MAKHOA
-        ORDER BY l.MALOP;
+        ORDER BY l.KHOAHOC DESC, l.MALOP;
     END
 END
 GO

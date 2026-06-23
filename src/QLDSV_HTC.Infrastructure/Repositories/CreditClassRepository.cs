@@ -22,14 +22,14 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             return dt.AsEnumerable().Select(row => new CreditClassDto
             {
                 Id = Convert.ToInt32(row[DbConstants.Columns.CreditClass.Id]),
-                Year = row[DbConstants.Columns.CreditClass.Year]?.ToString() ?? string.Empty,
+                Year = row[DbConstants.Columns.CreditClass.Year]?.ToString()?.Trim() ?? string.Empty,
                 Semester = Convert.ToInt32(row[DbConstants.Columns.CreditClass.Semester]),
-                SubjectId = row[DbConstants.Columns.CreditClass.SubjectId]?.ToString() ?? string.Empty,
-                SubjectName = row[DbConstants.Columns.CreditClass.SubjectName]?.ToString() ?? string.Empty,
+                SubjectId = row[DbConstants.Columns.CreditClass.SubjectId]?.ToString()?.Trim() ?? string.Empty,
+                SubjectName = row[DbConstants.Columns.CreditClass.SubjectName]?.ToString()?.Trim() ?? string.Empty,
                 Group = Convert.ToInt32(row[DbConstants.Columns.CreditClass.Group]),
-                LecturerId = row[DbConstants.Columns.CreditClass.LecturerId]?.ToString() ?? string.Empty,
-                LecturerName = row[DbConstants.Columns.CreditClass.LecturerName]?.ToString() ?? string.Empty,
-                FacultyId = row[DbConstants.Columns.CreditClass.FacultyId]?.ToString() ?? string.Empty,
+                LecturerId = row[DbConstants.Columns.CreditClass.LecturerId]?.ToString()?.Trim() ?? string.Empty,
+                LecturerName = row[DbConstants.Columns.CreditClass.LecturerName]?.ToString()?.Trim() ?? string.Empty,
+                FacultyId = row[DbConstants.Columns.CreditClass.FacultyId]?.ToString()?.Trim() ?? string.Empty,
                 MinStudents = Convert.ToInt32(row[DbConstants.Columns.CreditClass.MinStudents]),
                 IsCancelled = row[DbConstants.Columns.CreditClass.IsCancelled] != DBNull.Value && Convert.ToBoolean(row[DbConstants.Columns.CreditClass.IsCancelled]),
                 RegisteredCount = Convert.ToInt32(row[DbConstants.Columns.CreditClass.RegisteredCount])

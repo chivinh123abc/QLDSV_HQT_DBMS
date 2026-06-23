@@ -8,11 +8,13 @@ namespace QLDSV_HTC.Web.Models
         public string Name { get; set; } = string.Empty;
         public int TheoryHours { get; set; }
         public int PracticeHours { get; set; }
+        public bool CanDelete { get; set; } = true;
     }
 
     public class SubjectManagementViewModel
     {
         public IEnumerable<SubjectViewModel> Subjects { get; set; } = [];
+        public IEnumerable<SubjectViewModel> AllSubjects { get; set; } = [];
         public PaginationViewModel Pagination { get; set; } = new();
         public string SearchTerm { get; set; } = string.Empty;
     }

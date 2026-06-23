@@ -4,7 +4,9 @@ CREATE OR ALTER PROCEDURE sp_LayBangDiemMonHocCuaMotLopTinChi
     @MAMH NVARCHAR(10) = NULL,
     @NHOM INT = NULL,
     @MASV NVARCHAR(20) = NULL,
-    @TENSV NVARCHAR(100) = NULL
+    @TENSV NVARCHAR(100) = NULL,
+    @MALOP NVARCHAR(20) = NULL,
+    @MAKHOA NVARCHAR(10) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -14,6 +16,7 @@ BEGIN
         sv.MASV,
         sv.HO,
         sv.TEN,
+        mh.TENMH,
         dk.DIEM_CC,
         dk.DIEM_GK,
         dk.DIEM_CK,
@@ -25,12 +28,16 @@ BEGIN
     FROM DANGKY dk
     JOIN SINHVIEN sv ON sv.MASV = dk.MASV
     JOIN LOPTINCHI ltc ON ltc.MALTC = dk.MALTC
+    JOIN MONHOC mh ON mh.MAMH = ltc.MAMH
+    LEFT JOIN LOP lop ON lop.MALOP = sv.MALOP
     WHERE (@MAMH IS NULL OR @MAMH = '' OR ltc.MAMH = @MAMH)
       AND (@NHOM IS NULL OR @NHOM = 0 OR ltc.NHOM = @NHOM)
       AND (@NIENKHOA IS NULL OR @NIENKHOA = '' OR ltc.NIENKHOA = @NIENKHOA)
       AND (@HOCKY IS NULL OR @HOCKY = 0 OR ltc.HOCKY = @HOCKY)
       AND (@MASV IS NULL OR @MASV = '' OR sv.MASV LIKE '%' + @MASV + '%')
       AND (@TENSV IS NULL OR @TENSV = '' OR (sv.HO + ' ' + sv.TEN) LIKE N'%' + @TENSV + '%')
+      AND (@MALOP IS NULL OR @MALOP = '' OR sv.MALOP = @MALOP)
+      AND (@MAKHOA IS NULL OR @MAKHOA = '' OR lop.MAKHOA = @MAKHOA)
       AND (dk.HUYDANGKY = 0 OR dk.HUYDANGKY IS NULL)
     ORDER BY ltc.MALTC, sv.TEN, sv.HO;
 END

@@ -63,7 +63,8 @@ namespace QLDSV_HTC.Web.Controllers
                     lecturer = c.LecturerName,
                     registered = c.RegisteredCount,
                     minStudents = c.MinStudents,
-                    isRegistered = c.IsRegistered
+                    isRegistered = c.IsRegistered,
+                    hasGrades = c.HasGrades
                 });
                 return Ok(new { success = true, data = result });
             }

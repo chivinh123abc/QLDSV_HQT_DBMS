@@ -299,3 +299,32 @@ EXEC SP_Import_TrucTiep_Tu_Excel
 SELECT * FROM GiangVien;
 SELECT * FROM NCKH;
 ```
+
+### 📌 CÁC LƯU Ý QUAN TRỌNG (HỎI ĐÁP THỰC TẾ)
+
+#### 1. Tại Sao Lại Cần Dùng Cursor Khi SQL Đã SELECT Được Hết?
+Bản chất SQL là hướng tập hợp (Set-based) rất nhanh, nhưng ta bắt buộc phải dùng Cursor (xử lý tuần tự từng dòng) trong các trường hợp sau:
+*   **Hành động bên ngoài hệ thống:** Cần thực hiện hành động phi-SQL cho từng dòng như: duyệt danh sách gửi 100 email riêng lẻ, gọi 100 API thanh toán của bên thứ ba.
+*   **Tính toán bắc cầu/lũy tiến:** Giá trị xử lý của dòng sau phụ thuộc trực tiếp vào kết quả cập nhật của dòng trước (ví dụ: thuật toán khớp lệnh mua bán cổ phiếu, tính lãi suất cộng dồn).
+*   **Chạy SQL động (Dynamic SQL):** Ví dụ duyệt danh sách tên database thu được từ bảng hệ thống để chạy lệnh `BACKUP DATABASE` từng cái một.
+
+#### 2. Quy Tắc Hoạt Động của `FETCH NEXT INTO`
+*   **NEXT:** Đẩy "mũi tên chỉ vị trí" dịch xuống dòng tiếp theo ngay dưới dòng hiện tại.
+*   **INTO:** Copy các giá trị cột của dòng đó vào các biến cục bộ tương ứng để lập trình logic.
+*   **Nguyên tắc số lượng:** Số lượng biến gán `INTO` **bắt buộc phải bằng đúng** số lượng cột trong lệnh `SELECT` của con trỏ. Nếu con trỏ chọn 4 cột mà chỉ `INTO` 3 biến, SQL Server sẽ báo lỗi biên dịch lập tức.
+*   **Trạng thái `@@FETCH_STATUS`:** Nếu đọc được dòng mới thì biến này bằng `0`. Nếu hết dòng (duyệt hết bảng) thì bằng `-1`. Bắt buộc phải có câu lệnh `FETCH NEXT` thứ hai ở cuối thân vòng lặp `WHILE` để cập nhật lại status này, tránh vòng lặp vô hạn.
+
+#### 3. Phân Biệt Biến `@` (1 Dấu) và `@@` (2 Dấu)
+*   **Một dấu `@` (Local Variables):** Biến cục bộ do bạn tự khai báo (`DECLARE`) và quản lý (có toàn quyền đọc/ghi).
+*   **Hai dấu `@@` (System Variables):** Biến hệ thống toàn cục do SQL Server tự định nghĩa sẵn và quản lý (chỉ được đọc - Read-only, tự động nhảy số theo trạng thái hệ thống).
+
+#### 4. Biến Con Trỏ (`@CrsrVar`) Là Gì?
+*   Là một biến cục bộ có kiểu dữ liệu là `CURSOR` (tham chiếu đến vùng nhớ con trỏ).
+*   **Ưu điểm:** Có thể truyền biến con trỏ này qua lại giữa các Stored Procedure khác nhau (bằng tham số `OUTPUT`). Ngoài ra, khi thoát khỏi Stored Procedure, SQL Server sẽ tự động giải phóng bộ nhớ của biến con trỏ này, hạn chế tối đa lỗi rò rỉ bộ nhớ (Memory Leak) do quên `DEALLOCATE`.
+
+#### 5. Cơ Chế `WHERE CURRENT OF` và Cách Reset Con Trỏ Quay Lại Đầu Bảng
+*   **`WHERE CURRENT OF`:** SQL Server lưu địa chỉ vật lý (RID hoặc Clustered Index Key) của dòng con trỏ đang đứng trực tiếp trên RAM. Lệnh này giúp thực hiện `UPDATE`/`DELETE` thẳng vào địa chỉ đó cực nhanh mà không cần quét bảng tìm khóa chính.
+*   **Quay lại đầu bảng:** Mặc định con trỏ chỉ đi một chiều (`FORWARD_ONLY`). Khi duyệt đến cuối bảng và hết dữ liệu, để chạy lại vòng lặp mới từ đầu, ta có 2 cách:
+    *   **Cách 1:** Chạy `CLOSE @CrsrVar` rồi `OPEN @CrsrVar` lại (Cách này tối ưu hiệu năng nhất).
+    *   **Cách 2:** Khai báo con trỏ dạng `SCROLL` từ đầu, sau đó gọi lệnh `FETCH FIRST` để nhảy thẳng về dòng 1.
+

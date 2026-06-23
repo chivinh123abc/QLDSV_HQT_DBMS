@@ -31,6 +31,8 @@ namespace QLDSV_HTC.Domain.Constants
             public const string Group = "@NHOM";
             public const string StudentId = "@MASV";
             public const string StudentName = "@TENSV";
+            public const string ClassId = "@MALOP";
+            public const string FacultyId = "@MAKHOA";
         }
 
         public static class UpdateGrades
@@ -80,6 +82,12 @@ namespace QLDSV_HTC.Domain.Constants
             public const string Dob = "@NGAYSINH";
             public const string ClassId = "@MALOP";
             public const string OnLeave = "@DANGHIHOC";
+            public const string Password = "@PASSWORD";
+        }
+
+        public static class ResetPasswordSinhVien
+        {
+            public const string StudentId = "@MASV";
             public const string Password = "@PASSWORD";
         }
 

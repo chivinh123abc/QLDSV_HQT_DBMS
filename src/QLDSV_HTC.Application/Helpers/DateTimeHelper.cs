@@ -36,8 +36,9 @@ namespace QLDSV_HTC.Application.Helpers
         public static int GetCurrentSemester()
         {
             var month = DateTime.Now.Month;
-            if (month >= 9 || month == 1) return 1;
-            if (month >= 2 && month <= 6) return 2;
+            // HK1: Sep-Jan, HK2: Feb-May, HK3 (hè): Jun-Aug
+            if (month >= 9 || month <= 1) return 1;
+            if (month >= 2 && month <= 5) return 2;
             return 3;
         }
 

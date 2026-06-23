@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using QLDSV_HTC.Application.DTOs;
 using QLDSV_HTC.Application.Interfaces;
 using QLDSV_HTC.Application.Helpers;
+using QLDSV_HTC.Infrastructure.Helpers;
 using QLDSV_HTC.Domain.Constants;
 using QLDSV_HTC.Web.Models;
 
@@ -47,6 +48,9 @@ namespace QLDSV_HTC.Web.Controllers
             var subjects = await subjectRepository.GetSubjectListAsync();
             var lecturers = await lecturerRepository.GetLecturerListAsync(isPGV ? null : currentFacultyId);
 
+            // Tạo dictionary tra cứu tên khoa từ mã khoa
+            var facultyLookup = faculties.ToDictionary(f => f.FacultyId.Trim(), f => f.FacultyName);
+
             // Build View Model
             var vm = new CreditClassManagementViewModel
             {
@@ -61,7 +65,7 @@ namespace QLDSV_HTC.Web.Controllers
                     LecturerId = d.LecturerId,
                     LecturerName = d.LecturerName,
                     FacultyId = d.FacultyId,
-                    FacultyName = d.FacultyId, // Wait, dtos doesn't have FacultyName, but that's fine for now or I can add it
+                    FacultyName = facultyLookup.TryGetValue(d.FacultyId.Trim(), out var fname) ? fname : d.FacultyId,
                     MinStudents = d.MinStudents,
                     Cancelled = d.IsCancelled,
                     RegisteredCount = d.RegisteredCount
@@ -105,7 +109,7 @@ namespace QLDSV_HTC.Web.Controllers
             }
             catch (SqlException ex)
             {
-                return BadRequest(new { success = false, message = ex.Message });
+                return BadRequest(new { success = false, message = SqlErrorHelper.GetFriendlyMessage(ex) });
             }
         }
 

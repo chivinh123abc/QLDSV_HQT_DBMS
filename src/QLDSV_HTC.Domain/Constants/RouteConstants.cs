@@ -161,12 +161,29 @@ namespace QLDSV_HTC.Domain.Constants
             public const string UnregisterPath = $"{Prefix}/{Unregister}";
         }
 
+        public static class AdminRegistration
+        {
+            public const string Prefix = "/admin-registration";
+            public const string Index = "";
+            public const string SearchStudents = "search-students";
+            public const string Filter = "filter";
+            public const string Register = "register";
+            public const string Unregister = "unregister";
+
+            public const string AdminRegistrationPath = Prefix;
+            public const string SearchStudentsPath = $"{Prefix}/{SearchStudents}";
+            public const string FilterPath = $"{Prefix}/{Filter}";
+            public const string RegisterPath = $"{Prefix}/{Register}";
+            public const string UnregisterPath = $"{Prefix}/{Unregister}";
+        }
+
         public static class Grade
         {
             public const string Prefix = "/grade";
             public const string Index = "";
             public const string GetGrades = "/api/grades/students";
             public const string SaveGrades = "/api/grades/save";
+            public const string GetCreditClasses = "/api/grades/credit-classes";
 
             public const string GradePath = Prefix;
         }

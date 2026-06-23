@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using QLDSV_HTC.Infrastructure.Helpers;
 using QLDSV_HTC.Application.DTOs;
 using QLDSV_HTC.Application.Interfaces;
 using QLDSV_HTC.Domain.Constants;
@@ -96,7 +97,7 @@ namespace QLDSV_HTC.Web.Controllers
             }
             catch (SqlException ex)
             {
-                return BadRequest(new { success = false, message = ex.Message });
+                return BadRequest(new { success = false, message = SqlErrorHelper.GetFriendlyMessage(ex) });
             }
         }
 
@@ -125,7 +126,7 @@ namespace QLDSV_HTC.Web.Controllers
             }
             catch (SqlException ex)
             {
-                return BadRequest(new { success = false, message = ex.Message });
+                return BadRequest(new { success = false, message = SqlErrorHelper.GetFriendlyMessage(ex) });
             }
         }
 
@@ -150,7 +151,7 @@ namespace QLDSV_HTC.Web.Controllers
             }
             catch (SqlException ex)
             {
-                return BadRequest(new { success = false, message = ex.Message });
+                return BadRequest(new { success = false, message = SqlErrorHelper.GetFriendlyMessage(ex) });
             }
         }
     }

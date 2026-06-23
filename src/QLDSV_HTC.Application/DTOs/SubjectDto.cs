@@ -7,5 +7,6 @@ namespace QLDSV_HTC.Application.DTOs
         public string SubjectName { get; set; } = string.Empty;
         public int TheoryHours { get; set; }
         public int PracticeHours { get; set; }
+        public bool CanDelete { get; set; } = true;
     }
 }
