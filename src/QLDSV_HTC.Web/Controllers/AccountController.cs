@@ -381,6 +381,18 @@ namespace QLDSV_HTC.Web.Controllers
         }
 
         // ────────────────────────────────────────────────
+        // GET /account/online-logins — API: lấy danh sách login đang online
+        // ────────────────────────────────────────────────
+        [HttpGet]
+        [Route("online-logins")]
+        [Authorize(Roles = AppConstants.Groups.Faculty)]
+        public async Task<IActionResult> GetOnlineLogins()
+        {
+            var onlineLogins = await accountRepository.GetOnlineLoginsAsync();
+            return Json(onlineLogins);
+        }
+
+        // ────────────────────────────────────────────────
         // GET /account/management — Trang quản lý tài khoản
         // ────────────────────────────────────────────────
         [HttpGet]

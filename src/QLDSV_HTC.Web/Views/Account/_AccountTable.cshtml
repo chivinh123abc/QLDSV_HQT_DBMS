@@ -1025,6 +1025,86 @@
                 });
             });
 
+            // ── Auto-refresh online status (polling mỗi 15 giây) ──
+            let lastOnlineSet = new Set();
+            async function pollOnlineStatus() {
+                try {
+                    const res = await fetch('/account/online-logins');
+                    if (!res.ok) return;
+                    const onlineLogins = await res.json();
+                    const newSet = new Set(onlineLogins.map(l => l.toLowerCase()));
+
+                    // So sánh: nếu khác thì cập nhật UI
+                    const changed = newSet.size !== lastOnlineSet.size || 
+                        [...newSet].some(l => !lastOnlineSet.has(l)) ||
+                        [...lastOnlineSet].some(l => !newSet.has(l));
+
+                    if (!changed) return;
+                    lastOnlineSet = newSet;
+
+                    // Cập nhật từng hàng trong bảng
+                    document.querySelectorAll('#accountTableBody tr[data-login]').forEach(row => {
+                        const login = (row.dataset.login || '').toLowerCase();
+                        const user = (row.dataset.user || '').toLowerCase();
+                        const isOnline = newSet.has(login);
+                        const isSelf = user === CURRENT_LOGIN_NAME.toLowerCase();
+                        const isOnlineOther = isOnline && !isSelf;
+
+                        // Cập nhật nút Edit
+                        const editBtn = row.querySelector('.btn-outline-primary, .btn-sm.opacity-50:not(.btn-outline-danger)');
+                        if (editBtn) {
+                            if (isOnlineOther) {
+                                editBtn.classList.remove('btn-edit-row', 'hover-scale');
+                                editBtn.classList.add('disabled', 'opacity-50');
+                                editBtn.disabled = true;
+                                editBtn.title = 'Không thể sửa: tài khoản đang đăng nhập';
+                            } else {
+                                editBtn.classList.add('btn-edit-row', 'hover-scale');
+                                editBtn.classList.remove('disabled', 'opacity-50');
+                                editBtn.disabled = false;
+                                editBtn.title = 'Chỉnh sửa tài khoản';
+                            }
+                        }
+
+                        // Cập nhật nút Delete
+                        const delBtn = row.querySelector('.btn-outline-danger');
+                        if (delBtn) {
+                            const canDelete = !isSelf && !isOnlineOther;
+                            if (canDelete) {
+                                delBtn.classList.add('btn-delete-row', 'hover-scale');
+                                delBtn.classList.remove('disabled', 'opacity-50');
+                                delBtn.disabled = false;
+                                delBtn.title = 'Xóa tài khoản';
+                            } else {
+                                delBtn.classList.remove('btn-delete-row', 'hover-scale');
+                                delBtn.classList.add('disabled', 'opacity-50');
+                                delBtn.disabled = true;
+                                delBtn.title = isSelf ? 'Không thể xóa chính mình' : 'Không thể xóa: tài khoản đang đăng nhập';
+                            }
+                        }
+
+                        // Thêm/xóa badge Online trên tên đăng nhập
+                        const loginCell = row.querySelector('td:first-child');
+                        if (loginCell) {
+                            let badge = loginCell.querySelector('.online-badge');
+                            if (isOnline && !badge) {
+                                badge = document.createElement('span');
+                                badge.className = 'online-badge badge bg-success-subtle text-success border border-success-subtle px-1 py-0 rounded-pill ms-1';
+                                badge.style.fontSize = '0.6rem';
+                                badge.innerHTML = '<i class="bi bi-circle-fill" style="font-size:0.4rem"></i>';
+                                loginCell.appendChild(badge);
+                            } else if (!isOnline && badge) {
+                                badge.remove();
+                            }
+                        }
+                    });
+                } catch (e) { /* ignore polling errors */ }
+            }
+
+            // Poll ngay lần đầu, sau đó mỗi 15 giây
+            pollOnlineStatus();
+            setInterval(pollOnlineStatus, 15000);
+
         })();
     </script>
 }

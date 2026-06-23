@@ -15,6 +15,7 @@ namespace QLDSV_HTC.Web.Models
         public int CreditClassCount { get; set; }
         public bool HasAccount { get; set; }
         public bool IsOnline { get; set; }
+        public string? LoginName { get; set; }
     }
 
     public class LecturerManagementViewModel

@@ -62,6 +62,7 @@ namespace QLDSV_HTC.Web.Controllers
                     CreditClassCount = l.CreditClassCount,
                     HasAccount = l.HasAccount,
                     IsOnline = !string.IsNullOrEmpty(l.LoginName) && onlineLogins.Contains(l.LoginName),
+                    LoginName = l.LoginName,
                 }),
                 Faculties = faculties.Select(f => new FacultyViewModel
                 {
