@@ -120,6 +120,34 @@ Hệ thống kết xuất các báo cáo chuẩn PDF chất lượng cao:
 4.  **Phiếu điểm cá nhân**: In phiếu điểm của một sinh viên cụ thể (Lấy điểm cao nhất của các lần thi).
 5.  **Bảng điểm tổng kết khóa học**: Báo cáo dạng **Cross-Tab** (Ma trận) thể hiện điểm tổng kết của từng sinh viên đối với toàn bộ các môn học đã hoàn thành trong khóa học của Lớp.
 
+### 6. Báo cáo Động (Dynamic Report Builder)
+
+Cho phép người dùng **tự tạo báo cáo tùy chỉnh** mà không cần viết code — qua giao diện 6 bước kéo-thả:
+
+| Bước | Mô tả |
+| :--- | :--- |
+| **Step 1** | Chọn bảng dữ liệu nguồn |
+| **Step 2** | JOIN bảng liên quan (INNER/LEFT — tự detect FK) |
+| **Step 3** | Chọn cột hiển thị + Alias + Sắp xếp (ASC/DESC toggle) |
+| **Step 4** | Cấu hình Thống kê: Aggregate (COUNT/SUM/AVG/MIN/MAX), HAVING AND/OR, In theo nhóm |
+| **Step 5** | Điều kiện lọc WHERE (10 operators, parameterized) |
+| **Step 6** | Cài đặt: Tiêu đề (@PARAM interpolation), Tên file xuất |
+
+**Tính năng nổi bật:**
+- **Standalone Aggregates**: SUM/AVG/COUNT không cần GROUP BY (VD: tổng SV toàn trường).
+- **HAVING AND/OR**: Toggle giữa AND và OR cho điều kiện lọc sau gom nhóm.
+- **@PARAM Title**: Tiêu đề báo cáo có tham số động — `DANH SÁCH SV @MAKHOA` → `DANH SÁCH SV CNTT`.
+- **Print by Group**: In PDF theo nhóm với GroupHeader/GroupFooter + tùy chọn sang trang mới mỗi nhóm.
+- **Phân trang Preview**: Dropdown 10/25/50/100 dòng + nút ◀▶ + SQL Preview real-time cập nhật OFFSET/FETCH.
+- **SQL Preview Live**: Hiển thị câu SQL đang thực thi, cập nhật real-time khi thay đổi cấu hình.
+- **Guide Panel**: Sidebar hướng dẫn nhanh cách sử dụng + ràng buộc cần biết.
+
+### 7. Dashboard Sinh Viên
+
+- Hiển thị thông tin cá nhân, lớp, khóa học.
+- Học kỳ hiện tại: niên khóa/HK mới nhất có đăng ký + số môn.
+- Danh sách môn đã đăng ký ở HK hiện tại kèm điểm (CC, GK, CK).
+
 ---
 
 ## 🛠️ Makefile và Các lệnh Phát triển hữu ích
@@ -178,16 +206,30 @@ Tất cả các thành viên tham gia phát triển dự án cần tuân thủ n
 
 👉 **[Xem chi tiết Quy tắc Phát triển và Tối ưu CSDL](.agents/rules/rules.md)**
 
-Các quy tắc quan quan trọng bao gồm:
+Các quy tắc quan trọng bao gồm:
 
 1.  **Không Hardcode hằng số**: Tuyệt đối không viết trực tiếp tên cột, tên stored procedure hoặc route trong logic controller/repository. Phải sử dụng lớp hằng số tương ứng như `DbConstants` hoặc `AppConstants`.
 2.  **Không nối chuỗi SQL**: Sử dụng hoàn toàn SQL Parameterized để chống lỗi bảo mật SQL Injection.
 3.  **Thực thi Bulk Insert/Update qua TVP**: Tuyệt đối không chạy vòng lặp cập nhật điểm qua nhiều kết nối đơn lẻ.
 4.  **Quy luật Tối ưu Truy vấn SQL**:
     - Phép chọn (Filter) và phép chiếu (Select các trường cần thiết) trước, phép kết (Join) sau.
-    - Khử các phép nối không cần thiết.
+    - Khử các phép nối không cần thiết (dùng `EXISTS` thay `LEFT JOIN` khi chỉ cần validate).
+    - Tách điều kiện non-SARGable (VD: `HO + ' ' + TEN` → LIKE riêng `HO`/`TEN`).
     - Tối ưu vị trí của điều kiện lọc trong mệnh đề `AND` (sai đặt trước) và `OR` (đúng đặt trước).
     - Khai thác tối đa non-clustered indexes đã định cấu hình.
+
+### Kết quả Audit SP (21 Stored Procedures)
+
+| SP | Kỹ thuật tối ưu đã áp dụng |
+| :--- | :--- |
+| 006 | Khử phép nối — truy vấn `MALTC` riêng trước, giảm JOIN từ 3→2 bảng |
+| 007 | `LEFT JOIN LOP` → `EXISTS`, tách `HO+TEN` SARGable, reorder WHERE (PK first) |
+| 008 | CTE `FilteredDK` lọc trước JOIN + `ROW_NUMBER` lấy điểm max 1 lần quét |
+| 009 | Temp table materialize → tránh CTE double-scan khi PIVOT |
+| 012 | `QUOTENAME()` + `OBJECT_ID` validate + `sp_executesql` parameterize OFFSET/FETCH |
+| 017 | `SERIALIZABLE` isolation + TRY/CATCH pattern |
+| 019 | TVP (`GradeEntryType`) — bulk update điểm 1 round-trip |
+| 021 | Extract `@HAS_DK`, `@CUR_NK/@CUR_HK` biến cục bộ — giảm 3 lần quét bảng DANGKY |
 
 ---
 

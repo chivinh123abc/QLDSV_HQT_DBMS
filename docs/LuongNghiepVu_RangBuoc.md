@@ -1241,6 +1241,7 @@ Cost: ~5x chậm hơn                 Cost: Tối ưu nhất
 | 018 | `sp_ThemKhoa` / `sp_SuaKhoa` / `sp_XoaKhoa` | `FacultyController` | CRUD khoa | PGV |
 | 019 | `sp_CapNhatDiem` | `GradeController` | Cập nhật điểm hàng loạt (TVP) | PGV |
 | 020 | `sp_ResetPasswordSinhVien` | `AccountController` | Reset mật khẩu SV | SV |
+| 021 | `sp_LayThongTinDashboardSinhVien` | `HomeController` | Dashboard SV (thông tin + HK hiện tại + môn đăng ký) | SV |
 
 ### Bảng tra nhanh: Controller → View
 
@@ -1258,6 +1259,7 @@ Cost: ~5x chậm hơn                 Cost: Tối ưu nhất
 | `FacultyController` | `Index`, `Create`, `Edit` | Quản lý Khoa |
 | `LecturerController` | `Index`, `Create`, `Edit` | Quản lý GV |
 | `SubjectController` | `Index`, `Create`, `Edit` | Quản lý Môn học |
+| `HomeController` | `Index`, `Dashboard` | Trang chủ, Dashboard SV |
 
 ---
 
@@ -1282,3 +1284,9 @@ Cost: ~5x chậm hơn                 Cost: Tối ưu nhất
 | 15 | Dynamic Report: Standalone aggregate (all agg → no GROUP BY) | C# Repository | Nghiệp vụ |
 | 16 | Dynamic Report: HavingLogic whitelist (AND/OR only) | C# Repository | Validation |
 | 17 | Dynamic Report: Table/Column name sanitization `[a-zA-Z0-9_]` | C# Repository | Bảo mật |
+| 18 | `sp_PhanTrangDong`: `QUOTENAME` + `OBJECT_ID` validate + parameterize OFFSET/FETCH | SP (SQL) | Bảo mật |
+| 19 | `sp_BangDiemMon`: `LEFT JOIN LOP` → `EXISTS`, tách `HO+TEN` SARGable, reorder WHERE | SP (SQL) | Performance |
+| 20 | `sp_DashboardSV`: Extract `@HAS_DK`, `@CUR_NK/@CUR_HK` biến cục bộ (giảm 3 query lặp) | SP (SQL) | Performance |
+| 21 | Dynamic Report: Group column parse `Table.Column` → match DataTable column name | C# Report | Nghiệp vụ |
+| 22 | Dynamic Report: Prepend group column vào ORDER BY khi PrintByGroup active | C# Repository | Nghiệp vụ |
+| 23 | Dynamic Report: SQL Preview cập nhật OFFSET/FETCH khi chuyển trang | JS Frontend | UX |
