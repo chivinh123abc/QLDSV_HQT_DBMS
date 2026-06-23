@@ -9,15 +9,12 @@ namespace QLDSV_HTC.Web.Models
         public string Gpa { get; set; } = string.Empty;
     }
 
-    public class UpcomingClassViewModel
+    public class RegisteredCourseViewModel
     {
-        public int Id { get; set; }
-        public string Subject { get; set; } = string.Empty;
-        public string Code { get; set; } = string.Empty;
-        public string Room { get; set; } = string.Empty;
-        public string Time { get; set; } = string.Empty;
-        public string Lecturer { get; set; } = string.Empty;
-        public string Type { get; set; } = string.Empty;
+        public string SubjectName { get; set; } = string.Empty;
+        public string LecturerName { get; set; } = string.Empty;
+        public bool IsTheory { get; set; }
+        public bool IsPractice { get; set; }
     }
 
     public class AnnouncementViewModel
@@ -35,9 +32,11 @@ namespace QLDSV_HTC.Web.Models
         public string StudentId { get; set; } = string.Empty;
         public string StudentClass { get; set; } = string.Empty;
         public string FacultyName { get; set; } = string.Empty;
+        public string SchoolYear { get; set; } = string.Empty;
+        public bool OnLeave { get; set; }
 
         public CurrentSemesterInfoViewModel CurrentSemester { get; set; } = new();
-        public IEnumerable<UpcomingClassViewModel> UpcomingClasses { get; set; } = [];
+        public IEnumerable<RegisteredCourseViewModel> RegisteredCourses { get; set; } = [];
         public IEnumerable<AnnouncementViewModel> Announcements { get; set; } = [];
     }
 }

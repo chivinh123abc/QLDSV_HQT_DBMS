@@ -17,6 +17,7 @@ namespace QLDSV_HTC.Web.Models
         public int MinStudents { get; set; }
         public bool Cancelled { get; set; }
         public int RegisteredCount { get; set; }
+        public bool HasGrades { get; set; }
     }
 
     public class CreditClassManagementViewModel

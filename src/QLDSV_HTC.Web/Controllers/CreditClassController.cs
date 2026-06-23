@@ -68,7 +68,8 @@ namespace QLDSV_HTC.Web.Controllers
                     FacultyName = facultyLookup.TryGetValue(d.FacultyId.Trim(), out var fname) ? fname : d.FacultyId,
                     MinStudents = d.MinStudents,
                     Cancelled = d.IsCancelled,
-                    RegisteredCount = d.RegisteredCount
+                    RegisteredCount = d.RegisteredCount,
+                    HasGrades = d.HasGrades
                 }),
                 Faculties = faculties.Select(f => new FacultyViewModel { Id = f.FacultyId, Name = f.FacultyName }),
                 Subjects = subjects.Select(s => new SubjectViewModel { Id = s.SubjectId, Name = s.SubjectName }),

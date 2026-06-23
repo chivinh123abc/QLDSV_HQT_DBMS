@@ -50,6 +50,7 @@ namespace QLDSV_HTC.Domain.Constants
                 public const string AcademicRank = "HOCHAM";
                 public const string Specialty = "CHUYENMON";
                 public const string FacultyName = "TENKHOA";
+                public const string HasAccount = "CO_TAIKHOAN";
             }
 
             public static class Student
@@ -90,6 +91,7 @@ namespace QLDSV_HTC.Domain.Constants
                 public const string MinStudents = "SOSVTOITHIEU";
                 public const string IsCancelled = "HUYLOP";
                 public const string RegisteredCount = "SOSV_DANGKY";
+                public const string HasGrades = "DA_CO_DIEM";
                 public const string IsRegistered = "DA_DANGKY";
             }
 

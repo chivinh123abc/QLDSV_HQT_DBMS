@@ -32,7 +32,10 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                 FacultyId = row[DbConstants.Columns.CreditClass.FacultyId]?.ToString()?.Trim() ?? string.Empty,
                 MinStudents = Convert.ToInt32(row[DbConstants.Columns.CreditClass.MinStudents]),
                 IsCancelled = row[DbConstants.Columns.CreditClass.IsCancelled] != DBNull.Value && Convert.ToBoolean(row[DbConstants.Columns.CreditClass.IsCancelled]),
-                RegisteredCount = Convert.ToInt32(row[DbConstants.Columns.CreditClass.RegisteredCount])
+                RegisteredCount = Convert.ToInt32(row[DbConstants.Columns.CreditClass.RegisteredCount]),
+                HasGrades = row.Table.Columns.Contains(DbConstants.Columns.CreditClass.HasGrades)
+                    && row[DbConstants.Columns.CreditClass.HasGrades] != DBNull.Value
+                    && Convert.ToBoolean(row[DbConstants.Columns.CreditClass.HasGrades])
             });
         }
 

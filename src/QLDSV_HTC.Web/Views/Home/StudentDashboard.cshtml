@@ -1,7 +1,25 @@
+@model QLDSV_HTC.Web.Models.StudentDashboardViewModel
 @{
     ViewData["Title"] = "Bảng điều khiển sinh viên";
-    var fullName = User.FindFirst(QLDSV_HTC.Domain.Constants.AppConstants.SessionKeys.FullName)?.Value ?? "Sinh viên";
-    var maSV = User.FindFirst(QLDSV_HTC.Domain.Constants.AppConstants.SessionKeys.Username)?.Value ?? "---";
+    var fullName = Model?.StudentName ?? User.FindFirst(QLDSV_HTC.Domain.Constants.AppConstants.SessionKeys.FullName)?.Value ?? "Sinh viên";
+    var maSV = Model?.StudentId ?? User.FindFirst(QLDSV_HTC.Domain.Constants.AppConstants.SessionKeys.Username)?.Value ?? "---";
+    var schoolYear = Model?.SchoolYear ?? "---";
+    var currentSemester = Model?.CurrentSemester;
+    var courses = Model?.RegisteredCourses?.ToList() ?? new List<QLDSV_HTC.Web.Models.RegisteredCourseViewModel>();
+    var today = DateTime.Now;
+    var dayOfWeekVi = today.DayOfWeek switch
+    {
+        DayOfWeek.Monday => "Thứ 2",
+        DayOfWeek.Tuesday => "Thứ 3",
+        DayOfWeek.Wednesday => "Thứ 4",
+        DayOfWeek.Thursday => "Thứ 5",
+        DayOfWeek.Friday => "Thứ 6",
+        DayOfWeek.Saturday => "Thứ 7",
+        _ => "Chủ nhật",
+    };
+    var todayStr = $"{dayOfWeekVi}, {today:dd/MM/yyyy}";
+    var statusText = Model?.OnLeave == true ? "Nghỉ học" : "Đang học";
+    var statusBadge = Model?.OnLeave == true ? "text-danger" : "text-info";
 }
 
 <div class="dashboard-container">
@@ -24,7 +42,7 @@
                             </div>
                             <div class="info-item">
                                 <label class="text-muted small text-uppercase fw-bold d-block mb-1">Niên khóa</label>
-                                <span class="fw-semibold">2021-2025</span>
+                                <span class="fw-semibold">@schoolYear</span>
                             </div>
                         </div>
                     </div>
@@ -41,8 +59,8 @@
                     </div>
                     <div>
                         <p class="text-muted small mb-0 fw-medium">Học kỳ hiện tại</p>
-                        <h4 class="h5 fw-bold mb-0">Học kỳ 1</h4>
-                        <span class="text-xs text-muted">2025-2026</span>
+                        <h4 class="h5 fw-bold mb-0">@(currentSemester?.Semester ?? "---")</h4>
+                        <span class="text-xs text-muted">@(currentSemester?.Year ?? "---")</span>
                     </div>
                 </div>
             </div>
@@ -56,8 +74,8 @@
                     </div>
                     <div>
                         <p class="text-muted small mb-0 fw-medium">Môn học đăng ký</p>
-                        <h4 class="h5 fw-bold mb-0">06</h4>
-                        <span class="text-xs text-muted">Trong học kỳ 1</span>
+                        <h4 class="h5 fw-bold mb-0">@(currentSemester?.RegisteredCourses.ToString("D2") ?? "00")</h4>
+                        <span class="text-xs text-muted">Trong @(currentSemester?.Semester?.ToLower() ?? "---")</span>
                     </div>
                 </div>
             </div>
@@ -70,9 +88,9 @@
                         <i class="bi bi-award"></i>
                     </div>
                     <div>
-                        <p class="text-muted small mb-0 fw-medium">GPA Tích lũy</p>
-                        <h4 class="h5 fw-bold mb-0">3.45</h4>
-                        <span class="text-xs text-success fw-medium"><i class="bi bi-graph-up-arrow"></i> +0.15</span>
+                        <p class="text-muted small mb-0 fw-medium">Tổng môn đăng ký</p>
+                        <h4 class="h5 fw-bold mb-0">@courses.Count</h4>
+                        <span class="text-xs text-muted">Trong kỳ hiện tại</span>
                     </div>
                 </div>
             </div>
@@ -86,8 +104,8 @@
                     </div>
                     <div>
                         <p class="text-muted small mb-0 fw-medium">Trạng thái</p>
-                        <h4 class="h5 fw-bold mb-0">Đang học</h4>
-                        <span class="text-xs text-info">Bình thường</span>
+                        <h4 class="h5 fw-bold mb-0">@statusText</h4>
+                        <span class="text-xs @statusBadge">@(Model?.OnLeave == true ? "Tạm nghỉ" : "Bình thường")</span>
                     </div>
                 </div>
             </div>
@@ -95,74 +113,56 @@
     </div>
 
     <div class="row g-4">
-        <!-- Main Content Area: Left Column -->
+        <!-- Main Content Area: Left Column - Registered Courses -->
         <div class="col-lg-8">
             <div class="qldsv-card border-0 shadow-sm overflow-hidden h-100">
                 <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-                    <h3 class="h6 fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Lịch học hôm nay</h3>
-                    <span class="text-muted text-xs">Thứ 7, 28/03/2026</span>
+                    <h3 class="h6 fw-bold mb-0"><i class="bi bi-journal-bookmark me-2 text-primary"></i>Môn học đã đăng ký</h3>
+                    <span class="text-muted text-xs">@todayStr</span>
                 </div>
                 <div class="card-body p-4">
-                    <div class="timeline-schedule">
-                        <!-- Class 1 -->
-                        <div class="row g-0 mb-4 position-relative">
-                            <div class="col-auto text-center" style="width: 70px;">
-                                <div class="text-xs text-muted fw-bold mb-1">07:00</div>
-                                <div class="line mx-auto bg-light-subtle" style="width: 2px; height: 100%;"></div>
-                            </div>
-                            <div class="col">
-                                <div class="p-3 border rounded-3 bg-light-subtle hover-bg-light transition-base">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <h4 class="h6 fw-bold mb-0">Cơ sở dữ liệu</h4>
-                                        <span class="badge badge-status badge-info">Lý thuyết</span>
-                                    </div>
-                                    <div class="d-flex flex-wrap gap-3 mt-2">
-                                        <div class="text-xs text-muted"><i class="bi bi-geo-alt me-1"></i>H301</div>
-                                        <div class="text-xs text-muted"><i class="bi bi-person me-1"></i>TS. Nguyễn Văn A</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    @if (courses.Any())
+                    {
+                        <div class="timeline-schedule">
+                            @{ var times = new[] { "07:00", "09:30", "13:30", "15:00", "17:00", "18:30", "20:00" }; }
+                            @for (int i = 0; i < courses.Count; i++)
+                            {
+                                var course = courses[i];
+                                var time = i < times.Length ? times[i] : $"{7 + i}:00";
+                                var isHighlight = i % 3 == 1;
+                                var typeLabel = course.IsPractice ? "Thực hành" : "Lý thuyết";
+                                var typeBadge = course.IsPractice ? "badge-success" : "badge-info";
 
-                        <!-- Class 2 -->
-                        <div class="row g-0 mb-4 position-relative">
-                            <div class="col-auto text-center" style="width: 70px;">
-                                <div class="text-xs text-muted fw-bold mb-1">09:30</div>
-                                <div class="line mx-auto bg-light-subtle" style="width: 2px; height: 100%;"></div>
-                            </div>
-                            <div class="col">
-                                <div class="p-3 border rounded-3 border-primary-subtle bg-primary-subtle bg-opacity-10 hover-bg-light transition-base shadow-sm">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <h4 class="h6 fw-bold mb-0 text-primary">Lập trình Web nâng cao</h4>
-                                        <span class="badge badge-status badge-success">Thực hành</span>
+                                <div class="row g-0 @(i < courses.Count - 1 ? "mb-4" : "") position-relative">
+                                    <div class="col-auto text-center" style="width: 70px;">
+                                        <div class="text-xs text-muted fw-bold mb-1">@time</div>
+                                        @if (i < courses.Count - 1)
+                                        {
+                                            <div class="line mx-auto bg-light-subtle" style="width: 2px; height: 100%;"></div>
+                                        }
                                     </div>
-                                    <div class="d-flex flex-wrap gap-3 mt-2">
-                                        <div class="text-xs text-primary"><i class="bi bi-geo-alt me-1"></i>Lab 101</div>
-                                        <div class="text-xs text-primary"><i class="bi bi-person me-1"></i>ThS. Trần Thị B</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Class 3 -->
-                        <div class="row g-0 position-relative">
-                            <div class="col-auto text-center" style="width: 70px;">
-                                <div class="text-xs text-muted fw-bold mb-1">13:30</div>
-                            </div>
-                            <div class="col">
-                                <div class="p-3 border rounded-3 bg-light-subtle">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <h4 class="h6 fw-bold mb-0">Mạng máy tính</h4>
-                                        <span class="badge badge-status badge-info">Lý thuyết</span>
-                                    </div>
-                                    <div class="d-flex flex-wrap gap-3 mt-2">
-                                        <div class="text-xs text-muted"><i class="bi bi-geo-alt me-1"></i>H205</div>
-                                        <div class="text-xs text-muted"><i class="bi bi-person me-1"></i>PGS.TS. Lê Văn C</div>
+                                    <div class="col">
+                                        <div class="p-3 border rounded-3 @(isHighlight ? "border-primary-subtle bg-primary-subtle bg-opacity-10 shadow-sm" : "bg-light-subtle") hover-bg-light transition-base">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h4 class="h6 fw-bold mb-0 @(isHighlight ? "text-primary" : "")">@course.SubjectName</h4>
+                                                <span class="badge badge-status @typeBadge">@typeLabel</span>
+                                            </div>
+                                            <div class="d-flex flex-wrap gap-3 mt-2">
+                                                <div class="text-xs @(isHighlight ? "text-primary" : "text-muted")"><i class="bi bi-person me-1"></i>@course.LecturerName</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            }
                         </div>
-                    </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-inbox display-4 d-block mb-3 opacity-50"></i>
+                            <p class="mb-0">Chưa đăng ký môn học nào trong học kỳ này.</p>
+                        </div>
+                    }
                 </div>
                 <div class="card-footer bg-transparent border-0 p-4 text-center">
                     <a href="@QLDSV_HTC.Domain.Constants.RouteConstants.Student.SchedulePath" class="btn btn-link text-decoration-none text-xs fw-bold p-0">
@@ -186,8 +186,8 @@
                                     <i class="bi bi-bell text-xs"></i>
                                 </div>
                                 <div>
-                                    <h4 class="text-sm fw-bold mb-1 leading-tight">Yêu cầu đăng ký học phần HK2</h4>
-                                    <p class="text-xs text-muted mb-2 line-clamp-2">Thời hạn đăng ký sẽ kết thúc vào ngày 10/04/2026. Sinh viên lưu ý...</p>
+                                    <h4 class="text-sm fw-bold mb-1 leading-tight">Yêu cầu đăng ký học phần @(currentSemester?.Semester ?? "HK mới")</h4>
+                                    <p class="text-xs text-muted mb-2 line-clamp-2">Thời hạn đăng ký sắp kết thúc. Sinh viên lưu ý hoàn tất đăng ký môn học...</p>
                                     <span class="text-xs text-muted opacity-75">2 giờ trước</span>
                                 </div>
                             </div>
@@ -227,4 +227,3 @@
         </div>
     </div>
 </div>
-

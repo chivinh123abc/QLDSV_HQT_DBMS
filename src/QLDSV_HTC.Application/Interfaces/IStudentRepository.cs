@@ -11,5 +11,6 @@ namespace QLDSV_HTC.Application.Interfaces
         Task UpdateStudentAsync(StudentDto dto);
         Task DeleteStudentAsync(string studentId);
         Task ResetPasswordAsync(string studentId, string newPassword);
+        Task<DTOs.StudentDashboardDto?> GetStudentDashboardAsync(string studentId);
     }
 }

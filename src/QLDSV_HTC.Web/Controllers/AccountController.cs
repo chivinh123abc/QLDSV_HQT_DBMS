@@ -314,6 +314,13 @@ namespace QLDSV_HTC.Web.Controllers
                 return View(model);
             }
 
+            // Kiểm tra mật khẩu phải đủ 8 ký tự trước khi xác thực
+            if (string.IsNullOrEmpty(model.Password) || model.Password.Length < 8)
+            {
+                ViewBag.ErrorMessage = "Mật khẩu phải chứa ít nhất 8 ký tự.";
+                return View(model);
+            }
+
             var session = await authRepository.ValidateUserAsync(model.LoginName, model.Password ?? string.Empty, model.IsStudent);
 
             if (session?.IsValid == true)
