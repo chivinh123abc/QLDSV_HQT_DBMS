@@ -18,7 +18,8 @@ BEGIN
             gv.MAGV, gv.HO, gv.TEN,
             gv.HOCVI, gv.HOCHAM, gv.CHUYENMON,
             gv.MAKHOA,
-            ISNULL(k.TENKHOA, gv.MAKHOA) AS TENKHOA
+            ISNULL(k.TENKHOA, gv.MAKHOA) AS TENKHOA,
+            CAST(CASE WHEN SUSER_ID(RTRIM(gv.MAGV)) IS NOT NULL THEN 1 ELSE 0 END AS BIT) AS CO_TAIKHOAN
         FROM GIANGVIEN gv
         LEFT JOIN KHOA k ON k.MAKHOA = gv.MAKHOA
         WHERE @MAKHOA IS NULL OR gv.MAKHOA = @MAKHOA
@@ -34,7 +35,8 @@ BEGIN
             gv.MAGV, gv.HO, gv.TEN,
             gv.HOCVI, gv.HOCHAM, gv.CHUYENMON,
             gv.MAKHOA,
-            ISNULL(k.TENKHOA, gv.MAKHOA) AS TENKHOA
+            ISNULL(k.TENKHOA, gv.MAKHOA) AS TENKHOA,
+            CAST(CASE WHEN SUSER_ID(RTRIM(gv.MAGV)) IS NOT NULL THEN 1 ELSE 0 END AS BIT) AS CO_TAIKHOAN
         FROM GIANGVIEN gv
         LEFT JOIN KHOA k ON k.MAKHOA = gv.MAKHOA
         WHERE gv.MAKHOA = @MAKHOA_CURRENT
@@ -147,6 +149,13 @@ BEGIN
     IF EXISTS (SELECT 1 FROM LOPTINCHI WHERE MAGV = @MAGV)
     BEGIN
         RAISERROR(N'Không thể xóa giảng viên vì đang phụ trách lớp tín chỉ.', 16, 1);
+        RETURN;
+    END
+
+    -- Kiểm tra: giảng viên đã có tài khoản (SQL Login) thì không cho xóa
+    IF SUSER_ID(RTRIM(@MAGV)) IS NOT NULL
+    BEGIN
+        RAISERROR(N'Không thể xóa giảng viên vì đã được tạo tài khoản đăng nhập.', 16, 1);
         RETURN;
     END
 

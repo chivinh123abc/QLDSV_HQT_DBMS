@@ -337,9 +337,12 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                         helpers.setMode('edit');
                         
                         const creditClassCount = parseInt(ds.creditClassCount || '0', 10);
-                        if (creditClassCount > 0) {
+                        const hasAccount = ds.hasAccount === 'true';
+                        if (creditClassCount > 0 || hasAccount) {
                             btnXoa.disabled = true;
-                            btnXoa.title = `Không thể xóa giảng viên vì đang phụ trách lớp tín chỉ (${creditClassCount} lớp)`;
+                            btnXoa.title = hasAccount 
+                                ? 'Không thể xóa giảng viên vì đã được tạo tài khoản đăng nhập'
+                                : `Không thể xóa giảng viên vì đang phụ trách lớp tín chỉ (${creditClassCount} lớp)`;
                         } else {
                             btnXoa.disabled = false;
                             btnXoa.title = "Xóa (Phím tắt: Del)";
@@ -392,9 +395,12 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 helpers.setMode('edit');
                 
                 const creditClassCount = parseInt(ds.creditClassCount || '0', 10);
-                if (creditClassCount > 0) {
+                const hasAccount = ds.hasAccount === 'true';
+                if (creditClassCount > 0 || hasAccount) {
                     btnXoa.disabled = true;
-                    btnXoa.title = `Không thể xóa giảng viên vì đang phụ trách lớp tín chỉ (${creditClassCount} lớp)`;
+                    btnXoa.title = hasAccount 
+                        ? 'Không thể xóa giảng viên vì đã được tạo tài khoản đăng nhập'
+                        : `Không thể xóa giảng viên vì đang phụ trách lớp tín chỉ (${creditClassCount} lớp)`;
                 } else {
                     btnXoa.disabled = false;
                     btnXoa.title = "Xóa (Phím tắt: Del)";
@@ -532,16 +538,17 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
 
             function mainRowHtml(p, facultyName) {
                 const creditClassCount = p.creditClassCount || 0;
-                const canDelete = creditClassCount === 0;
+                const hasAccount = p.hasAccount === true || p.hasAccount === 'true';
+                const canDelete = creditClassCount === 0 && !hasAccount;
                 const disabledDelete = canDelete ? "" : "disabled";
-                const deleteTitle = canDelete ? "Xóa" : `Không thể xóa giảng viên vì đang phụ trách lớp tín chỉ (${creditClassCount} lớp)`;
+                const deleteTitle = hasAccount ? 'Không thể xóa vì đã có tài khoản' : (!canDelete ? `Không thể xóa vì đang phụ trách LTC (${creditClassCount} lớp)` : 'Xóa');
                 const deleteClass = canDelete ? "btn-delete-row hover-scale" : "disabled opacity-50";
 
                 return `<tr data-id="${escapeHtml(p.lecturerId)}" data-first="${escapeHtml(p.firstName)}" data-last="${escapeHtml(p.lastName)}"
                                 data-degree="${escapeHtml(p.degree ?? '')}" data-rank="${escapeHtml(p.academicRank ?? '')}"
                                 data-spec="${escapeHtml(p.specialty ?? '')}" data-faculty="${escapeHtml(p.facultyId)}"
                                 data-faculty-filter="${escapeHtml(p.facultyId)}"
-                                data-credit-class-count="${creditClassCount}">
+                                data-credit-class-count="${creditClassCount}" data-has-account="${hasAccount}">
                         <td class="fw-semibold font-monospace text-primary">${escapeHtml(p.lecturerId)}</td>
                         <td class="fw-medium">${escapeHtml(p.firstName)} ${escapeHtml(p.lastName)}</td>
                         <td>${escapeHtml(p.degree ?? '')}</td>
@@ -572,7 +579,7 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                                 data-id="${escapeHtml(p.lecturerId)}" data-first="${escapeHtml(p.firstName)}" data-last="${escapeHtml(p.lastName)}"
                                 data-degree="${escapeHtml(p.degree ?? '')}" data-rank="${escapeHtml(p.academicRank ?? '')}"
                                 data-spec="${escapeHtml(p.specialty ?? '')}" data-faculty="${escapeHtml(p.facultyId)}"
-                                data-credit-class-count="${p.creditClassCount || 0}">
+                                data-credit-class-count="${p.creditClassCount || 0}" data-has-account="${p.hasAccount || false}">
                         <td class="fw-bold font-monospace text-primary">${escapeHtml(p.lecturerId)}</td>
                         <td>${escapeHtml(p.firstName)} ${escapeHtml(p.lastName)}</td>
                         <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle small px-2">${escapeHtml(p.facultyId)}</span></td>

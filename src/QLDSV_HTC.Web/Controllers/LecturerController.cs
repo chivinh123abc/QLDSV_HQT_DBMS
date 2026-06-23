@@ -56,6 +56,7 @@ namespace QLDSV_HTC.Web.Controllers
                     FacultyId = l.FacultyId,
                     FacultyName = l.FacultyName,
                     CreditClassCount = l.CreditClassCount,
+                    HasAccount = l.HasAccount,
                 }),
                 Faculties = faculties.Select(f => new FacultyViewModel
                 {

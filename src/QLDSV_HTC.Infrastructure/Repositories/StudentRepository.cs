@@ -152,5 +152,60 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                 new SqlParameter(StoredProcedureConstants.ResetPasswordSinhVien.Password, newPassword)
             );
         }
+        public async Task<StudentDashboardDto?> GetStudentDashboardAsync(string studentId)
+        {
+            await using var conn = new SqlConnection(connectionProvider.GetConnectionString());
+            await using var cmd = new SqlCommand(AppConstants.SpNames.GetStudentDashboard, conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@MASV", studentId);
+            await conn.OpenAsync();
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            // Result 1: Student info
+            if (!await reader.ReadAsync()) return null;
+
+            var dto = new StudentDashboardDto
+            {
+                StudentId = reader["MASV"]?.ToString()?.Trim() ?? string.Empty,
+                FullName = $"{reader["HO"]?.ToString()?.Trim()} {reader["TEN"]?.ToString()?.Trim()}".Trim(),
+                ClassId = reader["MALOP"]?.ToString()?.Trim() ?? string.Empty,
+                ClassName = reader["TENLOP"]?.ToString()?.Trim() ?? string.Empty,
+                SchoolYear = reader["KHOAHOC"]?.ToString()?.Trim() ?? string.Empty,
+                OnLeave = reader["DANGHIHOC"] as bool? ?? false,
+            };
+
+            // Result 2: Current semester
+            if (await reader.NextResultAsync() && await reader.ReadAsync())
+            {
+                dto.CurrentYear = reader["NIENKHOA"]?.ToString()?.Trim() ?? string.Empty;
+                dto.CurrentSemester = Convert.ToInt32(reader["HOCKY"]);
+                dto.RegisteredCourses = Convert.ToInt32(reader["SoMon"]);
+            }
+
+            // Result 3: Registered courses
+            var courses = new List<RegisteredCourseDto>();
+            if (await reader.NextResultAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    courses.Add(new RegisteredCourseDto
+                    {
+                        CreditClassId = Convert.ToInt32(reader["MALTC"]),
+                        SubjectId = reader["MAMH"]?.ToString()?.Trim() ?? string.Empty,
+                        SubjectName = reader["TENMH"]?.ToString()?.Trim() ?? string.Empty,
+                        LecturerName = reader["HOTEN_GV"]?.ToString()?.Trim() ?? string.Empty,
+                        TheoryHours = Convert.ToInt32(reader["SOTIET_LT"]),
+                        PracticeHours = Convert.ToInt32(reader["SOTIET_TH"]),
+                        AttendanceGrade = reader["DIEM_CC"] as float?,
+                        MidtermGrade = reader["DIEM_GK"] as float?,
+                        FinalGrade = reader["DIEM_CK"] as float?,
+                    });
+                }
+            }
+            dto.Courses = courses;
+
+            return dto;
+        }
     }
 }

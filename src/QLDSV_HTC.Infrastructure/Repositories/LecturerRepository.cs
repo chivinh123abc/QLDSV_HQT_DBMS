@@ -28,7 +28,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
 
         public async Task<PagedResult<LecturerDto>> GetPagedLecturerListAsync(PaginationQuery paging)
         {
-            const string selectCols = "gv.MAGV, gv.HO, gv.TEN, gv.HOCVI, gv.HOCHAM, gv.CHUYENMON, gv.MAKHOA, ISNULL(k.TENKHOA, gv.MAKHOA) AS TENKHOA, (SELECT COUNT(1) FROM LOPTINCHI ltc WHERE ltc.MAGV = gv.MAGV) AS CreditClassCount";
+            const string selectCols = "gv.MAGV, gv.HO, gv.TEN, gv.HOCVI, gv.HOCHAM, gv.CHUYENMON, gv.MAKHOA, ISNULL(k.TENKHOA, gv.MAKHOA) AS TENKHOA, (SELECT COUNT(1) FROM LOPTINCHI ltc WHERE ltc.MAGV = gv.MAGV) AS CreditClassCount, CAST(CASE WHEN SUSER_ID(RTRIM(gv.MAGV)) IS NOT NULL THEN 1 ELSE 0 END AS BIT) AS CO_TAIKHOAN";
             const string tableName = "GIANGVIEN gv";
             const string joinClause = "LEFT JOIN KHOA k ON k.MAKHOA = gv.MAKHOA";
             const string whereClause = "(IS_MEMBER('PGV') = 1 OR USER_NAME() = 'dbo' OR (IS_MEMBER('KHOA') = 1 AND gv.MAKHOA = (SELECT MAKHOA FROM GIANGVIEN WHERE MAGV = USER_NAME())))";
@@ -105,7 +105,10 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             Specialty = row[DbConstants.Columns.Lecturer.Specialty]?.ToString(),
             FacultyId = row[DbConstants.Columns.Lecturer.FacultyId]?.ToString() ?? string.Empty,
             FacultyName = row[DbConstants.Columns.Lecturer.FacultyName]?.ToString() ?? string.Empty,
-            CreditClassCount = row.Table.Columns.Contains("CreditClassCount") && row["CreditClassCount"] != DBNull.Value ? Convert.ToInt32(row["CreditClassCount"]) : 0
+            CreditClassCount = row.Table.Columns.Contains("CreditClassCount") && row["CreditClassCount"] != DBNull.Value ? Convert.ToInt32(row["CreditClassCount"]) : 0,
+            HasAccount = row.Table.Columns.Contains(DbConstants.Columns.Lecturer.HasAccount)
+                && row[DbConstants.Columns.Lecturer.HasAccount] != DBNull.Value
+                && Convert.ToBoolean(row[DbConstants.Columns.Lecturer.HasAccount])
         };
     }
 }

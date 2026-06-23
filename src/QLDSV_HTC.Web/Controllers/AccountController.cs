@@ -314,6 +314,13 @@ namespace QLDSV_HTC.Web.Controllers
                 return View(model);
             }
 
+            // Kiểm tra mật khẩu phải đủ 8 ký tự trước khi xác thực
+            if (string.IsNullOrEmpty(model.Password) || model.Password.Length < 8)
+            {
+                ViewBag.ErrorMessage = "Mật khẩu phải chứa ít nhất 8 ký tự.";
+                return View(model);
+            }
+
             var session = await authRepository.ValidateUserAsync(model.LoginName, model.Password ?? string.Empty, model.IsStudent);
 
             if (session?.IsValid == true)
@@ -374,14 +381,29 @@ namespace QLDSV_HTC.Web.Controllers
         public async Task<IActionResult> Management()
         {
             var allAccounts = (await accountRepository.GetAccountListAsync()).ToList();
-            var lecturers = (await lecturerRepository.GetLecturerListAsync(null)).ToList();
 
             var currentGroup = User.FindFirst(AppConstants.SessionKeys.Group)?.Value ?? string.Empty;
+            var isKhoa = currentGroup.Equals(AppConstants.Groups.KHOA, StringComparison.OrdinalIgnoreCase);
+            var currentFacultyId = User.FindFirst(AppConstants.SessionKeys.FacultyId)?.Value ?? string.Empty;
+
+            // KHOA: chỉ lấy GV cùng khoa; PGV: tất cả
+            var lecturers = (await lecturerRepository.GetLecturerListAsync(isKhoa ? currentFacultyId : null)).ToList();
 
             // KHOA chỉ thấy tài khoản nhóm KHOA, PGV thấy tất cả
-            var accounts = currentGroup.Equals(AppConstants.Groups.KHOA, StringComparison.OrdinalIgnoreCase)
+            var accounts = isKhoa
                 ? allAccounts.Where(a => a.GroupName.Equals(AppConstants.Groups.KHOA, StringComparison.OrdinalIgnoreCase)).ToList()
                 : allAccounts;
+
+            // KHOA: lọc bỏ GV đã có TK PGV (không cho tạo TK KHOA cho GV đã có PGV)
+            if (isKhoa)
+            {
+                var pgvUserNames = allAccounts
+                    .Where(a => a.GroupName.Equals(AppConstants.Groups.PGV, StringComparison.OrdinalIgnoreCase))
+                    .Select(a => a.UserName?.Trim())
+                    .Where(u => !string.IsNullOrEmpty(u))
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                lecturers = lecturers.Where(l => !pgvUserNames.Contains(l.LecturerId?.Trim())).ToList();
+            }
 
             var vm = new AccountManagementViewModel
             {

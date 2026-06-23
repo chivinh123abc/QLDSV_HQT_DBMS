@@ -13,6 +13,7 @@ namespace QLDSV_HTC.Web.Models
         public string FacultyId { get; set; } = string.Empty;
         public string FacultyName { get; set; } = string.Empty;
         public int CreditClassCount { get; set; }
+        public bool HasAccount { get; set; }
     }
 
     public class LecturerManagementViewModel

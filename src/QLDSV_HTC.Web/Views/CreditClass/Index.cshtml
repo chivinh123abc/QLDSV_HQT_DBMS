@@ -363,7 +363,8 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
                             id: ds.id, year: ds.year, semester: ds.semester,
                             subId: ds.subId, group: ds.group, lecId: ds.lecId,
                             facId: ds.facId, min: ds.min, cancelled: ds.cancelled === 'true',
-                            regCount: parseInt(ds.regCount || '0', 10)
+                            regCount: parseInt(ds.regCount || '0', 10),
+                            hasGrades: ds.hasGrades === 'true'
                         };
                         populateFields(data);
                         originalId = data.id;
@@ -487,7 +488,8 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
                     id: ds.id, year: ds.year, semester: ds.semester,
                     subId: ds.subId, group: ds.group, lecId: ds.lecId,
                     facId: ds.facId, min: ds.min, cancelled: ds.cancelled === 'true',
-                    regCount: parseInt(ds.regCount || '0', 10)
+                    regCount: parseInt(ds.regCount || '0', 10),
+                    hasGrades: ds.hasGrades === 'true'
                 };
                 populateFields(data);
                 originalId = data.id;
@@ -526,8 +528,11 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
                 const idStr = String(p.id).padStart(4, '0');
                 
                 let statusHtml = '';
+                const hasGrades = p.hasGrades === true || p.hasGrades === 'true';
                 if (p.isCancelled) {
                     statusHtml = '<span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-10 px-3 py-1 rounded-pill w-100 shadow-sm d-inline-flex align-items-center justify-content-center gap-1"><i class="bi bi-x-circle-fill"></i><span>Đã hủy</span></span>';
+                } else if (hasGrades) {
+                    statusHtml = '<span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-10 px-3 py-1 rounded-pill w-100 shadow-sm d-inline-flex align-items-center justify-content-center gap-1"><i class="bi bi-clipboard-check-fill"></i><span>Đã có điểm</span></span>';
                 } else if (registeredCount < p.minStudents) {
                     statusHtml = '<span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-10 px-3 py-1 rounded-pill w-100 shadow-sm d-inline-flex align-items-center justify-content-center gap-1"><i class="bi bi-hourglass-split"></i><span>Chờ SV</span></span>';
                 } else {
@@ -647,6 +652,7 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
                 trMini.dataset.min = payload.minStudents;
                 trMini.dataset.cancelled = payload.isCancelled;
                 trMini.dataset.regCount = payload.registeredCount;
+                trMini.dataset.hasGrades = payload.hasGrades || false;
                 trMini.innerHTML = miniRowHtml(payload);
 
                 const miniBody = document.getElementById('miniCreditClassBody');
@@ -675,6 +681,7 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
                 trMain.dataset.min = payload.minStudents;
                 trMain.dataset.cancelled = payload.isCancelled;
                 trMain.dataset.regCount = payload.registeredCount;
+                trMain.dataset.hasGrades = payload.hasGrades || false;
                 trMain.dataset.search = subName + ' ' + lecName;
                 trMain.innerHTML = mainRowHtml(payload);
 
@@ -722,6 +729,7 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
                     trMini.dataset.min = payload.minStudents;
                     trMini.dataset.cancelled = payload.isCancelled;
                     trMini.dataset.regCount = payload.registeredCount || 0;
+                    trMini.dataset.hasGrades = payload.hasGrades || false;
                     trMini.innerHTML = miniRowHtml(payload);
                     trMini.classList.add('table-active', 'fw-semibold');
                 }
@@ -738,6 +746,7 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
                     trMain.dataset.min = payload.minStudents;
                     trMain.dataset.cancelled = payload.isCancelled;
                     trMain.dataset.regCount = payload.registeredCount || 0;
+                    trMain.dataset.hasGrades = payload.hasGrades || false;
                     
                     const subName = fldSubjectId.options[fldSubjectId.selectedIndex]?.text.split(' (')[0] || '';
                     const lecName = fldLecturerId.options[fldLecturerId.selectedIndex]?.text.split(' (')[0] || '';

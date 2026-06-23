@@ -14,5 +14,6 @@ namespace QLDSV_HTC.Application.DTOs
         public int MinStudents { get; set; }
         public bool IsCancelled { get; set; }
         public int RegisteredCount { get; set; }
+        public bool HasGrades { get; set; }
     }
 }

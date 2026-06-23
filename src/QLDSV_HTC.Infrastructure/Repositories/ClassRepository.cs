@@ -34,7 +34,7 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             const string tableName = "LOP l";
             const string joinClause = "LEFT JOIN KHOA k ON k.MAKHOA = l.MAKHOA";
             const string whereClause = "(IS_MEMBER('PGV') = 1 OR USER_NAME() = 'dbo' OR (IS_MEMBER('KHOA') = 1 AND l.MAKHOA = (SELECT MAKHOA FROM GIANGVIEN WHERE MAGV = USER_NAME())))";
-            const string orderBy = "l.MAKHOA, l.MALOP";
+            const string orderBy = "l.KHOAHOC DESC, l.TENLOP";
 
             var (dt, totalCount) = await ExecutePaginatedQueryAsync(
                 AppConstants.SpNames.DynamicPagination,
