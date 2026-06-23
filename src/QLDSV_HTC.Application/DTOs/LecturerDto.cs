@@ -13,5 +13,6 @@ namespace QLDSV_HTC.Application.DTOs
         public string? Specialty { get; set; }
         public int CreditClassCount { get; set; }
         public bool HasAccount { get; set; }
+        public string? LoginName { get; set; }
     }
 }

@@ -53,6 +53,26 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             );
         }
 
+        public async Task<HashSet<string>> GetOnlineLoginsAsync()
+        {
+            // Use admin connection to see ALL active sessions (user connections lack VIEW SERVER STATE)
+            var adminConnStr = Application.Helpers.SqlConfigHelper.GetConnectionString();
+            using var conn = new SqlConnection(adminConnStr);
+            await conn.OpenAsync();
+
+            using var cmd = new SqlCommand(
+                "SELECT DISTINCT login_name FROM sys.dm_exec_sessions WHERE is_user_process = 1 AND login_name NOT IN ('sa')",
+                conn);
+
+            var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                result.Add(reader.GetString(0));
+            }
+            return result;
+        }
+
         private static AccountDto MapRow(DataRow row) => new()
         {
             LoginName = row[DbConstants.Columns.Account.LoginName]?.ToString() ?? string.Empty,
@@ -61,6 +81,8 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             LecturerId = row[DbConstants.Columns.Account.LecturerId] == DBNull.Value ? null : row[DbConstants.Columns.Account.LecturerId]?.ToString()?.Trim(),
             LecturerFullName = row[DbConstants.Columns.Account.LecturerFullName] == DBNull.Value ? null : row[DbConstants.Columns.Account.LecturerFullName]?.ToString(),
             IsDisabled = row[DbConstants.Columns.Account.IsDisabled] != DBNull.Value && Convert.ToBoolean(row[DbConstants.Columns.Account.IsDisabled]),
+            IsOnline = row.Table.Columns.Contains("IS_ONLINE") && row["IS_ONLINE"] != DBNull.Value
+                && Convert.ToBoolean(row["IS_ONLINE"]),
         };
     }
 }

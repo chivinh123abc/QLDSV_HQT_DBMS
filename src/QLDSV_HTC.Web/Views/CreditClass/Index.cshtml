@@ -544,13 +544,13 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
                     : '<span class="text-muted opacity-50 tabular-nums">0</span>';
 
                 const canDelete = registeredCount === 0;
-                let actions = isPGV ? `
+                let actions = `
                     <td class="text-end pe-4">
                         <div class="d-flex justify-content-end gap-1">
                             <button class="btn btn-sm btn-outline-info shadow-none hover-scale rounded-3"
-                                    title="Xem danh sách Sinh viên đã đăng ký" onclick="window.location.href='@Url.Action("Index", "Registration")?filterCreditClassId=${p.id}'">
+                                    title="Xem danh sách Sinh viên đã đăng ký" onclick="showRegisteredStudents(${p.id})">
                                 <i class="bi bi-people"></i>
-                            </button>
+                            </button>` + (isPGV ? `
                             <button class="btn btn-sm btn-outline-primary btn-edit-row shadow-none hover-scale rounded-3"
                                     title="Chỉnh sửa thông tin lớp tín chỉ"
                                     data-id="${p.id}" data-year="${p.year}" data-semester="${p.semester}"
@@ -565,9 +565,9 @@ MODAL: Nhập danh mục LTC / Xác nhận xóa
                                     data-id="${p.id}"
                                     ${canDelete ? '' : 'disabled'}>
                                 <i class="bi ${canDelete ? 'bi-trash' : 'bi-trash-fill'}"></i>
-                            </button>
+                            </button>` : '') + `
                         </div>
-                    </td>` : '';
+                    </td>`;
 
                 return `
                     <td class="ps-4">

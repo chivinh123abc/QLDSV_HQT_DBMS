@@ -82,5 +82,30 @@ namespace QLDSV_HTC.Infrastructure.Repositories
                 new SqlParameter(StoredProcedureConstants.CreditClassCrud.CreditClassId, maLtc)
             );
         }
+
+        public async Task<IEnumerable<RegisteredStudentDto>> GetRegisteredStudentsAsync(int maLtc)
+        {
+            const string sql = @"
+                SELECT sv.MASV, sv.HO, sv.TEN,
+                       CASE WHEN sv.PHAI = 1 THEN N'Nữ' ELSE N'Nam' END AS PHAI,
+                       sv.MALOP
+                FROM DANGKY dk
+                JOIN SINHVIEN sv ON sv.MASV = dk.MASV
+                WHERE dk.MALTC = @MALTC
+                  AND (dk.HUYDANGKY = 0 OR dk.HUYDANGKY IS NULL)
+                ORDER BY sv.TEN, sv.HO";
+
+            var dt = await ExecuteQueryAsync(sql, System.Data.CommandType.Text,
+                new SqlParameter("@MALTC", maLtc));
+
+            return dt.AsEnumerable().Select(row => new RegisteredStudentDto
+            {
+                StudentId = row["MASV"]?.ToString()?.Trim() ?? string.Empty,
+                FirstName = row["HO"]?.ToString()?.Trim() ?? string.Empty,
+                LastName = row["TEN"]?.ToString()?.Trim() ?? string.Empty,
+                Gender = row["PHAI"]?.ToString()?.Trim() ?? string.Empty,
+                ClassId = row["MALOP"]?.ToString()?.Trim() ?? string.Empty,
+            });
+        }
     }
 }

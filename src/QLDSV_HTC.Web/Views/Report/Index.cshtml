@@ -148,15 +148,7 @@
     </div>
 </div>
 
-<datalist id="schoolYearsDataList">
-    @if(ViewBag.SchoolYears != null)
-    {
-        foreach(var y in ViewBag.SchoolYears)
-        {
-            <option value="@y">@y</option>
-        }
-    }
-</datalist>
+
 
 @section Scripts {
     <!-- jQuery and Select2 JS -->
@@ -164,6 +156,7 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
+        const schoolYearOptions = `@if(ViewBag.SchoolYears != null) { foreach(var y in ViewBag.SchoolYears) { <option value="@y">@y</option> } }`;
         const facultyOptions = `<option value="">-- Chọn Khoa --</option>@if(ViewBag.Faculties != null) { foreach(var f in ViewBag.Faculties) { <option value="@f.FacultyId">@f.FacultyName</option> } }`;
         const subjectOptions = `<option value="">-- Chọn Môn học --</option>@if(ViewBag.Subjects != null) { foreach(var s in ViewBag.Subjects) { <option value="@s.SubjectId">@s.SubjectName</option> } }`;
         const classOptions = `<option value="">-- Chọn Lớp --</option>@if(ViewBag.Classes != null) { foreach(var c in ViewBag.Classes) { <option value="@c.ClassId">@c.ClassId - @c.ClassName</option> } }`;
@@ -208,7 +201,9 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Niên Khóa</label>
-                                        <input type="text" class="form-control" name="schoolYear" list="schoolYearsDataList" placeholder="Ví dụ: 2023-2024" autocomplete="off" required>
+                                        <select class="form-select" name="schoolYear" required>
+                                            ${schoolYearOptions}
+                                        </select>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Học Kỳ</label>
@@ -235,7 +230,9 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Niên Khóa</label>
-                                        <input type="text" class="form-control" name="schoolYear" list="schoolYearsDataList" placeholder="Ví dụ: 2023-2024" autocomplete="off" required>
+                                        <select class="form-select" name="schoolYear" required>
+                                            ${schoolYearOptions}
+                                        </select>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Học Kỳ</label>
@@ -273,7 +270,9 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Niên Khóa</label>
-                                        <input type="text" class="form-control" name="schoolYear" list="schoolYearsDataList" placeholder="Ví dụ: 2023-2024" autocomplete="off" required>
+                                        <select class="form-select" name="schoolYear" required>
+                                            ${schoolYearOptions}
+                                        </select>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Học Kỳ</label>
@@ -324,18 +323,10 @@
                     reportForm.action = actionUrl;
                     reportFormBody.innerHTML = formHtml;
 
-                    // Auto-fill niên khóa mới nhất
-                    const schoolYearInput = reportFormBody.querySelector('input[name="schoolYear"]');
-                    if (schoolYearInput) {
-                        const datalist = document.getElementById('schoolYearsDataList');
-                        if (datalist) {
-                            const options = Array.from(datalist.options).map(o => o.value).filter(v => v);
-                            if (options.length > 0) {
-                                // Sort descending and pick the latest
-                                options.sort((a, b) => b.localeCompare(a));
-                                schoolYearInput.value = options[0];
-                            }
-                        }
+                    // Auto-select niên khóa mới nhất
+                    const schoolYearSelect = reportFormBody.querySelector('select[name="schoolYear"]');
+                    if (schoolYearSelect && schoolYearSelect.options.length > 0) {
+                        schoolYearSelect.selectedIndex = 0; // First option is already the latest (sorted DESC)
                     }
 
                     // Initialize Select2 on the injected selects

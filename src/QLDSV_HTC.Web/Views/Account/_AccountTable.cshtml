@@ -151,19 +151,28 @@
                         </td>
                         <td class="text-end pe-4">
                             <div class="d-flex justify-content-end gap-1">
-                                <button class="btn btn-sm btn-outline-primary btn-edit-row shadow-none hover-scale rounded-3" 
-                                        title="Chỉnh sửa tài khoản"
+                                @{
+                                    var isSelf = currentLoginName != null && a.UserName != null && a.UserName.Trim().Equals(currentLoginName, StringComparison.OrdinalIgnoreCase);
+                                    var isOnlineOther = a.IsOnline && !isSelf;
+                                    var editTitle = isOnlineOther ? "Không thể sửa: tài khoản đang đăng nhập" : "Chỉnh sửa tài khoản";
+                                    var deleteTitle = isSelf ? "Không thể xóa chính mình" 
+                                        : isOnlineOther ? "Không thể xóa: tài khoản đang đăng nhập" 
+                                        : "Xóa tài khoản";
+                                    var canDelete = !isSelf && !isOnlineOther;
+                                }
+                                <button class="btn btn-sm btn-outline-primary shadow-none rounded-3 @(isOnlineOther ? "disabled opacity-50" : "btn-edit-row hover-scale")" 
+                                        title="@editTitle"
                                         data-login="@a.LoginName" data-user="@a.UserName" data-group="@a.GroupName"
-                                        data-gv-id="@(a.LecturerId ?? "")" data-gv-name="@(a.LecturerFullName ?? "")">
+                                        data-gv-id="@(a.LecturerId ?? "")" data-gv-name="@(a.LecturerFullName ?? "")"
+                                        @(isOnlineOther ? "disabled" : "")>
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 @if (isPGV)
                                 {
-                                    var isSelf = currentLoginName != null && a.UserName != null && a.UserName.Trim().Equals(currentLoginName, StringComparison.OrdinalIgnoreCase);
-                                    <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-none hover-scale rounded-3 @(isSelf ? "disabled" : "")" 
-                                            title="@(isSelf ? "Không thể xóa chính mình" : "Xóa tài khoản")"
+                                    <button class="btn btn-sm btn-outline-danger shadow-none rounded-3 @(canDelete ? "btn-delete-row hover-scale" : "disabled opacity-50")" 
+                                            title="@deleteTitle"
                                             data-login="@a.LoginName" data-user="@a.UserName"
-                                            @(isSelf ? "disabled" : "")>
+                                            @(!canDelete ? "disabled" : "")>
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 }

@@ -8,6 +8,7 @@ namespace QLDSV_HTC.Application.DTOs
         public string? LecturerId { get; set; }
         public string? LecturerFullName { get; set; }
         public bool IsDisabled { get; set; }
+        public bool IsOnline { get; set; }
     }
 
     public class CreateAccountDto

@@ -23,5 +23,10 @@ namespace QLDSV_HTC.Application.Interfaces
         /// Xóa tài khoản (User + Login).
         /// </summary>
         Task DeleteAccountAsync(string loginName);
+
+        /// <summary>
+        /// Lấy danh sách login đang có session active (dùng admin connection).
+        /// </summary>
+        Task<HashSet<string>> GetOnlineLoginsAsync();
     }
 }

@@ -368,6 +368,14 @@ namespace QLDSV_HTC.Web.Controllers
         [Route(RouteConstants.Account.Logout)]
         public async Task<IActionResult> Logout()
         {
+            // Clear SQL connection pool for this user so sys.dm_exec_sessions no longer shows them
+            var userConnStr = User.FindFirst(AppConstants.SessionKeys.UserConnectionString)?.Value;
+            if (!string.IsNullOrEmpty(userConnStr))
+            {
+                using var conn = new SqlConnection(userConnStr);
+                SqlConnection.ClearPool(conn);
+            }
+
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Redirect(RouteConstants.Account.LoginPath);
         }
@@ -405,6 +413,9 @@ namespace QLDSV_HTC.Web.Controllers
                 lecturers = lecturers.Where(l => !pgvUserNames.Contains(l.LecturerId?.Trim())).ToList();
             }
 
+            // Query online logins using admin connection (sa) to see ALL active sessions
+            var onlineLogins = await accountRepository.GetOnlineLoginsAsync();
+
             var vm = new AccountManagementViewModel
             {
                 Accounts = accounts.Select(a => new AccountViewModel
@@ -415,6 +426,7 @@ namespace QLDSV_HTC.Web.Controllers
                     LecturerId = a.LecturerId,
                     LecturerFullName = a.LecturerFullName,
                     IsDisabled = a.IsDisabled,
+                    IsOnline = onlineLogins.Contains(a.LoginName),
                 }),
                 Lecturers = lecturers.Select(l => new LecturerViewModel
                 {

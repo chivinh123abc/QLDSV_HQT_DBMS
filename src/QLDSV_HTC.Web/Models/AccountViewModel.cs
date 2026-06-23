@@ -10,6 +10,7 @@ namespace QLDSV_HTC.Web.Models
         public string? LecturerId { get; set; }
         public string? LecturerFullName { get; set; }
         public bool IsDisabled { get; set; }
+        public bool IsOnline { get; set; }
     }
 
     public class AccountManagementViewModel

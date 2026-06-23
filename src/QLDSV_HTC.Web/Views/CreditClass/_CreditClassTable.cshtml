@@ -134,12 +134,9 @@
                         <span class="text-uppercase small fw-bold tracking-wider">Trạng thái</span>
                     </div>
                 </th>
-                @if (isPGV)
-                {
-                    <th scope="col" class="text-end pe-4" style="width:160px">
-                        <i class="bi bi-lightning-charge-fill text-warning opacity-75"></i>
-                    </th>
-                }
+                <th scope="col" class="text-end pe-4" style="width:160px">
+                    <i class="bi bi-lightning-charge-fill text-warning opacity-75"></i>
+                </th>
             </tr>
         </text>,
         
@@ -147,7 +144,7 @@
             @if (!Model.CreditClasses.Any())
             {
                 <tr>
-                    <td colspan="@(isPGV ? 9 : 8)" class="text-center py-5 border-0">
+                    <td colspan="9" class="text-center py-5 border-0">
                         <div class="animate__animated animate__fadeIn py-5">
                             <div class="icon-box-lg bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm">
                                 <i class="bi bi-inbox text-body-tertiary fs-1"></i>
@@ -243,15 +240,19 @@
                                 </span>
                             }
                         </td>
-                        @if (isPGV)
-                        {
-                            <td class="text-end pe-4">
-                                <div class="d-flex justify-content-end gap-1">
-                                    <button class="btn btn-sm btn-outline-info shadow-none hover-scale rounded-3"
-                                            title="Xem danh sách Sinh viên đã đăng ký" 
-                                            onclick="window.location.href='@Url.Action("Index", "Registration")?filterCreditClassId=@c.Id'">
-                                        <i class="bi bi-people"></i>
-                                    </button>
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-1">
+                                <button class="btn btn-sm btn-outline-info shadow-none hover-scale rounded-3"
+                                        title="Xem danh sách Sinh viên đã đăng ký" 
+                                        onclick="showRegisteredStudents(@c.Id)">
+                                    <i class="bi bi-people"></i>
+                                </button>
+                                @{
+                                    var canDelete = c.RegisteredCount == 0;
+                                    var deleteTooltip = canDelete ? "Xóa lớp tín chỉ này" : $"Không thể xóa LTC đã có {c.RegisteredCount} SV đăng ký";
+                                }
+                                @if (isPGV)
+                                {
                                     <button class="btn btn-sm btn-outline-primary btn-edit-row shadow-none hover-scale rounded-3"
                                             title="Chỉnh sửa thông tin lớp tín chỉ"
                                             data-id="@c.Id" data-year="@c.Year" data-semester="@c.Semester"
@@ -261,19 +262,15 @@
                                             data-cancelled="@(c.Cancelled ? "true" : "false")" data-has-grades="@(c.HasGrades ? "true" : "false")">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    @{
-                                        var canDelete = c.RegisteredCount == 0;
-                                        var deleteTooltip = canDelete ? "Xóa lớp tín chỉ này" : $"Không thể xóa LTC đã có {c.RegisteredCount} SV đăng ký";
-                                    }
                                     <button class="btn btn-sm @(canDelete ? "btn-outline-danger btn-delete-row shadow-none hover-scale rounded-3" : "btn-light text-muted border-0 opacity-50")"
                                             title="@deleteTooltip"
                                             data-id="@c.Id"
                                             @(canDelete ? "" : "disabled")>
                                         <i class="bi @(canDelete ? "bi-trash" : "bi-trash-fill")"></i>
                                     </button>
-                                </div>
-                            </td>
-                        }
+                                }
+                            </div>
+                        </td>
                     </tr>
                 }
             }
@@ -288,11 +285,6 @@
                         / <span id="totalCount" class="tabular-nums">@Model.CreditClasses.Count()</span> lớp tín chỉ
                     </span>
                 </div>
-                
-                <div class="d-none d-md-flex align-items-center gap-2 text-muted small bg-light px-3 py-1 rounded-pill border shadow-xs">
-                    <i class="bi bi-lightbulb text-warning"></i>
-                    <span>Nhấn <kbd class="bg-white text-dark border px-1">Ctrl + F</kbd> để tìm nhanh trên trang hiện tại</span>
-                </div>
             </div>
         </text>
     };
@@ -302,3 +294,106 @@
 }
 
 @await Html.PartialAsync("_CardTableWrapper", tableModel, ViewData)
+
+<!-- Modal xem SV đã đăng ký -->
+<div class="modal fade" id="registeredStudentsModal" tabindex="-1" aria-labelledby="registeredStudentsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-gradient-primary text-white py-3 px-4" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);">
+                <h5 class="modal-title d-flex align-items-center gap-2" id="registeredStudentsModalLabel">
+                    <i class="bi bi-people-fill"></i>
+                    <span>Danh sách Sinh viên đã đăng ký</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="regStudentsLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-2 mb-0">Đang tải...</p>
+                </div>
+                <div id="regStudentsEmpty" class="text-center py-5 d-none">
+                    <i class="bi bi-inbox text-muted fs-1"></i>
+                    <p class="text-muted mt-2 mb-0">Chưa có sinh viên nào đăng ký lớp tín chỉ này.</p>
+                </div>
+                <div id="regStudentsContent" class="d-none">
+                    <div class="px-4 py-2 bg-light border-bottom d-flex align-items-center justify-content-between">
+                        <span class="text-muted small">
+                            <i class="bi bi-info-circle text-primary me-1"></i>
+                            Tổng cộng <strong id="regStudentsCount" class="text-primary">0</strong> sinh viên
+                        </span>
+                    </div>
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="bg-light sticky-top">
+                                <tr>
+                                    <th class="ps-4 text-uppercase small fw-bold text-muted" style="width:50px;">STT</th>
+                                    <th class="text-uppercase small fw-bold text-muted">Mã SV</th>
+                                    <th class="text-uppercase small fw-bold text-muted">Họ tên</th>
+                                    <th class="text-uppercase small fw-bold text-muted text-center">Giới tính</th>
+                                    <th class="text-uppercase small fw-bold text-muted text-center">Mã lớp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="regStudentsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-top">
+                <button type="button" class="btn btn-secondary rounded-3 px-4" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i> Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showRegisteredStudents(creditClassId) {
+    const modalEl = document.getElementById('registeredStudentsModal');
+    // Move modal to body to avoid z-index/stacking issues
+    if (modalEl.parentElement !== document.body) {
+        document.body.appendChild(modalEl);
+    }
+    const modal = new bootstrap.Modal(modalEl);
+    const loading = document.getElementById('regStudentsLoading');
+    const empty = document.getElementById('regStudentsEmpty');
+    const content = document.getElementById('regStudentsContent');
+    const tbody = document.getElementById('regStudentsTableBody');
+    const countEl = document.getElementById('regStudentsCount');
+
+    loading.classList.remove('d-none');
+    empty.classList.add('d-none');
+    content.classList.add('d-none');
+    tbody.innerHTML = '';
+    modal.show();
+
+    fetch(`/credit-class/registered-students?id=${creditClassId}`)
+        .then(r => r.json())
+        .then(json => {
+            loading.classList.add('d-none');
+            if (!json.success || !json.data || json.data.length === 0) {
+                empty.classList.remove('d-none');
+                return;
+            }
+            content.classList.remove('d-none');
+            countEl.textContent = json.data.length;
+            tbody.innerHTML = json.data.map((s, i) => `
+                <tr>
+                    <td class="ps-4 text-muted tabular-nums">${i + 1}</td>
+                    <td class="fw-semibold font-monospace text-primary">${s.studentId}</td>
+                    <td class="fw-medium">${s.fullName}</td>
+                    <td class="text-center">
+                        <span class="badge ${s.gender === 'Nữ' ? 'bg-pink-subtle text-pink' : 'bg-primary-subtle text-primary'} border px-2 py-1 rounded-pill">
+                            ${s.gender}
+                        </span>
+                    </td>
+                    <td class="text-center"><span class="badge bg-secondary-subtle text-secondary border px-2 py-1 rounded-pill">${s.classId}</span></td>
+                </tr>
+            `).join('');
+        })
+        .catch(() => {
+            loading.classList.add('d-none');
+            empty.classList.remove('d-none');
+        });
+}
+</script>

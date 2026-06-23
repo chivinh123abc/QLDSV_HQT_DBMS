@@ -13,7 +13,8 @@ namespace QLDSV_HTC.Web.Controllers
     [Authorize(Roles = AppConstants.Groups.Faculty)]
     public class LecturerController(
         ILecturerRepository lecturerRepository,
-        IFacultyRepository facultyRepository) : Controller
+        IFacultyRepository facultyRepository,
+        IAccountRepository accountRepository) : Controller
     {
         // ────────────────────────────────────────────────
         // GET /lecturer  — Trang danh sách giảng viên
@@ -43,6 +44,9 @@ namespace QLDSV_HTC.Web.Controllers
             var lecturers = pagedResult.Items.ToList();
             var faculties = (await facultyRepository.GetFacultiesAsync()).ToList();
 
+            // Query online logins using admin connection
+            var onlineLogins = await accountRepository.GetOnlineLoginsAsync();
+
             var vm = new LecturerManagementViewModel
             {
                 Lecturers = lecturers.Select(l => new LecturerViewModel
@@ -57,6 +61,7 @@ namespace QLDSV_HTC.Web.Controllers
                     FacultyName = l.FacultyName,
                     CreditClassCount = l.CreditClassCount,
                     HasAccount = l.HasAccount,
+                    IsOnline = !string.IsNullOrEmpty(l.LoginName) && onlineLogins.Contains(l.LoginName),
                 }),
                 Faculties = faculties.Select(f => new FacultyViewModel
                 {

@@ -10,7 +10,7 @@ using QLDSV_HTC.Web.Models;
 namespace QLDSV_HTC.Web.Controllers
 {
     [Route(RouteConstants.AdminRegistration.Prefix)]
-    [Authorize(Roles = AppConstants.Groups.PGV)]
+    [Authorize(Roles = AppConstants.Groups.Faculty)]
     public class AdminRegistrationController(
         IStudentRepository studentRepository,
         IRegistrationRepository registrationRepository) : Controller

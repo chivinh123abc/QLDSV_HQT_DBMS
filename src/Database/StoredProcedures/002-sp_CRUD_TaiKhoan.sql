@@ -110,7 +110,10 @@ BEGIN
             WHEN gv.MAGV IS NOT NULL THEN gv.HO + N' ' + gv.TEN
             ELSE NULL
         END         AS LecturerFullName,
-        CONVERT(BIT, 0) AS IsDisabled -- Bỏ qua cờ disable để tối ưu vì ta không dùng
+        CONVERT(BIT, 0) AS IsDisabled, -- Bỏ qua cờ disable để tối ưu vì ta không dùng
+        CAST(CASE WHEN EXISTS (
+            SELECT 1 FROM sys.dm_exec_sessions s WHERE s.login_name = ur.LoginName
+        ) THEN 1 ELSE 0 END AS BIT) AS IS_ONLINE
     FROM UserRole ur
     LEFT JOIN GIANGVIEN gv ON gv.MAGV = ur.UserName  -- Khử phép nối: chỉ 1 LEFT JOIN
     WHERE ur.LoginName IS NOT NULL

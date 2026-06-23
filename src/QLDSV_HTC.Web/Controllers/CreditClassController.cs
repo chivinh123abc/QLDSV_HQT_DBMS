@@ -160,5 +160,32 @@ namespace QLDSV_HTC.Web.Controllers
                 return BadRequest(new { success = false, message = ex.Message });
             }
         }
+
+        // ── GET /credit-class/registered-students?id=... → JSON ──
+        [HttpGet("registered-students")]
+        public async Task<IActionResult> GetRegisteredStudents([FromQuery] int id)
+        {
+            if (id <= 0) return BadRequest(new { success = false, message = "Mã LTC không hợp lệ." });
+
+            try
+            {
+                var students = await creditClassRepository.GetRegisteredStudentsAsync(id);
+                return Ok(new
+                {
+                    success = true,
+                    data = students.Select(s => new
+                    {
+                        studentId = s.StudentId,
+                        fullName = $"{s.FirstName} {s.LastName}".Trim(),
+                        gender = s.Gender,
+                        classId = s.ClassId,
+                    })
+                });
+            }
+            catch (SqlException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
     }
 }

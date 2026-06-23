@@ -108,7 +108,10 @@ namespace QLDSV_HTC.Infrastructure.Repositories
             CreditClassCount = row.Table.Columns.Contains("CreditClassCount") && row["CreditClassCount"] != DBNull.Value ? Convert.ToInt32(row["CreditClassCount"]) : 0,
             HasAccount = row.Table.Columns.Contains(DbConstants.Columns.Lecturer.HasAccount)
                 && row[DbConstants.Columns.Lecturer.HasAccount] != DBNull.Value
-                && Convert.ToBoolean(row[DbConstants.Columns.Lecturer.HasAccount])
+                && Convert.ToBoolean(row[DbConstants.Columns.Lecturer.HasAccount]),
+            LoginName = row.Table.Columns.Contains("LOGIN_NAME") && row["LOGIN_NAME"] != DBNull.Value
+                ? row["LOGIN_NAME"]?.ToString()?.Trim()
+                : null
         };
     }
 }

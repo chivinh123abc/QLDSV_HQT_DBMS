@@ -8,5 +8,6 @@ namespace QLDSV_HTC.Application.Interfaces
         Task<int> AddAsync(CreditClassDto dto);
         Task UpdateAsync(CreditClassDto dto);
         Task DeleteAsync(int maLtc);
+        Task<IEnumerable<RegisteredStudentDto>> GetRegisteredStudentsAsync(int maLtc);
     }
 }
