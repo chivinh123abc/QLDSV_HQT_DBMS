@@ -66,6 +66,7 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
             // Undo Stack State
             let undoStack = [];
             let forceClose = false;
+            let isSubmitting = false;
 
             const modal = document.getElementById('lecturerFormModal');
             const deleteModal = document.getElementById('deleteConfirmModal');
@@ -92,6 +93,65 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 requiredFields: [fldLecturerId, fldFirstName, fldLastName, fldFacultyId],
                 getSelectedId: () => selectedId,
             });
+
+            function getFormChanges() {
+                const changes = [];
+                const currentMode = helpers.getMode();
+                if (currentMode === 'view') return changes;
+
+                const idVal = fldLecturerId.value.trim();
+                const firstNameVal = fldFirstName.value.trim();
+                const lastNameVal = fldLastName.value.trim();
+                const degreeVal = fldDegree.value.trim();
+                const academicRankVal = fldAcademicRank.value.trim();
+                const specialtyVal = fldSpecialty.value.trim();
+                const facultyIdVal = fldFacultyId.value.trim();
+
+                if (currentMode === 'add') {
+                    if (idVal) changes.push(`• <b>Mã giảng viên</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(idVal)}"</span>`);
+                    if (firstNameVal) changes.push(`• <b>Họ</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(firstNameVal)}"</span>`);
+                    if (lastNameVal) changes.push(`• <b>Tên</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(lastNameVal)}"</span>`);
+                    if (degreeVal) changes.push(`• <b>Học vị</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(degreeVal)}"</span>`);
+                    if (academicRankVal) changes.push(`• <b>Học hàm</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(academicRankVal)}"</span>`);
+                    if (specialtyVal) changes.push(`• <b>Chuyên môn</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(specialtyVal)}"</span>`);
+                    if (facultyIdVal) changes.push(`• <b>Khoa</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(facultyIdVal)}"</span>`);
+                } else if (currentMode === 'edit' && snapshotData) {
+                    const oldId = (snapshotData.lecturerId ?? '').toString().trim();
+                    const oldFirstName = (snapshotData.firstName ?? '').toString().trim();
+                    const oldLastName = (snapshotData.lastName ?? '').toString().trim();
+                    const oldDegree = (snapshotData.degree ?? '').toString().trim();
+                    const oldAcademicRank = (snapshotData.academicRank ?? '').toString().trim();
+                    const oldSpecialty = (snapshotData.specialty ?? '').toString().trim();
+                    const oldFacultyId = (snapshotData.facultyId ?? '').toString().trim();
+
+                    if (idVal !== oldId) {
+                        changes.push(`• <b>Mã giảng viên</b>: <span class="text-muted">"${escapeHtml(oldId)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(idVal)}"</span>`);
+                    }
+                    if (firstNameVal !== oldFirstName) {
+                        changes.push(`• <b>Họ</b>: <span class="text-muted">"${escapeHtml(oldFirstName)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(firstNameVal)}"</span>`);
+                    }
+                    if (lastNameVal !== oldLastName) {
+                        changes.push(`• <b>Tên</b>: <span class="text-muted">"${escapeHtml(oldLastName)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(lastNameVal)}"</span>`);
+                    }
+                    if (degreeVal !== oldDegree) {
+                        changes.push(`• <b>Học vị</b>: <span class="text-muted">"${escapeHtml(oldDegree)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(degreeVal)}"</span>`);
+                    }
+                    if (academicRankVal !== oldAcademicRank) {
+                        changes.push(`• <b>Học hàm</b>: <span class="text-muted">"${escapeHtml(oldAcademicRank)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(academicRankVal)}"</span>`);
+                    }
+                    if (specialtyVal !== oldSpecialty) {
+                        changes.push(`• <b>Chuyên môn</b>: <span class="text-muted">"${escapeHtml(oldSpecialty)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(specialtyVal)}"</span>`);
+                    }
+                    if (facultyIdVal !== oldFacultyId) {
+                        changes.push(`• <b>Khoa</b>: <span class="text-muted">"${escapeHtml(oldFacultyId)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(facultyIdVal)}"</span>`);
+                    }
+                }
+                return changes;
+            }
+
+            function isFormDirty() {
+                return getFormChanges().length > 0;
+            }
 
             // ── Xử lý modal xác nhận xóa ────────────────────────────
             let pendingDeleteId = null;
@@ -130,67 +190,27 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 forceClose = false;
             });
 
-            // Chặn đóng modal nếu còn stack
-            modal.addEventListener('hide.bs.modal', async (e) => {
-                if (undoStack.length > 0 && !forceClose) {
-                    e.preventDefault();
-                    const isConfirmed = await window.showConfirmDialog(
-                        "Dữ liệu chưa đóng",
-                        "Ghi nhận có thay đổi chưa lưu (bạn sẽ mất các trạng thái có thể Phục hồi).<br><br>Nhấn <b>Tiếp tục đóng</b> nếu bạn không cần Phục hồi nữa.<br>Nhấn <b>Hủy bỏ</b> để ở lại form và chọn nút dưới cùng.",
-                        { confirmText: "Tiếp tục đóng", cancelText: "Hủy bỏ", isDanger: true }
-                    );
-                    if (isConfirmed) {
-                        forceClose = true;
-                        bootstrap.Modal.getInstance(modal).hide();
-                    }
-                }
+            // Đóng modal → xóa stack (giữ lại thay đổi đã ghi)
+            modal.addEventListener('hide.bs.modal', (e) => {
+                if (forceClose) return;
+                undoStack = [];
             });
 
-            btnSaveModal?.addEventListener('click', async () => {
-                if (undoStack.length === 0) {
-                    forceClose = true;
-                    bootstrap.Modal.getInstance(modal).hide();
-                    return;
-                }
-
-                const message = "Dữ liệu đã được <b>Ghi</b> vào hệ thống. Nếu đóng cửa sổ, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa rồi.<br><br>Bạn có chắc chắn muốn thoát?";
-                
-                const isConfirmed = await window.showConfirmDialog(
-                    "Xác nhận Thoát", message,
-                    { confirmText: "Xác nhận", cancelText: "Trở lại" }
-                );
-                
-                if (isConfirmed) {
-                    undoStack = [];
-                    forceClose = true;
-                    bootstrap.Modal.getInstance(modal).hide();
-                }
+            btnSaveModal?.addEventListener('click', () => {
+                undoStack = [];
+                forceClose = true;
+                bootstrap.Modal.getInstance(modal).hide();
             });
 
+            // "Hoàn tác tất cả và thoát" → undo rồi đóng
             btnCancelModal?.addEventListener('click', async () => {
-                if (undoStack.length === 0) {
-                    forceClose = true;
-                    bootstrap.Modal.getInstance(modal).hide();
-                    return;
-                }
-
-                const message = "Hành động này sẽ <b>Hoàn Tác toàn bộ</b> các thay đổi bạn vừa thực hiện trong bảng vừa rồi.<br>Bạn có chắc chắn muốn xóa bỏ công sức vừa làm?";
-                
-                const isConfirmed = await window.showConfirmDialog(
-                    "Hoàn Tác & Đóng", message,
-                    { confirmText: "Xác nhận Hoàn tác", cancelText: "Giữ lại", isDanger: true }
-                );
-
-                if (isConfirmed) {
-                    btnCancelModal.disabled = true;
-                    while(undoStack.length > 0) {
+                if (undoStack.length > 0) {
+                    while (undoStack.length > 0) {
                         await executeUndo();
                     }
-                    undoStack = [];
-                    forceClose = true;
-                    btnCancelModal.disabled = false;
-                    bootstrap.Modal.getInstance(modal).hide();
                 }
+                forceClose = true;
+                bootstrap.Modal.getInstance(modal).hide();
             });
 
             // Reset khi đóng modal
@@ -223,9 +243,11 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 showDeleteModal(selectedId, fldFirstName.value + ' ' + fldLastName.value);
             });
 
-            // ── Nút Ghi ──────────────────────────────────────────────
-            btnGhi.addEventListener('click', async () => {
-                if (!helpers.validateForm()) return;
+            async function saveLecturer() {
+                if (!helpers.validateForm() || isSubmitting) return false;
+
+                isSubmitting = true;
+                if (btnGhi) btnGhi.disabled = true;
 
                 const payload = {
                     oldLecturerId: originalId,
@@ -245,6 +267,7 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                         if (helpers.getMode() === 'add') {
                             addRowToTables(payload);
                             undoStack.push({ action: 'delete', payload: { lecturerId: payload.lecturerId } });
+                            resetToView();
                         } else {
                             updateRowInTables(payload, originalId);
                             if (snapshotData) {
@@ -262,18 +285,29 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                                     } 
                                 });
                             }
+                            snapshotData = { ...payload };
+                            selectedId = payload.lecturerId;
+                            originalId = payload.lecturerId;
+                            helpers.setMode('view');
+                            highlightMiniRow(selectedId);
                         }
-                        snapshotData = { ...payload };
-                        selectedId = payload.lecturerId;
-                        originalId = payload.lecturerId;
-                        helpers.setMode('edit');
-                        highlightMiniRow(selectedId);
+                        return true;
                     } else {
                         helpers.showAlert(res.message, 'danger');
+                        return false;
                     }
                 } catch (err) {
                     helpers.showAlert('Lỗi: ' + err.message, 'danger');
+                    return false;
+                } finally {
+                    isSubmitting = false;
+                    if (btnGhi) btnGhi.disabled = false;
                 }
+            }
+
+            // ── Nút Ghi ──────────────────────────────────────────────
+            btnGhi.addEventListener('click', async () => {
+                await saveLecturer();
             });
 
             // ── Nút Phục hồi ─────────────────────────────────────────
@@ -301,6 +335,16 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                     setTimeout(() => {
                         populateFields(ds.id, ds.first, ds.last, ds.degree, ds.rank, ds.spec, ds.faculty);
                         helpers.setMode('edit');
+                        
+                        const creditClassCount = parseInt(ds.creditClassCount || '0', 10);
+                        if (creditClassCount > 0) {
+                            btnXoa.disabled = true;
+                            btnXoa.title = `Không thể xóa giảng viên vì đang phụ trách lớp tín chỉ (${creditClassCount} lớp)`;
+                        } else {
+                            btnXoa.disabled = false;
+                            btnXoa.title = "Xóa (Phím tắt: Del)";
+                        }
+
                         highlightMiniRow(ds.id);
                         helpers.hideAlert();
                     }, 200);
@@ -346,6 +390,16 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 const ds = row.dataset;
                 populateFields(ds.id, ds.first, ds.last, ds.degree, ds.rank, ds.spec, ds.faculty);
                 helpers.setMode('edit');
+                
+                const creditClassCount = parseInt(ds.creditClassCount || '0', 10);
+                if (creditClassCount > 0) {
+                    btnXoa.disabled = true;
+                    btnXoa.title = `Không thể xóa giảng viên vì đang phụ trách lớp tín chỉ (${creditClassCount} lớp)`;
+                } else {
+                    btnXoa.disabled = false;
+                    btnXoa.title = "Xóa (Phím tắt: Del)";
+                }
+
                 helpers.hideAlert();
             }
 
@@ -419,8 +473,37 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 const tbody = document.getElementById('lecturerTableBody');
                 const empty = tbody.querySelector('td[colspan]');
                 if (empty) empty.closest('tr').remove();
-                tbody.insertAdjacentHTML('beforeend', mainRowHtml(p, facultyName));
-                document.getElementById('miniLecturerBody').insertAdjacentHTML('beforeend', miniRowHtml(p));
+
+                // Sort key: facultyId + lecturerId (matching SP ORDER BY MAKHOA, MAGV)
+                const newKey = ((p.facultyId || '') + '|' + (p.lecturerId || '')).toLowerCase();
+
+                // Main table: sorted insert
+                const rows = [...tbody.querySelectorAll('tr[data-id]')];
+                let inserted = false;
+                for (const row of rows) {
+                    const rowKey = ((row.dataset.faculty || '') + '|' + (row.dataset.id || '')).toLowerCase();
+                    if (newKey.localeCompare(rowKey) < 0) {
+                        row.insertAdjacentHTML('beforebegin', mainRowHtml(p, facultyName));
+                        inserted = true;
+                        break;
+                    }
+                }
+                if (!inserted) tbody.insertAdjacentHTML('beforeend', mainRowHtml(p, facultyName));
+
+                // Mini table: sorted insert
+                const miniBody = document.getElementById('miniLecturerBody');
+                const miniRows = [...miniBody.querySelectorAll('tr[data-id]')];
+                let miniInserted = false;
+                for (const row of miniRows) {
+                    const rowKey = ((row.dataset.faculty || '') + '|' + (row.dataset.id || '')).toLowerCase();
+                    if (newKey.localeCompare(rowKey) < 0) {
+                        row.insertAdjacentHTML('beforebegin', miniRowHtml(p));
+                        miniInserted = true;
+                        break;
+                    }
+                }
+                if (!miniInserted) miniBody.insertAdjacentHTML('beforeend', miniRowHtml(p));
+
                 updateCount(1);
             }
 
@@ -428,6 +511,9 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 const opt = fldFacultyId.querySelector(`option[value="${p.facultyId}"]`);
                 const facultyName = opt ? opt.textContent : p.facultyId;
                 const main = document.querySelector(`#lecturerTableBody tr[data-id="${CSS.escape(oldId)}"]`);
+                const creditClassCount = main ? parseInt(main.dataset.creditClassCount || '0', 10) : 0;
+                
+                p.creditClassCount = creditClassCount;
                 if (main) main.outerHTML = mainRowHtml(p, facultyName);
                 const mini = document.querySelector(`#miniLecturerBody  tr[data-id="${CSS.escape(oldId)}"]`);
                 if (mini) mini.outerHTML = miniRowHtml(p);
@@ -445,10 +531,17 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
             }
 
             function mainRowHtml(p, facultyName) {
+                const creditClassCount = p.creditClassCount || 0;
+                const canDelete = creditClassCount === 0;
+                const disabledDelete = canDelete ? "" : "disabled";
+                const deleteTitle = canDelete ? "Xóa" : `Không thể xóa giảng viên vì đang phụ trách lớp tín chỉ (${creditClassCount} lớp)`;
+                const deleteClass = canDelete ? "btn-delete-row hover-scale" : "disabled opacity-50";
+
                 return `<tr data-id="${escapeHtml(p.lecturerId)}" data-first="${escapeHtml(p.firstName)}" data-last="${escapeHtml(p.lastName)}"
                                 data-degree="${escapeHtml(p.degree ?? '')}" data-rank="${escapeHtml(p.academicRank ?? '')}"
                                 data-spec="${escapeHtml(p.specialty ?? '')}" data-faculty="${escapeHtml(p.facultyId)}"
-                                data-faculty-filter="${escapeHtml(p.facultyId)}">
+                                data-faculty-filter="${escapeHtml(p.facultyId)}"
+                                data-credit-class-count="${creditClassCount}">
                         <td class="fw-semibold font-monospace text-primary">${escapeHtml(p.lecturerId)}</td>
                         <td class="fw-medium">${escapeHtml(p.firstName)} ${escapeHtml(p.lastName)}</td>
                         <td>${escapeHtml(p.degree ?? '')}</td>
@@ -461,11 +554,13 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                             <button class="btn btn-sm btn-outline-primary me-1 btn-edit-row shadow-sm hover-scale" title="Sửa"
                                     data-id="${escapeHtml(p.lecturerId)}" data-first="${escapeHtml(p.firstName)}" data-last="${escapeHtml(p.lastName)}"
                                     data-degree="${escapeHtml(p.degree ?? '')}" data-rank="${escapeHtml(p.academicRank ?? '')}"
-                                    data-spec="${escapeHtml(p.specialty ?? '')}" data-faculty="${escapeHtml(p.facultyId)}">
+                                    data-spec="${escapeHtml(p.specialty ?? '')}" data-faculty="${escapeHtml(p.facultyId)}"
+                                    data-credit-class-count="${creditClassCount}">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger btn-delete-row shadow-sm hover-scale" title="Xóa"
-                                    data-id="${escapeHtml(p.lecturerId)}" data-first="${escapeHtml(p.firstName)}" data-last="${escapeHtml(p.lastName)}">
+                            <button class="btn btn-sm btn-outline-danger shadow-sm rounded-3 ${deleteClass}" title="${deleteTitle}"
+                                    data-id="${escapeHtml(p.lecturerId)}" data-first="${escapeHtml(p.firstName)}" data-last="${escapeHtml(p.lastName)}"
+                                    ${disabledDelete}>
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>
@@ -476,7 +571,8 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 return `<tr class="mini-row transition-base" role="button"
                                 data-id="${escapeHtml(p.lecturerId)}" data-first="${escapeHtml(p.firstName)}" data-last="${escapeHtml(p.lastName)}"
                                 data-degree="${escapeHtml(p.degree ?? '')}" data-rank="${escapeHtml(p.academicRank ?? '')}"
-                                data-spec="${escapeHtml(p.specialty ?? '')}" data-faculty="${escapeHtml(p.facultyId)}">
+                                data-spec="${escapeHtml(p.specialty ?? '')}" data-faculty="${escapeHtml(p.facultyId)}"
+                                data-credit-class-count="${p.creditClassCount || 0}">
                         <td class="fw-bold font-monospace text-primary">${escapeHtml(p.lecturerId)}</td>
                         <td>${escapeHtml(p.firstName)} ${escapeHtml(p.lastName)}</td>
                         <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle small px-2">${escapeHtml(p.facultyId)}</span></td>
@@ -515,6 +611,21 @@ MODAL: Nhập danh mục giảng viên / Xác nhận xóa
                 const vc = document.getElementById('visibleCount');
                 if (vc) vc.textContent = String(vis);
             }
+
+            // Modal Client side search
+            const modalLecturerSearch = document.getElementById('modalLecturerSearch');
+            modalLecturerSearch?.addEventListener('input', () => {
+                const q = modalLecturerSearch.value.trim().toLowerCase();
+                document.querySelectorAll('#miniLecturerBody tr.mini-row').forEach(row => {
+                    const id = (row.dataset.id ?? '').toLowerCase();
+                    const first = (row.dataset.first ?? '').toLowerCase();
+                    const last = (row.dataset.last ?? '').toLowerCase();
+                    const faculty = (row.dataset.faculty ?? '').toLowerCase();
+                    const fullname = first + ' ' + last;
+                    const match = id.includes(q) || first.includes(q) || last.includes(q) || fullname.includes(q) || faculty.includes(q);
+                    row.style.display = match ? '' : 'none';
+                });
+            });
 
         })();
     </script>

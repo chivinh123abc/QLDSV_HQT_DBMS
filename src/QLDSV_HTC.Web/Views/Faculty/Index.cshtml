@@ -10,8 +10,6 @@
 }
 
 <div class="dashboard-container fade-in-up">
-
-<div class="dashboard-container fade-in-up">
     @* ── Bảng danh sách khoa ── *@
     @await Html.PartialAsync("_FacultyTable", Model, ViewData)
 </div>
@@ -39,6 +37,7 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
             // Undo Stack State
             let undoStack = [];
             let forceClose = false;
+            let isSubmitting = false;
 
             const modal = document.getElementById('facultyFormModal');
             const deleteModal = document.getElementById('deleteConfirmModal');
@@ -60,6 +59,35 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
                 requiredFields: [fldFacultyId, fldFacultyName],
                 getSelectedId: () => selectedId,
             });
+
+            function getFormChanges() {
+                const changes = [];
+                const currentMode = helpers.getMode();
+                if (currentMode === 'view') return changes;
+
+                const idVal = fldFacultyId.value.trim();
+                const facultyNameVal = fldFacultyName.value.trim();
+
+                if (currentMode === 'add') {
+                    if (idVal) changes.push(`• <b>Mã khoa</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(idVal)}"</span>`);
+                    if (facultyNameVal) changes.push(`• <b>Tên khoa</b>: (Mới) → <span class="text-success fw-bold">"${escapeHtml(facultyNameVal)}"</span>`);
+                } else if (currentMode === 'edit' && snapshotData) {
+                    const oldId = (snapshotData.facultyId ?? '').toString().trim();
+                    const oldName = (snapshotData.facultyName ?? '').toString().trim();
+
+                    if (idVal !== oldId) {
+                        changes.push(`• <b>Mã khoa</b>: <span class="text-muted">"${escapeHtml(oldId)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(idVal)}"</span>`);
+                    }
+                    if (facultyNameVal !== oldName) {
+                        changes.push(`• <b>Tên khoa</b>: <span class="text-muted">"${escapeHtml(oldName)}"</span> → <span class="text-warning fw-bold">"${escapeHtml(facultyNameVal)}"</span>`);
+                    }
+                }
+                return changes;
+            }
+
+            function isFormDirty() {
+                return getFormChanges().length > 0;
+            }
 
             // ── Xử lý modal xác nhận xóa ────────────────────────────
             let pendingDeleteId = null;
@@ -98,67 +126,27 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
                 forceClose = false;
             });
 
-            // Chặn đóng modal nếu còn stack
-            modal.addEventListener('hide.bs.modal', async (e) => {
-                if (undoStack.length > 0 && !forceClose) {
-                    e.preventDefault();
-                    const isConfirmed = await window.showConfirmDialog(
-                        "Xác nhận thoát",
-                        "Bạn có các thao tác đã thực hiện nhưng chưa đóng phiên làm việc.<br>Nếu thoát bây giờ, bạn sẽ <b>không thể Phục hồi (Undo)</b> các thay đổi này được nữa.<br><br>Bạn vẫn muốn thoát?",
-                        { confirmText: "Tiếp tục thoát", cancelText: "Ở lại", isDanger: true }
-                    );
-                    if (isConfirmed) {
-                        forceClose = true;
-                        bootstrap.Modal.getInstance(modal).hide();
-                    }
-                }
+            // Đóng modal → xóa stack (giữ lại thay đổi đã ghi)
+            modal.addEventListener('hide.bs.modal', (e) => {
+                if (forceClose) return;
+                undoStack = [];
             });
 
-            btnSaveModal?.addEventListener('click', async () => {
-                if (undoStack.length === 0) {
-                    forceClose = true;
-                    bootstrap.Modal.getInstance(modal).hide();
-                    return;
-                }
-
-                const message = "Các thay đổi đã được <b>Ghi</b> vào hệ thống. Tuy nhiên, nếu đóng cửa sổ này, bạn sẽ không thể dùng chức năng 'Phục hồi' (Undo) cho các thao tác vừa thực hiện.<br><br>Bạn có chắc chắn muốn thoát?";
-                
-                const isConfirmed = await window.showConfirmDialog(
-                    "Xác nhận Thoát", message,
-                    { confirmText: "Xác nhận", cancelText: "Trở lại" }
-                );
-                
-                if (isConfirmed) {
-                    undoStack = [];
-                    forceClose = true;
-                    bootstrap.Modal.getInstance(modal).hide();
-                }
+            btnSaveModal?.addEventListener('click', () => {
+                undoStack = [];
+                forceClose = true;
+                bootstrap.Modal.getInstance(modal).hide();
             });
 
+            // "Hoàn tác tất cả và thoát" → undo rồi đóng
             btnCancelModal?.addEventListener('click', async () => {
-                if (undoStack.length === 0) {
-                    forceClose = true;
-                    bootstrap.Modal.getInstance(modal).hide();
-                    return;
-                }
-
-                const message = "Hành động này sẽ <b>Hoàn Tác toàn bộ</b> các thay đổi bạn vừa thực hiện trong bảng vừa rồi.<br>Bạn có chắc chắn muốn xóa bỏ công sức vừa làm?";
-                
-                const isConfirmed = await window.showConfirmDialog(
-                    "Hoàn Tác & Đóng", message,
-                    { confirmText: "Xác nhận Hoàn tác", cancelText: "Giữ lại", isDanger: true }
-                );
-
-                if (isConfirmed) {
-                    btnCancelModal.disabled = true;
-                    while(undoStack.length > 0) {
+                if (undoStack.length > 0) {
+                    while (undoStack.length > 0) {
                         await executeUndo();
                     }
-                    undoStack = [];
-                    forceClose = true;
-                    btnCancelModal.disabled = false;
-                    bootstrap.Modal.getInstance(modal).hide();
                 }
+                forceClose = true;
+                bootstrap.Modal.getInstance(modal).hide();
             });
 
             // Reset khi đóng modal
@@ -191,9 +179,11 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
                 showDeleteModal(selectedId, fldFacultyName.value);
             });
 
-            // ── Nút Ghi ──────────────────────────────────────────────
-            btnGhi.addEventListener('click', async () => {
-                if (!helpers.validateForm()) return;
+            async function saveFaculty() {
+                if (!helpers.validateForm() || isSubmitting) return false;
+
+                isSubmitting = true;
+                if (btnGhi) btnGhi.disabled = true;
 
                 const payload = {
                     oldFacultyId: originalId,
@@ -208,6 +198,7 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
                         if (helpers.getMode() === 'add') {
                             addRowToTables(payload);
                             undoStack.push({ action: 'delete', payload: { facultyId: payload.facultyId } });
+                            resetToView();
                         } else {
                             updateRowInTables(payload, originalId);
                             if (snapshotData) {
@@ -220,18 +211,29 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
                                     } 
                                 });
                             }
+                            snapshotData = { ...payload };
+                            selectedId = payload.facultyId;
+                            originalId = payload.facultyId;
+                            helpers.setMode('view');
+                            highlightMiniRow(selectedId);
                         }
-                        snapshotData = { ...payload };
-                        selectedId = payload.facultyId;
-                        originalId = payload.facultyId;
-                        helpers.setMode('edit');
-                        highlightMiniRow(selectedId);
+                        return true;
                     } else {
                         helpers.showAlert(res.message, 'danger');
+                        return false;
                     }
                 } catch (err) {
                     helpers.showAlert('Lỗi: ' + err.message, 'danger');
+                    return false;
+                } finally {
+                    isSubmitting = false;
+                    if (btnGhi) btnGhi.disabled = false;
                 }
+            }
+
+            // ── Nút Ghi ──────────────────────────────────────────────
+            btnGhi.addEventListener('click', async () => {
+                await saveFaculty();
             });
 
             // ── Nút Phục hồi ─────────────────────────────────────────
@@ -370,8 +372,33 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
                 if (empty) empty.closest('tr').remove();
                 
                 const count = p.lecturerCount !== undefined ? p.lecturerCount : 0;
-                tbody.insertAdjacentHTML('beforeend', mainRowHtml(p, count));
-                document.getElementById('miniFacultyBody').insertAdjacentHTML('beforeend', miniRowHtml(p));
+                const newId = (p.facultyId || '').toLowerCase();
+
+                // Main table: sorted insert by facultyId
+                const rows = [...tbody.querySelectorAll('tr[data-id]')];
+                let inserted = false;
+                for (const row of rows) {
+                    if (newId.localeCompare((row.dataset.id || '').toLowerCase()) < 0) {
+                        row.insertAdjacentHTML('beforebegin', mainRowHtml(p, count));
+                        inserted = true;
+                        break;
+                    }
+                }
+                if (!inserted) tbody.insertAdjacentHTML('beforeend', mainRowHtml(p, count));
+
+                // Mini table: sorted insert
+                const miniBody = document.getElementById('miniFacultyBody');
+                const miniRows = [...miniBody.querySelectorAll('tr[data-id]')];
+                let miniInserted = false;
+                for (const row of miniRows) {
+                    if (newId.localeCompare((row.dataset.id || '').toLowerCase()) < 0) {
+                        row.insertAdjacentHTML('beforebegin', miniRowHtml(p));
+                        miniInserted = true;
+                        break;
+                    }
+                }
+                if (!miniInserted) miniBody.insertAdjacentHTML('beforeend', miniRowHtml(p));
+
                 updateCount(1);
             }
 
@@ -437,10 +464,14 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
             function miniRowHtml(p, lecturerCount = 0) {
                 return `<tr class="mini-row transition-base" role="button"
                                 data-id="${escapeHtml(p.facultyId)}" data-name="${escapeHtml(p.facultyName)}" data-lecturer-count="${lecturerCount}">
-                        <td class="fw-bold font-monospace text-primary small">${escapeHtml(p.facultyId)}</td>
-                        <td class="small d-flex justify-content-between align-items-center">
-                            <span>${escapeHtml(p.facultyName)}</span>
-                            <span class="badge rounded-pill bg-light text-muted border tabular-nums" style="font-size: 0.65rem">${lecturerCount}</span>
+                        <td class="ps-3">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill font-monospace">
+                                ${escapeHtml(p.facultyId)}
+                            </span>
+                        </td>
+                        <td class="d-flex justify-content-between align-items-center py-2">
+                            <span class="fw-bold text-dark">${escapeHtml(p.facultyName)}</span>
+                            <span class="badge rounded-pill bg-light text-muted border tabular-nums px-2" title="Số giảng viên">${lecturerCount} <i class="bi bi-person-workspace ms-1"></i></span>
                         </td>
                     </tr>`;
             }
@@ -492,6 +523,18 @@ MODAL: Nhập danh mục khoa / Xác nhận xóa
                     searchInput.value = '';
                     performSearch();
                 }
+            });
+
+            // Modal Client side search
+            const modalFacultySearch = document.getElementById('modalFacultySearch');
+            modalFacultySearch?.addEventListener('input', () => {
+                const q = modalFacultySearch.value.trim().toLowerCase();
+                document.querySelectorAll('#miniFacultyBody tr.mini-row').forEach(row => {
+                    const id = (row.dataset.id ?? '').toLowerCase();
+                    const name = (row.dataset.name ?? '').toLowerCase();
+                    const match = id.includes(q) || name.includes(q);
+                    row.style.display = match ? '' : 'none';
+                });
             });
 
         })();
