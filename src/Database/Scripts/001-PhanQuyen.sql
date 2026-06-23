@@ -26,51 +26,51 @@ ALTER ROLE [SV] ADD MEMBER [user_sv];
 GO
 
 -- ========================================================
--- 0.5 TẠO LOGIN VÀ USER CHO LCVINH (PGV) VÀ PTQUANH (KHOA)
+-- 0.5 TẠO LOGIN VÀ USER CHO LNKT (PGV) VÀ HTT (KHOA)
 -- ========================================================
--- (A) Tài khoản lcvinh - Nhóm PGV (Toàn quyền)
-IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'lcvinh')
+-- (A) Tài khoản lnkt - Nhóm PGV (Toàn quyền)
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'lnkt')
 BEGIN
-    CREATE LOGIN [lcvinh] WITH PASSWORD = 'lcvinh123', DEFAULT_DATABASE = [QLDSV_HTC];
+    CREATE LOGIN [lnkt] WITH PASSWORD = '12345678', DEFAULT_DATABASE = [QLDSV_HTC];
 END
 ELSE
 BEGIN
-    ALTER LOGIN [lcvinh] WITH PASSWORD = 'lcvinh123';
+    ALTER LOGIN [lnkt] WITH PASSWORD = '12345678';
 END
 GO
-IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'lcvinh')
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'lnkt')
 BEGIN
-    CREATE USER [lcvinh] FOR LOGIN [lcvinh];
+    CREATE USER [lnkt] FOR LOGIN [lnkt];
 END
 GO
-ALTER ROLE [PGV] ADD MEMBER [lcvinh];
--- Cho phép lcvinh tạo tài khoản khác
-IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'lcvinh')
+ALTER ROLE [PGV] ADD MEMBER [lnkt];
+-- Cho phép lnkt tạo tài khoản khác
+IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'lnkt')
 BEGIN
-    ALTER SERVER ROLE [securityadmin] ADD MEMBER [lcvinh];
+    ALTER SERVER ROLE [securityadmin] ADD MEMBER [lnkt];
 END
 GO
 
--- (B) Tài khoản ptquanh - Nhóm KHOA (Quyền hạn chế)
-IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'ptquanh')
+-- (B) Tài khoản htt - Nhóm KHOA (Quyền hạn chế)
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'htt')
 BEGIN
-    CREATE LOGIN [ptquanh] WITH PASSWORD = 'ptquanh123', DEFAULT_DATABASE = [QLDSV_HTC];
+    CREATE LOGIN [htt] WITH PASSWORD = '12345678', DEFAULT_DATABASE = [QLDSV_HTC];
 END
 ELSE
 BEGIN
-    ALTER LOGIN [ptquanh] WITH PASSWORD = 'ptquanh123';
+    ALTER LOGIN [htt] WITH PASSWORD = '12345678';
 END
 GO
-IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'ptquanh')
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'htt')
 BEGIN
-    CREATE USER [ptquanh] FOR LOGIN [ptquanh];
+    CREATE USER [htt] FOR LOGIN [htt];
 END
 GO
-ALTER ROLE [KHOA] ADD MEMBER [ptquanh];
--- Cho phép ptquanh tạo tài khoản khác
-IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'ptquanh')
+ALTER ROLE [KHOA] ADD MEMBER [htt];
+-- Cho phép htt tạo tài khoản khác
+IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'htt')
 BEGIN
-    ALTER SERVER ROLE [securityadmin] ADD MEMBER [ptquanh];
+    ALTER SERVER ROLE [securityadmin] ADD MEMBER [htt];
 END
 GO
 

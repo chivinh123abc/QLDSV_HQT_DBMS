@@ -113,7 +113,9 @@ namespace QLDSV_HTC.Web.Extensions
 
         private static async Task ExecuteSqlFileAsync(string connectionString, string filePath)
         {
-            var content = await File.ReadAllTextAsync(filePath);
+            // Tự động phát hiện encoding của file (UTF-16 LE/BE có hoặc không có BOM, UTF-8)
+            var encoding = DetectFileEncoding(filePath);
+            var content = await File.ReadAllTextAsync(filePath, encoding);
 
             // Loại bỏ các lệnh USE [DatabaseName] để tránh lỗi lô lệnh (batch) và đảm bảo chạy đúng DB cấu hình
             content = Regex.Replace(content, @"^\s*USE\s+[^;\r\n]+;?\s*$", "", RegexOptions.Multiline | RegexOptions.IgnoreCase);
@@ -147,6 +149,42 @@ namespace QLDSV_HTC.Web.Extensions
                     throw;
                 }
             }
+        }
+
+        /// <summary>
+        /// Phát hiện encoding của file SQL dựa trên BOM hoặc mẫu byte NULL xen kẽ (UTF-16 không BOM).
+        /// </summary>
+        private static System.Text.Encoding DetectFileEncoding(string filePath)
+        {
+            var bom = new byte[4];
+            using (var fs = File.OpenRead(filePath))
+            {
+                var bytesRead = fs.Read(bom, 0, 4);
+                if (bytesRead < 2)
+                    return System.Text.Encoding.UTF8;
+            }
+
+            // UTF-8 BOM: EF BB BF
+            if (bom[0] == 0xEF && bom[1] == 0xBB && bom[2] == 0xBF)
+                return System.Text.Encoding.UTF8;
+
+            // UTF-16 LE BOM: FF FE
+            if (bom[0] == 0xFF && bom[1] == 0xFE)
+                return System.Text.Encoding.Unicode;
+
+            // UTF-16 BE BOM: FE FF
+            if (bom[0] == 0xFE && bom[1] == 0xFF)
+                return System.Text.Encoding.BigEndianUnicode;
+
+            // UTF-16 LE không có BOM: ký tự ASCII có byte thứ 2 = 0x00
+            if (bom[1] == 0x00 && bom[0] != 0x00)
+                return System.Text.Encoding.Unicode;
+
+            // UTF-16 BE không có BOM: ký tự ASCII có byte thứ 1 = 0x00
+            if (bom[0] == 0x00 && bom[1] != 0x00)
+                return System.Text.Encoding.BigEndianUnicode;
+
+            return System.Text.Encoding.UTF8;
         }
 
         private static string ReplaceDatabaseInConnectionString(string connectionString, string newDatabase)
