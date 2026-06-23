@@ -52,8 +52,13 @@
                     <label for="fldPassword" class="form-label fw-semibold">
                         Mật khẩu <span class="text-danger" id="reqPasswordStar">*</span>
                     </label>
-                    <input type="password" class="form-control" id="fldPassword"
-                           maxlength="50" placeholder="Nhập mật khẩu" disabled>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="fldPassword"
+                               maxlength="50" placeholder="Nhập mật khẩu" disabled>
+                        <button class="btn btn-outline-secondary border" type="button" id="btnTogglePassword" tabindex="-1" title="Hiện/Ẩn mật khẩu">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                     <div class="invalid-feedback">Vui lòng nhập mật khẩu.</div>
                 </div>
 
@@ -80,10 +85,16 @@
         </text>,
         
         ExtraBodySection = @<text>
-            <h6 class="fw-bold mb-3 text-primary d-flex align-items-center gap-2">
-                <i class="bi bi-list-ul"></i>
-                <span>Danh sách tài khoản hiện có</span>
-            </h6>
+            <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+                <h6 class="fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-list-ul"></i>
+                    <span>Danh sách tài khoản hiện có</span>
+                </h6>
+                <div class="input-group input-group-sm" style="max-width: 250px;">
+                    <span class="input-group-text bg-white border-end-0 border-primary-subtle"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" id="modalAccountSearch" class="form-control border-start-0 border-primary-subtle" placeholder="Tìm kiếm tài khoản...">
+                </div>
+            </div>
             <div class="table-responsive rounded-3 border border-light-subtle shadow-sm" style="max-height:240px; overflow-y:auto">
                 <table class="table table-sm table-hover align-middle mb-0" id="miniAccountTable">
                     <thead class="table-light sticky-top">
