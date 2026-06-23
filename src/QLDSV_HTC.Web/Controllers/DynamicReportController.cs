@@ -87,14 +87,17 @@ public class DynamicReportController(IDynamicReportRepository dynamicReportRepos
             if (!await IsTableAllowedAsync(request.TableName))
                 return BadRequest(new { success = false, message = "Tên bảng không hợp lệ." });
 
-            var (dataTable, rawSql) = await dynamicReportRepository.GetPreviewDataAsync(request);
+            var (dataTable, rawSql, totalCount) = await dynamicReportRepository.GetPreviewDataAsync(request);
 
             var result = new
             {
                 success = true,
                 columns = dataTable.Columns.Cast<DataColumn>().Select(c => c.ColumnName).ToList(),
                 data = MapDataTableToList(dataTable),
-                sql = rawSql
+                sql = rawSql,
+                totalCount,
+                pageNumber = request.PageNumber,
+                pageSize = request.PageSize
             };
 
             return Ok(result);

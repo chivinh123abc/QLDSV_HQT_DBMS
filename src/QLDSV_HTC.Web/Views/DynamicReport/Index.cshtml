@@ -68,8 +68,27 @@
                             <div class="mb-3" id="aggregationGroup" style="display: none;">
                                 <div class="step-label">
                                     <span class="step-num">4</span> Cấu hình Thống kê
+                                    <button type="button" class="btn btn-sm btn-outline-primary ms-auto" id="havingLogicToggle" title="Đổi logic HAVING">AND</button>
                                 </div>
                                 <div id="aggregationContainer" class="column-scroll rounded p-2 bg-light"></div>
+                                <!-- F5: Print by Group (only visible when aggregation enabled) -->
+                                <div class="mt-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="printByGroupCheck">
+                                        <label class="form-check-label small" for="printByGroupCheck">
+                                            <i class="bi bi-collection"></i> In theo nhóm (Print by Group)
+                                        </label>
+                                    </div>
+                                    <div id="printByGroupOptions" style="display: none;" class="ms-4 mt-1">
+                                        <select class="form-select form-select-sm mb-1" id="groupByColumnSelect">
+                                            <option value="">-- Chọn cột nhóm --</option>
+                                        </select>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="pageBreakCheck">
+                                            <label class="form-check-label x-small" for="pageBreakCheck">Sang trang mới cho mỗi nhóm</label>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- STEP 5: Filters -->
@@ -91,7 +110,10 @@
                                 <div class="mb-2">
                                     <label class="form-label small text-muted mb-1">Tiêu đề báo cáo</label>
                                     <input type="text" class="form-control form-control-sm" id="reportTitleInput" 
-                                        placeholder="VD: ĐIỂM CỦA LỚP A (bỏ trống = tự động)" />
+                                        placeholder="VD: DANH SÁCH SINH VIÊN @@MAKHOA (bỏ trống = tự động)" />
+                                    <div class="form-text x-small text-muted mt-1">
+                                        <i class="bi bi-info-circle"></i> Gõ <code>@@TÊN_CỘT</code> để chèn giá trị lọc. VD: <code>@@MAKHOA</code> → CNTT
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="form-label small text-muted mb-1">Tên file tải về</label>
@@ -149,6 +171,11 @@
                         <h6><i class="bi bi-table me-2"></i>Kết quả xem trước</h6>
                         <span id="recordCountBadge" class="dr-badge dr-badge-info">0 dòng</span>
                     </div>
+                    <!-- Report Title Preview -->
+                    <div id="reportTitlePreview" class="dr-title-preview" style="display: none;">
+                        <i class="bi bi-file-earmark-text me-1"></i>
+                        <span id="reportTitlePreviewText">BÁO CÁO TÙY CHỈNH</span>
+                    </div>
                     <div class="preview-table-wrap">
                         <table class="table table-hover table-striped mb-0">
                             <thead id="previewTableHead">
@@ -160,6 +187,31 @@
                             </thead>
                             <tbody id="previewTableBody"></tbody>
                         </table>
+                    </div>
+                    <!-- F6: Pagination Bar -->
+                    <div id="paginationBar" class="dr-pagination" style="display: none;">
+                        <div class="dr-pagination-left">
+                            <label class="small text-muted me-1">Hiển thị</label>
+                            <select class="form-select form-select-sm dr-page-size-select" id="pageSizeSelect">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50" selected>50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span class="small text-muted ms-1">dòng/trang</span>
+                        </div>
+                        <div class="dr-pagination-center">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="prevPageBtn" disabled>
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <span class="small fw-semibold mx-2" id="pageIndicator">Trang 1 / 1</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="nextPageBtn" disabled>
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="dr-pagination-right">
+                            <span class="small text-muted" id="totalCountLabel">Tổng: 0 dòng</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -318,3 +370,61 @@
     <script type="module" src="~/js/dynamic-report/index.js" asp-append-version="true"></script>
 }
 
+<!-- F8: Guide Toggle Button (floating) -->
+<button type="button" class="dr-guide-toggle-btn" id="guideToggleBtn" title="Hướng dẫn sử dụng">
+    <i class="bi bi-question-lg"></i>
+</button>
+
+<!-- F8: Collapsible Guide Sidebar -->
+<div class="dr-guide-panel" id="guidePanel">
+    <div class="dr-guide-header">
+        <h6><i class="bi bi-book me-2"></i>Hướng dẫn nhanh</h6>
+        <button type="button" class="btn-close btn-close-white" id="guidePanelClose" aria-label="Đóng"></button>
+    </div>
+    <div class="dr-guide-body">
+        <h6 class="text-primary mb-2">Muốn A → Cần làm gì?</h6>
+        <div class="dr-guide-item">
+            <strong><i class="bi bi-hash"></i> Đếm số SV mỗi Khoa</strong>
+            <ol class="small mb-2">
+                <li>Chọn bảng <code>SINHVIEN</code></li>
+                <li>JOIN bảng <code>KHOA</code></li>
+                <li>Chọn cột <code>TENKHOA</code> + <code>MASV</code></li>
+                <li>Bật <strong>Thống kê</strong></li>
+                <li>Đặt <code>MASV</code> = COUNT</li>
+                <li>Nhấn <strong>Xem trước</strong></li>
+            </ol>
+        </div>
+        <div class="dr-guide-item">
+            <strong><i class="bi bi-calculator"></i> Tính điểm TB môn</strong>
+            <ol class="small mb-2">
+                <li>Chọn bảng <code>DANGKY</code></li>
+                <li>Chọn cột <code>DIEM_GK</code></li>
+                <li>Bật <strong>Thống kê</strong> → DIEM_GK chọn AVG</li>
+            </ol>
+        </div>
+        <div class="dr-guide-item">
+            <strong><i class="bi bi-at"></i> Tiêu đề có tham số</strong>
+            <ol class="small mb-2">
+                <li>Thêm filter <code>MAKHOA = CNTT</code></li>
+                <li>Gõ tiêu đề: <code>DANH SÁCH SV @@MAKHOA</code></li>
+                <li>Kết quả PDF: <strong>DANH SÁCH SV CNTT</strong></li>
+            </ol>
+        </div>
+        <div class="dr-guide-item">
+            <strong><i class="bi bi-collection"></i> In PDF theo nhóm</strong>
+            <ol class="small mb-2">
+                <li>Bật <strong>Thống kê</strong></li>
+                <li>Tick <strong>"In theo nhóm"</strong></li>
+                <li>Chọn cột nhóm → Xuất PDF</li>
+            </ol>
+        </div>
+        <hr>
+        <h6 class="text-warning mb-2">Ràng buộc cần biết</h6>
+        <ul class="small mb-0">
+            <li><code>@@PARAM</code> trong tiêu đề phải <strong>IN HOA</strong>, trùng tên cột, và cột đó phải có filter</li>
+            <li>Khi bật GROUP BY: cột group tự động chọn hiển thị, không thể bỏ</li>
+            <li>Cột tính toán: Alias nên ngắn gọn, <strong>KHÔNG</strong> dấu tiếng Việt</li>
+            <li>Sắp xếp: Click ↑↓ trên mỗi cột để chọn ASC/DESC</li>
+        </ul>
+    </div>
+</div>

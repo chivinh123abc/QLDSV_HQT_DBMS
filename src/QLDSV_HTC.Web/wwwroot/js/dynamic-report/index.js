@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     DOM.tableNameSelect.addEventListener('change', onTableChange);
     DOM.addJoinBtn.addEventListener('click', addJoinRow);
     DOM.addFilterBtn.addEventListener('click', addFilterRow);
-    DOM.previewBtn.addEventListener('click', previewData);
+    DOM.previewBtn.addEventListener('click', () => { State.currentPage = 1; previewData(); });
     DOM.generatePdfBtn.addEventListener('click', generatePdf);
     DOM.toggleAggregationBtn.addEventListener('click', onToggleAggregation);
 
@@ -602,7 +602,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- Action Handlers ---
 
-    function getRequestPayload() {
+    function getRequestPayload(pageOverride = null) {
         const joins = Array.from(DOM.joinsContainer.querySelectorAll('.join-row')).map(r => ({
             JoinTable: r.querySelector('.join-table-select').value,
             JoinType: r.querySelector('.join-type-select').value
@@ -617,15 +617,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             return { TableName: tbl, ColumnName: col, Operator: op, Value: val || '' };
         }).filter(f => f && (f.Value || f.Operator === 9 || f.Operator === 10));
 
+        // F2: Build OrderByColumns from sortDirections
+        const orderByColumns = [];
+        for (const [key, dir] of Object.entries(State.sortDirections)) {
+            if (!dir) continue;
+            const [tbl, col] = key.split('.');
+            orderByColumns.push({ TableName: tbl, ColumnName: col, Descending: dir === 'DESC' });
+        }
+
         return {
             TableName: State.tableName,
             Joins: joins,
             AdvancedSelectColumns: State.selectedColumns,
             Filters: filters,
+            OrderByColumns: orderByColumns,
+            HavingLogic: State.havingLogic,
+            PrintByGroup: State.printByGroup,
+            GroupByColumn: State.groupByColumn || null,
+            PageBreakPerGroup: State.pageBreakPerGroup,
             ReportTitle: DOM.reportTitleInput?.value?.trim(),
             FileName: DOM.fileNameInput?.value?.trim(),
-            PageNumber: 1,
-            PageSize: 50
+            PageNumber: pageOverride ?? State.currentPage,
+            PageSize: State.pageSize
         };
     }
 
@@ -637,7 +650,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const result = await ApiService.previewData(payload);
             if (result.success) {
-                UIManager.renderPreviewTable(result.data, result.columns);
+                UIManager.renderPreviewTable(result.data, result.columns, State.printByGroup ? State.groupByColumn : null);
+                // F6: Update pagination state
+                State.totalCount = result.totalCount ?? result.data.length;
+                State.currentPage = result.pageNumber ?? State.currentPage;
+                State.pageSize = result.pageSize ?? State.pageSize;
+                renderPaginationBar();
+                // Update SQL preview with actual executed SQL
+                if (result.sql) {
+                    DOM.sqlPreviewCode.innerHTML = highlightSql(result.sql);
+                    DOM.copySqlBtn.style.display = 'inline-flex';
+                }
+                // Show resolved report title preview
+                updateTitlePreview(payload);
             } else {
                 UIManager.showAlert('Lỗi: ' + result.message);
             }
@@ -647,6 +672,123 @@ document.addEventListener('DOMContentLoaded', async () => {
             UIManager.setLoading('previewBtn', false, 'Xem trước dữ liệu', 'bi bi-table');
         }
     }
+
+    // --- F6: Pagination Bar ---
+    function renderPaginationBar() {
+        const bar = DOM.paginationBar;
+        if (!bar) return;
+        bar.style.display = 'flex';
+
+        const totalPages = Math.max(1, Math.ceil(State.totalCount / State.pageSize));
+        if (DOM.pageIndicator) DOM.pageIndicator.textContent = `Trang ${State.currentPage} / ${totalPages}`;
+        if (DOM.totalCountLabel) DOM.totalCountLabel.textContent = `Tổng: ${State.totalCount} dòng`;
+        if (DOM.prevPageBtn) DOM.prevPageBtn.disabled = State.currentPage <= 1;
+        if (DOM.nextPageBtn) DOM.nextPageBtn.disabled = State.currentPage >= totalPages;
+        if (DOM.pageSizeSelect) DOM.pageSizeSelect.value = String(State.pageSize);
+    }
+
+    function updateTitlePreview(payload) {
+        if (!DOM.reportTitlePreview || !DOM.reportTitlePreviewText) return;
+
+        let title = payload.ReportTitle?.trim();
+        if (!title) {
+            title = `BÁO CÁO TÙY CHỈNH: ${State.tableName || ''}`;
+        }
+
+        // Replace @PARAM with filter values (same logic as backend BuildTitle)
+        if (payload.Filters && payload.Filters.length > 0) {
+            for (const filter of payload.Filters) {
+                if (!filter.Value) continue;
+                const placeholder = `@${filter.ColumnName.trim().toUpperCase()}`;
+                const regex = new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                title = title.replace(regex, filter.Value.trim());
+            }
+        }
+
+        DOM.reportTitlePreviewText.textContent = title.toUpperCase();
+        DOM.reportTitlePreview.style.display = 'flex';
+    }
+
+    DOM.pageSizeSelect?.addEventListener('change', (e) => {
+        State.pageSize = parseInt(e.target.value, 10);
+        State.currentPage = 1;
+        previewData();
+    });
+
+    DOM.prevPageBtn?.addEventListener('click', () => {
+        if (State.currentPage > 1) {
+            State.currentPage--;
+            previewData();
+        }
+    });
+
+    DOM.nextPageBtn?.addEventListener('click', () => {
+        const totalPages = Math.ceil(State.totalCount / State.pageSize);
+        if (State.currentPage < totalPages) {
+            State.currentPage++;
+            previewData();
+        }
+    });
+
+    // --- F3: HAVING Logic Toggle ---
+    DOM.havingLogicToggle?.addEventListener('click', () => {
+        State.havingLogic = State.havingLogic === 'AND' ? 'OR' : 'AND';
+        DOM.havingLogicToggle.textContent = State.havingLogic;
+        DOM.havingLogicToggle.classList.toggle('btn-outline-primary', State.havingLogic === 'AND');
+        DOM.havingLogicToggle.classList.toggle('btn-outline-warning', State.havingLogic === 'OR');
+        stateChanged();
+    });
+
+    // --- F5: Print by Group ---
+    DOM.printByGroupCheck?.addEventListener('change', (e) => {
+        State.printByGroup = e.target.checked;
+        if (DOM.printByGroupOptions) DOM.printByGroupOptions.style.display = e.target.checked ? 'block' : 'none';
+        if (e.target.checked) populateGroupByOptions();
+    });
+
+    function populateGroupByOptions() {
+        if (!DOM.groupByColumnSelect) return;
+        const cols = State.selectedColumns.filter(c => !c.IsComputed);
+        DOM.groupByColumnSelect.innerHTML = '<option value="">-- Chọn cột nhóm --</option>' +
+            cols.map(c => `<option value="${c.TableName}.${c.ColumnName}">${c.TableName}.${c.ColumnName}</option>`).join('');
+    }
+
+    DOM.groupByColumnSelect?.addEventListener('change', (e) => {
+        State.groupByColumn = e.target.value;
+    });
+
+    DOM.pageBreakCheck?.addEventListener('change', (e) => {
+        State.pageBreakPerGroup = e.target.checked;
+    });
+
+    // --- F2: Sort Toggle (Event delegation on column selection container) ---
+    DOM.columnSelectionContainer.addEventListener('click', (e) => {
+        const sortBtn = e.target.closest('.sort-toggle-btn');
+        if (!sortBtn) return;
+        const key = sortBtn.dataset.sortKey; // "Table.Column"
+        if (!key) return;
+
+        const current = State.sortDirections[key];
+        if (!current) State.sortDirections[key] = 'ASC';
+        else if (current === 'ASC') State.sortDirections[key] = 'DESC';
+        else delete State.sortDirections[key];
+
+        // Update icon
+        const icon = sortBtn.querySelector('i');
+        const dir = State.sortDirections[key];
+        if (dir === 'ASC') { icon.className = 'bi bi-sort-alpha-down'; sortBtn.title = 'ASC → Click để DESC'; }
+        else if (dir === 'DESC') { icon.className = 'bi bi-sort-alpha-up-alt'; sortBtn.title = 'DESC → Click để bỏ sort'; }
+        else { icon.className = 'bi bi-arrow-down-up'; sortBtn.title = 'Click để sắp xếp ASC'; }
+        stateChanged();
+    });
+
+    // --- F8: Guide Panel ---
+    DOM.guideToggleBtn?.addEventListener('click', () => {
+        DOM.guidePanel?.classList.toggle('open');
+    });
+    DOM.guidePanelClose?.addEventListener('click', () => {
+        DOM.guidePanel?.classList.remove('open');
+    });
 
     async function generatePdf() {
         const payload = getRequestPayload();

@@ -46,11 +46,17 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
         return columns;
     }
 
-    public async Task<(DataTable Data, string Sql)> GetPreviewDataAsync(DynamicQueryRequestDto request)
+    public async Task<(DataTable Data, string Sql, int TotalCount)> GetPreviewDataAsync(DynamicQueryRequestDto request)
     {
         var (sql, parameters) = BuildDynamicQuery(request, isPagination: true);
         var dataTable = await ExecuteQueryAsync(sql, CommandType.Text, parameters);
-        return (dataTable, sql);
+
+        // Build count query (reuse same WHERE/JOIN/GROUP BY but SELECT COUNT)
+        var (countSql, countParams) = BuildCountQuery(request);
+        var countDt = await ExecuteQueryAsync(countSql, CommandType.Text, countParams);
+        int totalCount = countDt.Rows.Count > 0 ? Convert.ToInt32(countDt.Rows[0][0]) : 0;
+
+        return (dataTable, sql, totalCount);
     }
 
     public Task<string> GetSqlPreviewAsync(DynamicQueryRequestDto request)
@@ -73,7 +79,7 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
         string safeTableName = request.TableName.Replace("]", "]]");
 
         // 1. Build Select Clause
-        string selectClause = BuildSelectClause(request, out var groupByColumns, out var orderByColumn);
+        string selectClause = BuildSelectClause(request, out var groupByColumns, out var fallbackOrderByColumn);
 
         // 2. Build FROM & JOINs
         var sqlBuilder = new StringBuilder();
@@ -87,19 +93,50 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
         // 4. Build GROUP BY & HAVING
         ApplyGroupingAndHaving(sqlBuilder, request, groupByColumns, parameters);
 
-        // 5. Build Pagination
-        if (isPagination)
+        // 5. Build ORDER BY + Pagination
+        ApplyOrderByAndPagination(sqlBuilder, request, fallbackOrderByColumn, isPagination);
+
+        return (sqlBuilder.ToString(), parameters.ToArray());
+    }
+
+    private static (string Sql, SqlParameter[] Parameters) BuildCountQuery(DynamicQueryRequestDto request)
+    {
+        var parameters = new List<SqlParameter>();
+        string safeTableName = request.TableName.Replace("]", "]]");
+
+        string selectClause = BuildSelectClause(request, out var groupByColumns, out _);
+
+        var sqlBuilder = new StringBuilder();
+
+        if (groupByColumns.Count > 0)
         {
-            ApplyPagination(sqlBuilder, request, orderByColumn);
+            // When GROUP BY exists, count the number of groups
+            sqlBuilder.Append("SELECT COUNT(*) FROM (SELECT ")
+                      .Append(selectClause)
+                      .Append(" \n").Append(DbConstants.SqlKeywords.From).Append(" [dbo].[").Append(safeTableName).Append(']');
+        }
+        else
+        {
+            sqlBuilder.Append("SELECT COUNT(*) ")
+                      .Append(" \n").Append(DbConstants.SqlKeywords.From).Append(" [dbo].[").Append(safeTableName).Append(']');
+        }
+
+        ApplyJoins(sqlBuilder, request, safeTableName);
+        ApplyFilters(sqlBuilder, request, safeTableName, parameters);
+        ApplyGroupingAndHaving(sqlBuilder, request, groupByColumns, parameters);
+
+        if (groupByColumns.Count > 0)
+        {
+            sqlBuilder.Append(") AS CountQuery");
         }
 
         return (sqlBuilder.ToString(), parameters.ToArray());
     }
 
-    private static string BuildSelectClause(DynamicQueryRequestDto request, out List<string> groupByColumns, out string orderByColumn)
+    private static string BuildSelectClause(DynamicQueryRequestDto request, out List<string> groupByColumns, out string fallbackOrderByColumn)
     {
         groupByColumns = [];
-        orderByColumn = "(SELECT NULL)";
+        fallbackOrderByColumn = "(SELECT NULL)";
         string safeTableName = request.TableName.Replace("]", "]]");
 
         if (request.AdvancedSelectColumns?.Count > 0)
@@ -107,6 +144,7 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
             var uniqueKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var selectedColumns = new List<string>();
             bool hasAggregates = request.AdvancedSelectColumns.Any(c => c.Aggregate != AggregateType.None);
+            bool hasRawColumns = request.AdvancedSelectColumns.Any(c => c.Aggregate == AggregateType.None);
 
             foreach (var c in request.AdvancedSelectColumns)
             {
@@ -114,7 +152,7 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
                 string safeColTable = c.TableName.Replace("]", "]]");
                 string qualifiedCol = string.IsNullOrWhiteSpace(c.Expression)
                     ? $"[{safeColTable}].[{colName}]"
-                    : c.Expression; // We trust Expression from backend validation, but front-end should only allow safe constructs.
+                    : c.Expression;
 
                 bool isRaw = c.Aggregate == AggregateType.None;
                 string aggFunc = isRaw ? "NONE" : c.Aggregate.ToString().ToUpper();
@@ -128,11 +166,9 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
                     aggAlias = isRaw ? colName : $"{aggFunc}_{colName}";
                 }
 
-                // If it's a computed column (has Expression), we MUST have an alias, and we don't apply GROUP BY to it directly unless wrapped properly, 
-                // but usually computed columns are raw.
                 if (!string.IsNullOrWhiteSpace(c.Expression) && string.IsNullOrWhiteSpace(c.AliasName))
                 {
-                    aggAlias = "ComputedColumn"; // Fallback alias
+                    aggAlias = "ComputedColumn";
                 }
 
                 string uniqueKey = $"{qualifiedCol}_{aggFunc}_{aggAlias}";
@@ -141,7 +177,8 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
                 if (isRaw)
                 {
                     selectedColumns.Add($"{qualifiedCol} AS [{aggAlias}]");
-                    if (hasAggregates)
+                    // F1: Only add to GROUP BY if there are ALSO aggregate columns AND raw columns coexist
+                    if (hasAggregates && hasRawColumns)
                     {
                         groupByColumns.Add(qualifiedCol);
                     }
@@ -151,14 +188,14 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
                     selectedColumns.Add($"{aggFunc}({qualifiedCol}) AS [{aggAlias}]");
                 }
 
-                if (orderByColumn == "(SELECT NULL)") orderByColumn = isRaw ? qualifiedCol : $"[{aggAlias}]";
+                if (fallbackOrderByColumn == "(SELECT NULL)") fallbackOrderByColumn = isRaw ? qualifiedCol : $"[{aggAlias}]";
             }
             return string.Join(", ", selectedColumns);
         }
 
         if (request.SelectColumns?.Count > 0)
         {
-            orderByColumn = $"[{safeTableName}].[{request.SelectColumns[0].Replace("]", "]]")}]";
+            fallbackOrderByColumn = $"[{safeTableName}].[{request.SelectColumns[0].Replace("]", "]]")}]";
             return string.Join(", ", request.SelectColumns.Select(c => $"[{safeTableName}].[{c.Replace("]", "]]")}]"));
         }
 
@@ -314,16 +351,70 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
         }
 
         if (havingClauses.Count > 0)
-            sqlBuilder.Append('\n').Append(DbConstants.SqlKeywords.Having).Append(' ').AppendJoin($"\n   {DbConstants.SqlKeywords.And} ", havingClauses);
+        {
+            // F3: Support AND/OR logic for HAVING
+            string havingLogic = request.HavingLogic?.Trim().ToUpperInvariant() switch
+            {
+                "OR" => DbConstants.SqlKeywords.Or,
+                _ => DbConstants.SqlKeywords.And // Default to AND
+            };
+            sqlBuilder.Append('\n').Append(DbConstants.SqlKeywords.Having).Append(' ').AppendJoin($"\n   {havingLogic} ", havingClauses);
+        }
     }
 
-    private static void ApplyPagination(StringBuilder sqlBuilder, DynamicQueryRequestDto request, string orderByColumn)
+    private static void ApplyOrderByAndPagination(StringBuilder sqlBuilder, DynamicQueryRequestDto request, string fallbackOrderByColumn, bool isPagination)
     {
-        int offset = Math.Max(0, request.PageNumber - 1) * Math.Max(1, request.PageSize);
-        sqlBuilder.Append('\n').Append(DbConstants.SqlKeywords.OrderBy).Append(' ').Append(orderByColumn)
-                  .Append(" \n").Append(DbConstants.SqlKeywords.Offset).Append(' ').Append(offset)
-                  .Append(" ROWS \n").Append(DbConstants.SqlKeywords.FetchNext).Append(' ').Append(Math.Max(1, request.PageSize))
-                  .Append(' ').Append(DbConstants.SqlKeywords.RowsOnly);
+        // F2: Build ORDER BY from user-defined columns, fallback to default
+        string orderByClause;
+        if (request.OrderByColumns?.Count > 0)
+        {
+            var orderParts = new List<string>();
+            foreach (var ob in request.OrderByColumns)
+            {
+                string safeTable = ob.TableName.Replace("]", "]]");
+                string safeCol = ob.ColumnName.Replace("]", "]]");
+                string direction = ob.Descending ? "DESC" : "ASC";
+                orderParts.Add($"[{safeTable}].[{safeCol}] {direction}");
+            }
+            orderByClause = string.Join(", ", orderParts);
+        }
+        else
+        {
+            orderByClause = fallbackOrderByColumn;
+        }
+
+        // F5: When PrintByGroup, ensure group column is FIRST in ORDER BY
+        if (request.PrintByGroup && !string.IsNullOrWhiteSpace(request.GroupByColumn))
+        {
+            string groupColRaw = request.GroupByColumn;
+            string groupOrderExpr;
+            if (groupColRaw.Contains('.'))
+            {
+                var parts = groupColRaw.Split('.');
+                groupOrderExpr = $"[{parts[0].Replace("]", "]]")}].[{parts[1].Replace("]", "]]")}]";
+            }
+            else
+            {
+                groupOrderExpr = $"[{groupColRaw.Replace("]", "]]")}]";
+            }
+
+            // Prepend group column if not already at the start
+            if (!orderByClause.StartsWith(groupOrderExpr, StringComparison.OrdinalIgnoreCase))
+            {
+                orderByClause = $"{groupOrderExpr} ASC, {orderByClause}";
+            }
+        }
+
+        // Always apply ORDER BY for report (sorted output), pagination needs it for OFFSET
+        sqlBuilder.Append('\n').Append(DbConstants.SqlKeywords.OrderBy).Append(' ').Append(orderByClause);
+
+        if (isPagination)
+        {
+            int offset = Math.Max(0, request.PageNumber - 1) * Math.Max(1, request.PageSize);
+            sqlBuilder.Append(" \n").Append(DbConstants.SqlKeywords.Offset).Append(' ').Append(offset)
+                      .Append(" ROWS \n").Append(DbConstants.SqlKeywords.FetchNext).Append(' ').Append(Math.Max(1, request.PageSize))
+                      .Append(' ').Append(DbConstants.SqlKeywords.RowsOnly);
+        }
     }
 
     #endregion

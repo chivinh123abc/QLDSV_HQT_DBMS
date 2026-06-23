@@ -310,6 +310,16 @@
 .dr-page .preview-table-wrap tbody tr:hover {
     background: var(--dr-primary-bg) !important;
 }
+.dr-page .preview-table-wrap .dr-group-header-row {
+    background: linear-gradient(135deg, #e0f2fe, #eff6ff) !important;
+}
+.dr-page .preview-table-wrap .dr-group-header-row td {
+    padding: 10px 14px;
+    font-size: .85rem;
+    color: var(--dr-primary);
+    border-bottom: 2px solid var(--dr-primary-light);
+    text-align: left;
+}
 
 /* Table group label in column section */
 .dr-page .table-group-label {
@@ -489,4 +499,175 @@
 .modal-footer {
     border-top: 1px solid var(--dr-border);
     padding: 16px 24px;
+}
+
+/* ===== F2: Sort Toggle Button ===== */
+.dr-page .sort-toggle-btn {
+    background: none;
+    border: 1px solid var(--dr-border);
+    border-radius: 6px;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: .68rem;
+    color: var(--dr-text-muted);
+    transition: all .15s ease;
+    padding: 0;
+    margin-left: 4px;
+}
+.dr-page .sort-toggle-btn:hover {
+    border-color: var(--dr-primary);
+    color: var(--dr-primary);
+    background: var(--dr-primary-bg);
+}
+.dr-page .sort-toggle-btn.active {
+    border-color: var(--dr-primary);
+    color: var(--dr-primary);
+    background: var(--dr-primary-bg);
+}
+
+/* ===== F6: Pagination Bar ===== */
+.dr-page .dr-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-top: 1px solid var(--dr-border);
+    background: var(--dr-surface-alt);
+    border-radius: 0 0 var(--dr-radius) var(--dr-radius);
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.dr-page .dr-pagination-left,
+.dr-page .dr-pagination-center,
+.dr-page .dr-pagination-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.dr-page .dr-page-size-select {
+    width: 70px;
+    font-size: .78rem;
+    padding: 2px 6px;
+}
+
+/* ===== F7: Validation Warning ===== */
+.dr-page .dr-validation-warning {
+    font-size: .72rem;
+    color: var(--dr-warning);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+}
+.dr-page .dr-validation-warning i {
+    font-size: .8rem;
+}
+
+/* ===== F8: Guide Panel ===== */
+.dr-guide-toggle-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #0ea5e9);
+    color: #fff;
+    border: none;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(37,99,235,.4);
+    transition: all .2s ease;
+    z-index: 1050;
+}
+.dr-guide-toggle-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(37,99,235,.5);
+}
+
+.dr-guide-panel {
+    position: fixed;
+    top: 0;
+    right: -380px;
+    width: 360px;
+    height: 100vh;
+    background: #fff;
+    box-shadow: -4px 0 20px rgba(0,0,0,.1);
+    z-index: 1060;
+    transition: right .3s ease;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.dr-guide-panel.open {
+    right: 0;
+}
+.dr-guide-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #1e293b, #334155);
+    color: #fff;
+}
+.dr-guide-header h6 {
+    margin: 0;
+    font-size: .9rem;
+    font-weight: 700;
+}
+.dr-guide-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+.dr-guide-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+}
+.dr-guide-item strong {
+    font-size: .82rem;
+    display: block;
+    margin-bottom: 6px;
+}
+.dr-guide-item ol {
+    padding-left: 18px;
+    margin-bottom: 0;
+}
+.dr-guide-item ol li {
+    margin-bottom: 2px;
+}
+
+/* ===== F5: Print by Group UI ===== */
+.dr-page .x-small {
+    font-size: .72rem;
+}
+
+/* ===== Report Title Preview ===== */
+.dr-page .dr-title-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #eff6ff, #e0f2fe);
+    border-bottom: 1px solid var(--dr-border);
+    font-size: .9rem;
+    font-weight: 700;
+    color: var(--dr-text);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    gap: 6px;
+}
+.dr-page .dr-title-preview i {
+    color: var(--dr-primary);
+    font-size: 1rem;
 }
