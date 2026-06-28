@@ -1,6 +1,56 @@
 # Hệ thống Quản lý Điểm Sinh viên Hệ Tín chỉ (QLDSV_HTC)
 
-> Đồ án thực hành môn học **Hệ quản trị Cơ sở dữ liệu (DBMS) SQL Server - Đề tài 3** trên nền tảng .NET 10.0 Web MVC, sử dụng ADO.NET (Raw SQL Parameterized) kết hợp Stored Procedures tối ưu và DevExpress Web Document Viewer để in ấn báo cáo.
+> 🎓 **Học viện Công nghệ Bưu chính Viễn thông cơ sở tại TP. Hồ Chí Minh (PTITHCM)**  
+> 📚 **Môn học**: Hệ quản trị Cơ sở dữ liệu  
+> 👨‍🏫 **Giảng viên hướng dẫn**: Thầy Lưu Nguyễn Kỳ Thư
+
+[![Course Score](https://img.shields.io/badge/Course%20Score-10%2F10%20%E2%98%85-brightgreen?style=for-the-badge)](#)
+[![Donate](https://img.shields.io/badge/Donate-Buy%20us%20a%20coffee-orange?style=for-the-badge&logo=buy-me-a-coffee)](#-ủng-hộ--donate)
+
+> [!IMPORTANT]
+> 🏆 **ĐỒ ÁN ĐẠT ĐIỂM SỐ TỐI ĐA 10/10**  
+> Đồ án thực hành xuất sắc, được đánh giá cao nhờ thiết kế chuẩn **Kiến trúc sạch (Clean Architecture)** và áp dụng nhiều giải pháp **tối ưu hiệu năng truy vấn dữ liệu sâu rộng trên SQL Server** (Covering Indexes, TVP, Parameterized SQL chống Injection).
+
+Đồ án thực hành môn học **Hệ quản trị Cơ sở dữ liệu (DBMS) SQL Server - Đề tài 3** trên nền tảng .NET 10.0 Web MVC, sử dụng ADO.NET (Raw SQL Parameterized) kết hợp Stored Procedures tối ưu và DevExpress Web Document Viewer để in ấn báo cáo.
+
+---
+
+## 📘 Tài Liệu Liên Quan
+
+> [!IMPORTANT]
+> Dự án này đi kèm tài liệu tổng hợp kiến thức lý thuyết & thực hành liên quan đến lập trình web & hệ quản trị cơ sở dữ liệu (.NET 10.0 Web MVC, ADO.NET SqlClient, stored procedures, tối ưu hóa truy vấn) cùng danh sách nhắc nhở các tính năng bắt buộc và nâng cao cần áp dụng.
+>
+> 👉 [Đọc đề bài môn học tại đây (Đề tài 3)](docs/assignment/De3.md)
+>
+> 👉 [Đọc tài liệu tổng hợp kiến thức tại đây (Mục lục Bài học)](docs/lessons/MucLuc.md)
+>
+> 👉 [Đọc danh sách tính năng & lưu ý áp dụng tại đây](docs/LuongNghiepVu_RangBuoc.md)
+
+---
+
+## 🏆 Nhật ký Bảo vệ Đồ án (24/06/2026)
+
+Dự án đã được bảo vệ thành công với điểm số tuyệt đối 10/10. Dưới đây là tóm tắt quá trình vấn đáp thực tế và cách nhóm giải quyết các câu hỏi từ Giảng viên:
+
+### Quy Trình Bảo Vệ
+
+- **Chuẩn bị đầu giờ**: Nhóm được cấp thời gian để thiết lập máy tính, môi trường và khởi chạy mã nguồn.
+- **Xác định vai trò**: Đối với nhóm làm việc nhiều thành viên, giảng viên yêu cầu báo cáo chi tiết về phân công nhiệm vụ của từng cá nhân.
+- **Giao chủ đề vấn đáp**: Dựa trên vai trò đã báo cáo, giảng viên sẽ ghi chú lại và đặt ra 4 chủ đề hoặc câu hỏi chính bám sát vào các tính năng mà từng người đảm nhận.
+- **Demo hệ thống**: Sinh viên tiến hành thao tác trực tiếp trên phần mềm để chứng minh luồng hoạt động và trả lời cho các câu hỏi được giao.
+
+### Trọng Tâm Câu Hỏi
+
+- **Nghiệp vụ và Ràng buộc dữ liệu**: Giảng viên chú trọng vào logic xử lý thực tế, ví dụ như hệ thống có cho phép xóa dữ liệu giảng viên/sinh viên không, và cách giao diện xử lý (khóa hay ẩn nút xóa).
+- **Luồng xử lý logic**: Các câu hỏi đi sâu vào cơ chế hoạt động, điển hình như quy trình đăng nhập được xử lý ra sao và truy xuất từ bảng hệ thống nào.
+- **Lý thuyết cốt lõi**: Nội dung bám sát vào phạm vi tính năng của đồ án, không đánh đố bằng các kỹ thuật ngoài lề hay quá phức tạp như Cursor, UDF, hay tối ưu hóa truy vấn.
+- **Kỹ năng thao tác công cụ (SSMS)**: Cần nắm vững các thao tác trên SQL Server Management Studio như cách xem Stored Procedure (SP), kiểm tra người dùng (User) và tài khoản đăng nhập (Login).
+
+### Tiêu Chí Chấm Điểm & Điểm Cộng
+
+- **Đánh giá hiểu biết (SQL)**: Nếu sinh viên giải thích trôi chảy và nắm rõ luồng nghiệp vụ từ đầu, giảng viên sẽ không yêu cầu phải viết câu lệnh SQL.
+- **Xử lý tình huống**: Nếu phần trả lời lý thuyết chưa tốt, sinh viên buộc phải viết mã SQL để gỡ điểm. Nếu viết thành công, câu hỏi đó sẽ được thông qua. Ngược lại, nếu không thể viết mã, không thể mô tả hoặc không nhớ tên các trường dữ liệu, sinh viên sẽ bị trừ điểm.
+- **Tiêu chí điểm cộng**: Giảng viên đánh giá rất cao sự chủ động và khả năng mở rộng hệ thống. Nhóm đã ghi điểm tuyệt đối nhờ việc hoàn thiện thêm các tính năng ngoài phạm vi được giao (cụ thể là tính năng "tạo báo cáo động" vốn thuộc đề tài của một nhóm khác).
 
 ---
 
@@ -124,16 +174,17 @@ Hệ thống kết xuất các báo cáo chuẩn PDF chất lượng cao:
 
 Cho phép người dùng **tự tạo báo cáo tùy chỉnh** mà không cần viết code — qua giao diện 6 bước kéo-thả:
 
-| Bước | Mô tả |
-| :--- | :--- |
-| **Step 1** | Chọn bảng dữ liệu nguồn |
-| **Step 2** | JOIN bảng liên quan (INNER/LEFT — tự detect FK) |
-| **Step 3** | Chọn cột hiển thị + Alias + Sắp xếp (ASC/DESC toggle) |
+| Bước       | Mô tả                                                                             |
+| :--------- | :-------------------------------------------------------------------------------- |
+| **Step 1** | Chọn bảng dữ liệu nguồn                                                           |
+| **Step 2** | JOIN bảng liên quan (INNER/LEFT — tự detect FK)                                   |
+| **Step 3** | Chọn cột hiển thị + Alias + Sắp xếp (ASC/DESC toggle)                             |
 | **Step 4** | Cấu hình Thống kê: Aggregate (COUNT/SUM/AVG/MIN/MAX), HAVING AND/OR, In theo nhóm |
-| **Step 5** | Điều kiện lọc WHERE (10 operators, parameterized) |
-| **Step 6** | Cài đặt: Tiêu đề (@PARAM interpolation), Tên file xuất |
+| **Step 5** | Điều kiện lọc WHERE (10 operators, parameterized)                                 |
+| **Step 6** | Cài đặt: Tiêu đề (@PARAM interpolation), Tên file xuất                            |
 
 **Tính năng nổi bật:**
+
 - **Standalone Aggregates**: SUM/AVG/COUNT không cần GROUP BY (VD: tổng SV toàn trường).
 - **HAVING AND/OR**: Toggle giữa AND và OR cho điều kiện lọc sau gom nhóm.
 - **@PARAM Title**: Tiêu đề báo cáo có tham số động — `DANH SÁCH SV @MAKHOA` → `DANH SÁCH SV CNTT`.
@@ -220,19 +271,33 @@ Các quy tắc quan trọng bao gồm:
 
 ### Kết quả Audit SP (21 Stored Procedures)
 
-| SP | Kỹ thuật tối ưu đã áp dụng |
-| :--- | :--- |
-| 006 | Khử phép nối — truy vấn `MALTC` riêng trước, giảm JOIN từ 3→2 bảng |
-| 007 | `LEFT JOIN LOP` → `EXISTS`, tách `HO+TEN` SARGable, reorder WHERE (PK first) |
-| 008 | CTE `FilteredDK` lọc trước JOIN + `ROW_NUMBER` lấy điểm max 1 lần quét |
-| 009 | Temp table materialize → tránh CTE double-scan khi PIVOT |
+| SP  | Kỹ thuật tối ưu đã áp dụng                                                       |
+| :-- | :------------------------------------------------------------------------------- |
+| 006 | Khử phép nối — truy vấn `MALTC` riêng trước, giảm JOIN từ 3→2 bảng               |
+| 007 | `LEFT JOIN LOP` → `EXISTS`, tách `HO+TEN` SARGable, reorder WHERE (PK first)     |
+| 008 | CTE `FilteredDK` lọc trước JOIN + `ROW_NUMBER` lấy điểm max 1 lần quét           |
+| 009 | Temp table materialize → tránh CTE double-scan khi PIVOT                         |
 | 012 | `QUOTENAME()` + `OBJECT_ID` validate + `sp_executesql` parameterize OFFSET/FETCH |
-| 017 | `SERIALIZABLE` isolation + TRY/CATCH pattern |
-| 019 | TVP (`GradeEntryType`) — bulk update điểm 1 round-trip |
-| 021 | Extract `@HAS_DK`, `@CUR_NK/@CUR_HK` biến cục bộ — giảm 3 lần quét bảng DANGKY |
+| 017 | `SERIALIZABLE` isolation + TRY/CATCH pattern                                     |
+| 019 | TVP (`GradeEntryType`) — bulk update điểm 1 round-trip                           |
+| 021 | Extract `@HAS_DK`, `@CUR_NK/@CUR_HK` biến cục bộ — giảm 3 lần quét bảng DANGKY   |
 
 ---
 
-## 📝 Giấy phép
+## 👨‍💻 Đội ngũ phát triển (Contributors)
 
-Dự án được phân phối dưới giấy phép nội bộ phục vụ học tập và nghiên cứu môn học Hệ quản trị cơ sở dữ liệu.
+Dự án được thiết kế, phát triển và tối ưu bởi nhóm 2 thành viên. Chúng mình đã áp dụng quy trình làm việc thực chiến (Code Review, Pull Request) để mang lại một kiến trúc hệ thống ổn định nhất.
+
+| <div align="center"><img src="https://github.com/ptquanh.png" width="100px;" alt=""/><br /><sub><b>Phan Tuấn Quốc Anh (Peter Phan)</b></sub></div> | <div align="center"><img src="https://github.com/chivinh123abc.png" width="100px;" alt=""/><br /><sub><b>Lương Chí Vinh (Ryan Luong)</b></sub></div> |
+| :------------------------------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------: |
+|                                                  [🔗 GitHub Profile](https://github.com/ptquanh)                                                   |                                                [🔗 GitHub Profile](https://github.com/chivinh123abc)                                                 |
+
+> _Nếu bạn thấy dự án này thú vị hoặc có bất kỳ câu hỏi nào về kiến trúc code, đừng ngần ngại kết nối với chúng mình qua GitHub nhé!_
+
+## ☕ Ủng hộ / Donate
+
+Nếu mã nguồn này giúp ích cho bạn trong quá trình học tập hoặc làm đồ án tại PTIT HCM, hãy cân nhắc mời nhóm một ly cà phê nhé! Sự ủng hộ của bạn là động lực rất lớn.
+
+- **Ngân hàng**: MB Bank
+- **Chủ tài khoản**: PHAN TUAN QUOC ANH
+- **Số tài khoản**: 042055678888
