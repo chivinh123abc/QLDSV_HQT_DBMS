@@ -33,6 +33,9 @@ namespace QLDSV_HTC.Web.Reports
 
             // ------- REPORT HEADER -------
             string title = BuildTitle(request);
+            bool groupedPageBreak = request.PrintByGroup
+                && request.PageBreakPerGroup
+                && !string.IsNullOrWhiteSpace(request.GroupByColumn);
 
             XRLabel lblTitle = new()
             {
@@ -73,25 +76,39 @@ namespace QLDSV_HTC.Web.Reports
             }
 
             headerTable.Rows.Add(headerRow);
-            pageHeaderBand.Controls.Add(headerTable);
+
+            if (groupedPageBreak)
+            {
+                pageHeaderBand.HeightF = 0f;
+                pageHeaderBand.Visible = false;
+            }
+            else
+            {
+                pageHeaderBand.Controls.Add(headerTable);
+            }
 
             // ------- DETAIL BAND DYNAMIC -------
             var detailFont = new DevExpress.Drawing.DXFont("Arial", 11, DevExpress.Drawing.DXFontStyle.Regular);
+            const DevExpress.XtraPrinting.BorderSide borderSideDetail = 
+                DevExpress.XtraPrinting.BorderSide.Left | 
+                DevExpress.XtraPrinting.BorderSide.Right | 
+                DevExpress.XtraPrinting.BorderSide.Bottom;
 
             XRTable detailTable = new()
             {
                 SizeF = new(totalWidth, 30f),
-                Borders = borderSideAll,
+                Borders = borderSideDetail,
                 Font = detailFont,
                 TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleCenter
             };
             XRTableRow detailRow = new();
 
-            // STT Expression
+            // STT Expression - reset về 1 mỗi nhóm nếu có gom nhóm
+            SummaryRunning runningMode = request.PrintByGroup ? SummaryRunning.Group : SummaryRunning.Report;
             XRTableCell cellStt = new()
             {
                 WidthF = sttWidth,
-                Summary = new() { Func = SummaryFunc.RecordNumber, Running = SummaryRunning.Report }
+                Summary = new() { Func = SummaryFunc.RecordNumber, Running = runningMode }
             };
             cellStt.ExpressionBindings.Add(new("BeforePrint", "Text", "sumRecordNumber()"));
             detailRow.Cells.Add(cellStt);
@@ -128,11 +145,9 @@ namespace QLDSV_HTC.Web.Reports
             // ------- F5: PRINT BY GROUP -------
             if (request.PrintByGroup && !string.IsNullOrWhiteSpace(request.GroupByColumn))
             {
-                // GroupByColumn comes as "Table.Column" from frontend — extract column part
                 string rawGroupCol = request.GroupByColumn;
                 string colPart = rawGroupCol.Contains('.') ? rawGroupCol.Split('.').Last() : rawGroupCol;
 
-                // Find matching column in DataTable (could be exact name or alias)
                 string? matchedCol = null;
                 foreach (DataColumn col in dt.Columns)
                 {
@@ -146,8 +161,14 @@ namespace QLDSV_HTC.Web.Reports
 
                 if (matchedCol != null)
                 {
-                    request.GroupByColumn = matchedCol; // normalize for ApplyGroupedLayout
-                    ApplyGroupedLayout(request, totalWidth);
+                    request.GroupByColumn = matchedCol;
+                    ApplyGroupedLayout(request, totalWidth, title, headerTable);
+
+                    if (groupedPageBreak)
+                    {
+                        reportHeaderBand.HeightF = 0f;
+                        reportHeaderBand.Visible = false;
+                    }
                 }
             }
 
@@ -167,9 +188,6 @@ namespace QLDSV_HTC.Web.Reports
             this.DataSource = dt;
         }
 
-        /// <summary>
-        /// F4: Build title with @PARAM interpolation from filter values
-        /// </summary>
         private static string BuildTitle(DynamicQueryRequestDto request)
         {
             string title = !string.IsNullOrWhiteSpace(request.ReportTitle)
@@ -191,16 +209,18 @@ namespace QLDSV_HTC.Web.Reports
             return title;
         }
 
-        /// <summary>
-        /// F5: Apply grouped layout with GroupHeaderBand and GroupFooterBand
-        /// </summary>
-        private void ApplyGroupedLayout(DynamicQueryRequestDto request, float totalWidth)
+        private void ApplyGroupedLayout(DynamicQueryRequestDto request, float totalWidth, string reportTitle, XRTable headerTable)
         {
             string groupCol = request.GroupByColumn!;
 
+            // Tính chiều cao GroupHeader: 
+            // - Sang trang: tiêu đề (40f) + table header (40f) + margins = 90f (để khít với detailTable)
+            // - Không sang trang: chỉ có group label màu xanh (30f) + margins = 35f
+            float headerHeight = request.PageBreakPerGroup ? 90f : 35f;
+
             var groupHeader = new GroupHeaderBand()
             {
-                HeightF = 35f,
+                HeightF = headerHeight,
                 GroupFields = { new GroupField(groupCol, XRColumnSortOrder.Ascending) },
                 RepeatEveryPage = true
             };
@@ -208,19 +228,36 @@ namespace QLDSV_HTC.Web.Reports
             if (request.PageBreakPerGroup)
             {
                 groupHeader.PageBreak = PageBreak.BeforeBand;
-            }
 
-            var lblGroupHeader = new XRLabel()
+                var lblGroupTitle = new XRLabel()
+                {
+                    Font = new DevExpress.Drawing.DXFont("Arial", 18, DevExpress.Drawing.DXFontStyle.Bold),
+                    TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleCenter,
+                    SizeF = new SizeF(totalWidth, 40f),
+                    LocationF = new PointF(0f, 5f)
+                };
+                string escapedTitle = reportTitle.ToUpper().Replace("'", "''");
+                lblGroupTitle.ExpressionBindings.Add(
+                    new("BeforePrint", "Text", $"'{escapedTitle} ' + [{groupCol}]"));
+                groupHeader.Controls.Add(lblGroupTitle);
+
+                headerTable.LocationF = new PointF(0f, 50f);
+                groupHeader.Controls.Add(headerTable);
+            }
+            else
             {
-                Font = new DevExpress.Drawing.DXFont("Arial", 12, DevExpress.Drawing.DXFontStyle.Bold),
-                TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleLeft,
-                SizeF = new SizeF(totalWidth, 30f),
-                LocationF = new PointF(0f, 2f),
-                BackColor = Color.FromArgb(230, 240, 255),
-                Padding = new DevExpress.XtraPrinting.PaddingInfo(10, 0, 0, 0)
-            };
-            lblGroupHeader.ExpressionBindings.Add(new("BeforePrint", "Text", $"'► ' + [{groupCol}]"));
-            groupHeader.Controls.Add(lblGroupHeader);
+                var lblGroupHeader = new XRLabel()
+                {
+                    Font = new DevExpress.Drawing.DXFont("Arial", 12, DevExpress.Drawing.DXFontStyle.Bold),
+                    TextAlignment = DevExpress.XtraPrinting.TextAlignment.MiddleLeft,
+                    SizeF = new SizeF(totalWidth, 30f),
+                    LocationF = new PointF(0f, 2f),
+                    BackColor = Color.FromArgb(230, 240, 255),
+                    Padding = new DevExpress.XtraPrinting.PaddingInfo(10, 0, 0, 0)
+                };
+                lblGroupHeader.ExpressionBindings.Add(new("BeforePrint", "Text", $"'► ' + [{groupCol}]"));
+                groupHeader.Controls.Add(lblGroupHeader);
+            }
 
             var groupFooter = new GroupFooterBand() { HeightF = 25f };
             var lblGroupCount = new XRLabel()
