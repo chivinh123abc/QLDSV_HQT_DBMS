@@ -11,6 +11,89 @@ namespace QLDSV_HTC.Infrastructure.Repositories;
 public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
     : BaseSqlRepository(connectionProvider), IDynamicReportRepository
 {
+    private static Dictionary<string, List<TableRelation>>? _cachedRelations;
+    private static readonly object _cacheLock = new();
+
+    private static void EnsureRelationsLoaded()
+    {
+        if (_cachedRelations != null) return;
+
+        lock (_cacheLock)
+        {
+            if (_cachedRelations != null) return;
+
+            string connStr = QLDSV_HTC.Application.Helpers.SqlConfigHelper.GetConnectionString();
+            using var conn = new SqlConnection(connStr);
+            using var cmd = new SqlCommand(AppConstants.SpNames.GetTableRelations, conn);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            conn.Open();
+            using var reader = cmd.ExecuteReader();
+            var dt = new DataTable();
+            dt.Load(reader);
+
+            var tempRelations = new Dictionary<string, List<TableRelation>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (DataRow row in dt.Rows)
+            {
+                string parentTable = row[StoredProcedureConstants.GetTableRelations.ParentTable].ToString()!;
+                string parentColumn = row[StoredProcedureConstants.GetTableRelations.ParentColumn].ToString()!;
+                string referencedTable = row[StoredProcedureConstants.GetTableRelations.ReferencedTable].ToString()!;
+                string referencedColumn = row[StoredProcedureConstants.GetTableRelations.ReferencedColumn].ToString()!;
+
+                // Parent to Referenced
+                if (!tempRelations.ContainsKey(parentTable))
+                    tempRelations[parentTable] = new List<TableRelation>();
+
+                tempRelations[parentTable].Add(new TableRelation
+                {
+                    TargetTable = referencedTable,
+                    JoinCondition = $"[{parentTable}].[{parentColumn}] = [{referencedTable}].[{referencedColumn}]"
+                });
+
+                // Referenced to Parent (bidirectional)
+                if (!tempRelations.ContainsKey(referencedTable))
+                    tempRelations[referencedTable] = new List<TableRelation>();
+
+                tempRelations[referencedTable].Add(new TableRelation
+                {
+                    TargetTable = parentTable,
+                    JoinCondition = $"[{referencedTable}].[{referencedColumn}] = [{parentTable}].[{parentColumn}]"
+                });
+            }
+
+            _cachedRelations = tempRelations;
+        }
+    }
+
+    private static string? GetJoinCondition(string sourceTable, string targetTable)
+    {
+        EnsureRelationsLoaded();
+        if (_cachedRelations!.TryGetValue(sourceTable, out var validTargets))
+        {
+            var relation = validTargets.Find(r => r.TargetTable.Equals(targetTable, StringComparison.OrdinalIgnoreCase));
+            if (relation != null)
+            {
+                return relation.JoinCondition;
+            }
+        }
+        return null;
+    }
+
+    private async Task<DataTable> ExecuteQueryWithAdminConnectionAsync(string commandText, params SqlParameter[] parameters)
+    {
+        string connStr = QLDSV_HTC.Application.Helpers.SqlConfigHelper.GetConnectionString();
+        await using var conn = new SqlConnection(connStr);
+        await using var cmd = new SqlCommand(commandText, conn);
+        cmd.CommandType = CommandType.Text;
+        if (parameters != null) cmd.Parameters.AddRange(parameters);
+        await conn.OpenAsync();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        var dt = new DataTable();
+        dt.Load(reader);
+        return dt;
+    }
+
     public async Task<IEnumerable<string>> GetAllowedTablesAsync()
     {
         const string query = @"
@@ -19,14 +102,14 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
             WHERE TABLE_TYPE IN ('BASE TABLE', 'VIEW') 
               AND TABLE_NAME NOT LIKE 'SPRING_%' 
               AND TABLE_NAME NOT LIKE 'sys%'
-              AND HAS_PERMS_BY_NAME('[dbo].[' + TABLE_NAME + ']', 'OBJECT', 'SELECT') = 1
+              AND TABLE_NAME NOT IN ('sysdiagrams', 'database_firewall_rules', '__EFMigrationsHistory')
             ORDER BY TABLE_NAME";
-        var dt = await ExecuteQueryAsync(query, CommandType.Text);
+        var dt = await ExecuteQueryWithAdminConnectionAsync(query);
 
         var tables = new List<string>();
         foreach (DataRow row in dt.Rows)
         {
-            tables.Add(row["TABLE_NAME"].ToString()!);
+            tables.Add(row[StoredProcedureConstants.SchemaMetadata.TableName].ToString()!);
         }
 
         return tables;
@@ -35,15 +118,25 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
     public async Task<IEnumerable<string>> GetTableColumnsAsync(string tableName)
     {
         const string query = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @TableName ORDER BY ORDINAL_POSITION";
-        var dt = await ExecuteQueryAsync(query, CommandType.Text, new SqlParameter("@TableName", tableName));
+        var dt = await ExecuteQueryWithAdminConnectionAsync(query, new SqlParameter("@TableName", tableName));
 
         var columns = new List<string>();
         foreach (DataRow row in dt.Rows)
         {
-            columns.Add(row["COLUMN_NAME"].ToString()!);
+            columns.Add(row[StoredProcedureConstants.SchemaMetadata.ColumnName].ToString()!);
         }
 
         return columns;
+    }
+
+    public Task<IEnumerable<string>> GetTableRelationsAsync(string tableName)
+    {
+        EnsureRelationsLoaded();
+        if (_cachedRelations!.TryGetValue(tableName, out var relations))
+        {
+            return Task.FromResult<IEnumerable<string>>(relations.ConvertAll(r => r.TargetTable));
+        }
+        return Task.FromResult<IEnumerable<string>>([]);
     }
 
     public async Task<(DataTable Data, string Sql, int TotalCount)> GetPreviewDataAsync(DynamicQueryRequestDto request)
@@ -223,8 +316,8 @@ public class DynamicReportRepository(IDbConnectionProvider connectionProvider)
             string? joinCondition = null;
             foreach (var existingTable in joinedTables)
             {
-                joinCondition = TableRelationRegistry.GetJoinCondition(existingTable, joinSafeTable)
-                              ?? TableRelationRegistry.GetJoinCondition(joinSafeTable, existingTable);
+                joinCondition = GetJoinCondition(existingTable, joinSafeTable)
+                              ?? GetJoinCondition(joinSafeTable, existingTable);
                 if (joinCondition != null) break;
             }
 

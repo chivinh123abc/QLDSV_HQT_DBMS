@@ -168,5 +168,19 @@ namespace QLDSV_HTC.Domain.Constants
             public const string StudentId = "@MASV";
             public const string CreditClassId = "@MALTC";
         }
+
+        public static class GetTableRelations
+        {
+            public const string ParentTable = "ParentTable";
+            public const string ParentColumn = "ParentColumn";
+            public const string ReferencedTable = "ReferencedTable";
+            public const string ReferencedColumn = "ReferencedColumn";
+        }
+
+        public static class SchemaMetadata
+        {
+            public const string TableName = "TABLE_NAME";
+            public const string ColumnName = "COLUMN_NAME";
+        }
     }
 }

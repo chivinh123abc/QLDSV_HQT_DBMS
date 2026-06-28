@@ -57,7 +57,7 @@ public class DynamicReportController(IDynamicReportRepository dynamicReportRepos
             if (!await IsTableAllowedAsync(tableName))
                 return BadRequest(new { success = false, message = "Tên bảng không hợp lệ." });
 
-            var targetTables = TableRelationRegistry.GetRelationsForTable(tableName);
+            var targetTables = await dynamicReportRepository.GetTableRelationsAsync(tableName);
             return Ok(new { success = true, data = targetTables });
         }, "lấy quan hệ bảng");
     }

@@ -53,6 +53,7 @@ namespace QLDSV_HTC.Domain.Constants
             public const string DeleteAccount = "sp_XoaTaiKhoan";
 
             public const string DynamicPagination = "sp_PhanTrangDong";
+            public const string GetTableRelations = "sp_LayQuanHeGiuaCacBang";
         }
 
         public static class Configs

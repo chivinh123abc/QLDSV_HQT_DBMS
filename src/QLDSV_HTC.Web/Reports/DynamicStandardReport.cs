@@ -89,9 +89,9 @@ namespace QLDSV_HTC.Web.Reports
 
             // ------- DETAIL BAND DYNAMIC -------
             var detailFont = new DevExpress.Drawing.DXFont("Arial", 11, DevExpress.Drawing.DXFontStyle.Regular);
-            const DevExpress.XtraPrinting.BorderSide borderSideDetail = 
-                DevExpress.XtraPrinting.BorderSide.Left | 
-                DevExpress.XtraPrinting.BorderSide.Right | 
+            const DevExpress.XtraPrinting.BorderSide borderSideDetail =
+                DevExpress.XtraPrinting.BorderSide.Left |
+                DevExpress.XtraPrinting.BorderSide.Right |
                 DevExpress.XtraPrinting.BorderSide.Bottom;
 
             XRTable detailTable = new()

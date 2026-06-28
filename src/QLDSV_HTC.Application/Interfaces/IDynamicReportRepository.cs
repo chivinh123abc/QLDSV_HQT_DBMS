@@ -7,6 +7,7 @@ public interface IDynamicReportRepository
 {
     Task<IEnumerable<string>> GetAllowedTablesAsync();
     Task<IEnumerable<string>> GetTableColumnsAsync(string tableName);
+    Task<IEnumerable<string>> GetTableRelationsAsync(string tableName);
     Task<(DataTable Data, string Sql, int TotalCount)> GetPreviewDataAsync(DynamicQueryRequestDto request);
     Task<string> GetSqlPreviewAsync(DynamicQueryRequestDto request);
     Task<DataTable> GetReportDataAsync(DynamicQueryRequestDto request);
